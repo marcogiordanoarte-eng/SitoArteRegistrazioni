@@ -1,0 +1,204 @@
+{
+  "meta": {
+    "version": 1,
+    "generatedAt": "2025-10-01T00:00:00Z",
+    "language": "it",
+    "description": "Conoscenza strutturata del sito Arte Registrazioni: pagine, artisti, percorsi e azioni principali."
+  },
+  "pages": [
+    {
+      "route": "/",
+      "key": "home",
+      "nome": "Home",
+      "descrizione": "Pagina iniziale: accesso rapido a artisti, musica, studio, festival, podcast, countdown e contatti.",
+      "azioniSuggerite": ["vai a artisti", "vai a musica", "apri studio", "apri podcast", "vai a festival", "mostra countdown", "vai a contatti"],
+      "prioritaIntro": 1
+    },
+    {
+      "route": "/artisti",
+      "key": "artisti",
+      "nome": "Artisti",
+      "descrizione": "Galleria di tutti gli artisti presenti sulla piattaforma, accesso ai profili e alle immagini fullscreen.",
+      "azioniSuggerite": ["apri profilo <nome>", "mostra biografia <nome>", "vai a musica", "torna home"],
+      "campiRilevanti": ["nome", "bio", "steps (immagini)", "ordine"],
+      "prioritaIntro": 2
+    },
+    {
+      "route": "/artista/:id",
+      "key": "artista-dettaglio",
+      "nome": "Dettaglio Artista",
+      "descrizione": "Pagina specifica con biografia sintetica o estesa, immagini, eventuali link ai brani correlati.",
+      "azioniSuggerite": ["leggi biografia", "mostra immagini", "vai a musica", "torna a artisti"],
+      "prioritaIntro": 3
+    },
+    {
+      "route": "/musica",
+      "key": "musica",
+      "nome": "Musica",
+      "descrizione": "Esplorazione brani, anteprime, filtri per genere, accesso a opzione di acquisto.",
+      "azioniSuggerite": ["filtra per genere", "ascolta anteprima", "vai a buy", "torna home"],
+      "prioritaIntro": 4
+    },
+    {
+      "route": "/buy",
+      "key": "sounds",
+      "nome": "Sounds / Buy Music",
+      "descrizione": "Sezione per acquistare e supportare gli artisti. Seleziona un brano e procedi con Acquista/Download.",
+      "azioniSuggerite": ["acquista brano", "mostra istruzioni acquisto", "torna a musica", "supporta artista"],
+      "note": "CTA dosata: non ripetere troppo spesso.",
+      "prioritaIntro": 5
+    },
+    {
+      "route": "/buy/genre/:gid",
+      "key": "buy-genre",
+      "nome": "Buy per Genere",
+      "descrizione": "Filtro dei brani acquistabili per genere specifico.",
+      "azioniSuggerite": ["torna a buy", "acquista brano", "filtra un altro genere"],
+      "prioritaIntro": 6
+    },
+    {
+      "route": "/studio",
+      "key": "studio",
+      "nome": "Studio",
+      "descrizione": "Servizi di registrazione, produzione, sperimentazione sonora e contenuti multimediali.",
+      "azioniSuggerite": ["mostra servizi", "apri video studio", "vai a contatti", "torna home"],
+      "prioritaIntro": 7
+    },
+    {
+      "route": "/festival",
+      "key": "festival",
+      "nome": "Festival",
+      "descrizione": "Eventi, iniziative, bando di partecipazione e specifiche tecniche.",
+      "azioniSuggerite": ["mostra bando", "vai a countdown", "torna home"],
+      "prioritaIntro": 8
+    },
+    {
+      "route": "/podcast",
+      "key": "podcast",
+      "nome": "Podcast",
+      "descrizione": "Interviste ed episodi dedicati agli artisti e alla scena musicale.",
+      "azioniSuggerite": ["riproduci episodio", "vai a musica", "torna home"],
+      "prioritaIntro": 9
+    },
+    {
+      "route": "/countdown",
+      "key": "countdown",
+      "nome": "Countdown",
+      "descrizione": "Tempo rimanente a una release o evento imminente.",
+      "azioniSuggerite": ["quanto manca", "vai a festival", "torna home"],
+      "prioritaIntro": 10
+    },
+    {
+      "route": "/contatti",
+      "key": "contatti",
+      "nome": "Contatti",
+      "descrizione": "Modulo per inviare messaggi e recapiti ufficiali.",
+      "azioniSuggerite": ["invia messaggio", "vai a studio", "torna home"],
+      "prioritaIntro": 11
+    },
+    {
+      "route": "/termini",
+      "key": "termini",
+      "nome": "Termini",
+      "descrizione": "Termini di servizio e note legali.",
+      "azioniSuggerite": ["vai a privacy", "torna home"],
+      "prioritaIntro": 12
+    },
+    {
+      "route": "/privacy",
+      "key": "privacy",
+      "nome": "Privacy",
+      "descrizione": "Informativa e gestione dati personali.",
+      "azioniSuggerite": ["vai a termini", "torna home"],
+      "prioritaIntro": 13
+    },
+    {
+      "route": "/licenza",
+      "key": "licenza",
+      "nome": "Licenza",
+      "descrizione": "Licenze e diritti d'uso dei contenuti.",
+      "azioniSuggerite": ["vai a termini", "torna home"],
+      "prioritaIntro": 14
+    }
+  ],
+  "artists": [
+    {
+      "name": "Marco Giordano",
+      "bioBreve": "Fondatore di Arte Registrazioni; sax tenore e pianoforte, passione jazz e improvvisazione; stile personale che fonde classico e moderno.",
+      "tags": ["jazz", "sax", "fondatore"],
+      "ctaSupporto": true
+    },
+    {
+      "name": "Art Explorers Jazz Quartet",
+      "bioBreve": "Quartetto sperimentale: Gabriele Tommaso (piano), Michelangelo Tommaso (basso), Davide Fiale (batteria), Marco Giordano (sax). Ricerca timbrica e interplay.",
+      "tags": ["jazz", "quartet", "sperimentazione"],
+      "ctaSupporto": true
+    },
+    {
+      "name": "Beppe Martini",
+      "bioBreve": "Chitarrista: tour con Zucchero negli anni '80, poi ambient. 2024: singolo 'Respirando un Suono' e prossima uscita 'Seventeen'.",
+      "tags": ["chitarra", "ambient", "collaborazioni"],
+      "ctaSupporto": true
+    },
+    {
+      "name": "Marco Tavano",
+      "bioBreve": "Cantautore: melodie leggere e testi profondi su autenticità e ribellione pacifica; linguaggio semplice ma non banale.",
+      "tags": ["cantautore", "testo", "autenticità"],
+      "ctaSupporto": true
+    },
+    {
+      "name": "Dodo",
+      "bioBreve": "Artista rap multilingue (it/en/fr/de); singoli 'Make A Change', 'My Energy Now', 'Sopra le Nuvole'; album 'Verso Le Nuvole'. Energia innovativa.",
+      "tags": ["rap", "multilingue", "energia"],
+      "ctaSupporto": true
+    },
+    {
+      "name": "Susaman",
+      "bioBreve": "Rap old school con influssi reggae, ironia e innovazione; singolo 'Si Vive Al Meglio'.",
+      "tags": ["rap", "reggae", "old-school"],
+      "ctaSupporto": true
+    },
+    {
+      "name": "Shardon",
+      "bioBreve": "Voce Soul/R&B/Blues; formazione Lizard, palchi e jam torinesi, timbro sognante e originale.",
+      "tags": ["soul", "rnb", "blues", "voce"],
+      "ctaSupporto": true
+    },
+    {
+      "name": "Karma",
+      "bioBreve": "B-girl e rapper: 28 anni tra breakdance e rime; ritorno dopo pausa con nuova energia e disciplina formativa.",
+      "tags": ["rap", "breakdance", "percorso"],
+      "ctaSupporto": true
+    }
+  ],
+  "navigationIntents": {
+    "patternNavigazione": ["vai a", "portami a", "apri"],
+    "scroll": ["scroll giù", "scorri giù", "scendi", "scroll su", "torna su", "vai su", "footer"],
+    "acquisto": ["compra", "acquista", "buy", "sounds", "supporta", "sostieni"],
+    "bio": ["chi è", "dimmi di", "biografia"],
+    "riassunto": ["cosa c'è", "di cosa parla", "spiega pagina"]
+  },
+  "purchaseFlow": {
+    "entry": "/buy",
+    "section": "Sounds",
+    "steps": ["Apri /buy", "Seleziona brano", "Premi Acquista/Download"],
+    "cta": "Sostieni gli artisti acquistando i brani nella sezione Sounds.",
+    "ctaCooldown": 2
+  },
+  "phrases": {
+    "fallback": "Non trovo queste informazioni. Vuoi altro su artisti, musica, studio o acquisto?",
+    "askRefine": "Vuoi un artista, una pagina o acquistare musica?",
+    "scrollDown": "Scorro giù",
+    "scrollUp": "Torno su",
+    "footer": "Vado al footer",
+    "notFound": "Sezione non trovata",
+    "openSounds": "Apro la sezione Sounds per acquistare e supportare.",
+    "ctaSupport": "Puoi sostenere gli artisti acquistando i brani nella sezione Sounds."
+  },
+  "outputPolicy": {
+    "maxSentencesDefault": 4,
+    "expandKeyword": "approfondisci",
+    "clipPriority": true,
+    "avoidRepeatCTA": true
+  }
+}

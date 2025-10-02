@@ -1,0 +1,29 @@
+node_modules/
+build/
+dist/
+.DS_Store
+
+# Python / venv
+tortoise/.venv/
+__pycache__/
+*.pyc
+
+# Media grezzi molto grandi (togli se vuoi davvero versionarli)
+videopromo.mp4
+audio/
+tortoise/voices/
+tracce_iA_Voce_Audio/
+tracce_iA_Voce_Audio_mono/
+
+# Log
+npm-debug.log*
+yarn-error.log*
+.env.local
+build.zip
+audio/
+build.zip
+tortoise/.venv/
+tortoise/voices/
+tracce_iA_Voce_Audio/
+tracce_iA_Voce_Audio_mono/
+

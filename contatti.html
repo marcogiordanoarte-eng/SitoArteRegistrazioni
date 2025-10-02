@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contatti | Arte Registrazioni</title>
+    <meta name="description" content="Contatta Arte Registrazioni: email, telefono e indirizzo dello studio.">
+    <meta property="og:title" content="Contatti Arte Registrazioni">
+    <meta property="og:description" content="Email, telefono e indirizzo per contattare Arte Registrazioni.">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="site.css">
+    <style>
+        .contact-body { background-image:url('foto.png'); background-size:cover; background-position:center center; position:relative; }
+        .contact-body::before { content:""; position:fixed; inset:0; background:linear-gradient(to bottom,#000 30%,rgba(0,0,0,0.5) 60%,#000 100%); mix-blend-mode:multiply; pointer-events:none; }
+        .contact-body > * { position:relative; z-index:1; }
+        .contact-container { background:#060606; padding:40px; border-radius:10px; box-shadow:0 0 10px rgba(255,255,255,0.1); max-width:600px; margin:60px auto 0; text-align:center; }
+        .contact-container h1 { color:#ffd700; margin-bottom:24px; }
+        .contact-container p { color:#fcfbfb; font-size:1.1em; margin-bottom:18px; }
+        .maps-link { display:inline-block; margin-top:24px; padding:12px 28px; background:#222; color:#ffd700; border-radius:10px; font-size:1.1em; text-decoration:none; box-shadow:0 0 16px #ffd700,0 0 32px #fff; transition:background .2s,color .2s,box-shadow .3s; }
+        .maps-link:hover { background:#ffd700; color:#222; box-shadow:0 0 32px #ffd700,0 0 64px #fff; }
+        .phone-link { color:#ffd700; text-decoration:underline; }
+    </style>
+</head>
+<body class="contact-body">
+    <nav class="navbar">
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="artisti.html">Artisti</a></li>
+            <li><a href="PaginaStudio/artestudio.html">Arte Registrazioni</a></li>
+            <li><a href="contatti.html" class="active">Contatti</a></li>
+        </ul>
+    </nav>
+    <div class="contact-container">
+    <h1>Contatti</h1>
+    <p>Email: arteregistrazioni@gmail.com</p>
+    <p>Telefono: <a href="tel:+393711532403" class="phone-link">+39 371 1532403</a></p>
+    <p>Indirizzo: Corso Francia 169, Torino (To) Italia</p>
+    <a class="maps-link" href="https://share.google/WoJQ6fCnnUcrPv7dl" target="_blank" rel="noopener">Apri su Google Maps</a>
+    </div>
+</body>
+</html>

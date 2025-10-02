@@ -1,0 +1,23 @@
+{
+  "home": {
+    "title": "Arte Registrazioni - Home",
+    "intro": "Scopri artisti, musica, studio, festival, podcast e prossime uscite.",
+    "sections": ["artisti", "musica", "studio", "festival", "podcast", "countdown", "contatti"]
+  },
+  "artisti": {
+    "title": "Artisti",
+    "intro": "Pagina Artisti. Sfoglia i profili e scopri le biografie e le produzioni.",
+    "fields": ["nome", "genere", "bio", "steps"],
+    "actions": ["apri artista", "mostra biografia", "vai a musica dell'artista"]
+  },
+  "musica": {
+    "title": "Musica",
+    "intro": "Anteprime e acquisto brani.",
+    "actions": ["filtra genere", "acquista brano", "ascolta anteprima"]
+  },
+  "studio": { "title": "Studio", "intro": "Servizi di registrazione e produzione." },
+  "festival": { "title": "Festival", "intro": "Bando di partecipazione e specifiche tecniche." },
+  "podcast": { "title": "Podcast", "intro": "Interviste e contenuti dedicati agli artisti." },
+  "countdown": { "title": "Countdown", "intro": "Prossime uscite e release recenti." },
+  "contatti": { "title": "Contatti", "intro": "Modulo contatto e recapiti." }
+}

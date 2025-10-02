@@ -1,0 +1,221 @@
+Script registrazioni voce reale "Sounds" (Italiano)
+Formato richiesto per ogni riga:
+N. Titolo traccia: ####_Nome_breve - Testo: “Frase completa da leggere.”
+
+Linee guida generali prima di registrare:
+- Formato: WAV mono 48 kHz 24‑bit (come i campioni esistenti).
+- Ambiente: stanza trattata / distanza microfono costante (15–20 cm con filtro pop se possibile).
+- Timbro: caldo, naturale, energico ma non teatrale. Evita sibilanti marcate.
+- Loudness: mantieni picchi sotto -3 dBFS; niente clipping. Non applicare compressioni pesanti, solo un lieve high‑pass (80 Hz) se necessario.
+- Respiri: lascia respiri naturali brevi, evita inspirazioni rumorose.
+- Ritmo: leggermente più lento del parlato quotidiano, ma fluido (≈ 0.95× velocità naturale). Pausa microscopica prima di parole chiave ("Compra", "Scopri", "Benvenuto").
+- Coerenza: se rifai una frase, conserva naming e scegli la migliore, elimina versioni scartate.
+- Punteggiatura: leggi come scritto. Ogni frase termina con intonazione coerente (discendente per dichiarative, ascendente per domande).
+- Evita rumori di cuffie, click mouse, colpi sul tavolo.
+
+Nota tecnica matching attuale:
+- L'engine divide il testo in frasi usando . ! ? e newline. Una frase registrata deve comparire (o essere contenuta) nel testo che l'assistente vuole pronunciare per essere usata.
+- Aggiungere varianti sinonimiche aiuta la copertura.
+- Le frasi troppo corte (< ~8 caratteri) oggi non vengono usate; forniamo connettori multi-parola ("e inoltre", "in questo momento") per aggirare la soglia.
+
+Sequenza inizio (partiamo da 0085 perché esistono già 84 campioni):
+
+1. Titolo traccia: 0085_Ciao_sono_Sounds - Testo: “Ciao sono Sounds! L’iA di Arte Registrazioni, posso aiutarti?”
+2. Titolo traccia: 0086_Ciao_benvenuto - Testo: “Ciao e benvenuto su Arte Registrazioni.”
+3. Titolo traccia: 0087_Benvenuti_tutti - Testo: “Benvenuti su Arte Registrazioni.”
+4. Titolo traccia: 0088_Bentornato - Testo: “Bentornato, felice di rivederti.”
+5. Titolo traccia: 0089_Bentornata - Testo: “Bentornata, felice di rivederti.”
+6. Titolo traccia: 0090_Presentazione_breve - Testo: “Sono Sounds, la voce intelligente del sito.”
+7. Titolo traccia: 0091_Presentazione_estesa - Testo: “Sono Sounds, l’assistente intelligente di Arte Registrazioni.”
+8. Titolo traccia: 0092_Come_posso_aiutarti - Testo: “Come posso aiutarti?”
+9. Titolo traccia: 0093_Dimmi_pura - Testo: “Dimmi pure.”
+10. Titolo traccia: 0094_Ho_ascolto - Testo: “Ti ascolto.”
+11. Titolo traccia: 0095_Un_attimo - Testo: “Un attimo, controllo.”
+12. Titolo traccia: 0096_Sto_elaborando - Testo: “Sto elaborando la tua richiesta.”
+13. Titolo traccia: 0097_Un_secondo_precarico - Testo: “Un secondo, preparo le informazioni.”
+14. Titolo traccia: 0098_Ecco_quello_che_ho_trovato - Testo: “Ecco quello che ho trovato.”
+15. Titolo traccia: 0099_Ecco_la_risposta - Testo: “Ecco la risposta.”
+16. Titolo traccia: 0100_Ho_finito - Testo: “Ho finito.”
+17. Titolo traccia: 0101_Fatto - Testo: “Fatto.”
+18. Titolo traccia: 0102_Operazione_completata - Testo: “Operazione completata.”
+19. Titolo traccia: 0103_Salvataggio_effettuato - Testo: “Salvataggio effettuato.”
+20. Titolo traccia: 0104_Elemento_eliminato - Testo: “Elemento eliminato.”
+21. Titolo traccia: 0105_Non_ho_trovato_risultati - Testo: “Non ho trovato risultati.”
+22. Titolo traccia: 0106_Nessun_dato_disponibile - Testo: “Nessun dato disponibile.”
+23. Titolo traccia: 0107_Riprova_piu_tardi - Testo: “Riprova più tardi.”
+24. Titolo traccia: 0108_Per_favore_riprova - Testo: “Per favore riprova.”
+25. Titolo traccia: 0109_Manca_un_informazione - Testo: “Manca un’informazione importante.”
+26. Titolo traccia: 0110_Serve_nome_artista - Testo: “Mi serve il nome dell’artista per procedere.”
+27. Titolo traccia: 0111_Serve_titolo_brano - Testo: “Mi serve il titolo del brano.”
+28. Titolo traccia: 0112_Serve_genere - Testo: “Seleziona prima un genere.”
+29. Titolo traccia: 0113_Non_capito_ripeti - Testo: “Non ho capito, puoi ripetere?”
+30. Titolo traccia: 0114_Puoi_essere_piu_specifico - Testo: “Puoi essere più specifico?”
+31. Titolo traccia: 0115_Scelta_genere - Testo: “Scegli un genere musicale.”
+32. Titolo traccia: 0116_Ascolta_anteprima - Testo: “Ascolta l’anteprima di quindici secondi.”
+33. Titolo traccia: 0117_Acquista_il_brano - Testo: “Acquista il brano che ti conquista.”
+34. Titolo traccia: 0118_Diventa_tuo - Testo: “Dopo l’acquisto il brano diventa tuo.”
+35. Titolo traccia: 0119_Non_sara_piu_venduto - Testo: “Non sarà più venduto ad altri.”
+36. Titolo traccia: 0120_Supporta_artista - Testo: “Così supporti direttamente l’artista.”
+37. Titolo traccia: 0121_Vai_a_Buy_Music - Testo: “Vai alla sezione Buy Music.”
+38. Titolo traccia: 0122_Vai_a_Musica - Testo: “Vai alla sezione Musica.”
+39. Titolo traccia: 0123_Vai_a_Artisti - Testo: “Vai alla sezione Artisti.”
+40. Titolo traccia: 0124_Torna_alla_home - Testo: “Torna alla home.”
+41. Titolo traccia: 0125_Apri_dashboard - Testo: “Apri la dashboard.”
+42. Titolo traccia: 0126_Scorri_in_basso - Testo: “Scorri in basso.”
+43. Titolo traccia: 0127_Scorri_in_alto - Testo: “Scorri in alto.”
+44. Titolo traccia: 0128_Sto_cercando - Testo: “Sto cercando.”
+45. Titolo traccia: 0129_Caricamento_in_corso - Testo: “Caricamento in corso.”
+46. Titolo traccia: 0130_Analisi_in_corso - Testo: “Analisi in corso.”
+47. Titolo traccia: 0131_Elaborazione_in_corso - Testo: “Elaborazione in corso.”
+48. Titolo traccia: 0132_Aggiorno_dati - Testo: “Aggiorno i dati.”
+49. Titolo traccia: 0133_Verifico_info - Testo: “Verifico le informazioni.”
+50. Titolo traccia: 0134_Controlle_finale - Testo: “Controllo finale.”
+51. Titolo traccia: 0135_Richiesta_ricevuta - Testo: “Richiesta ricevuta.”
+52. Titolo traccia: 0136_Dammi_un_momento - Testo: “Dammi un momento.”
+53. Titolo traccia: 0137_Grazie_attesa - Testo: “Grazie per l’attesa.”
+54. Titolo traccia: 0138_Grazie_supporto - Testo: “Grazie per il tuo supporto.”
+55. Titolo traccia: 0139_Grazie_visita - Testo: “Grazie per la visita.”
+56. Titolo traccia: 0140_Buona_creazione - Testo: “Buona creazione!”
+57. Titolo traccia: 0141_Buono_lavoro - Testo: “Buon lavoro!”
+58. Titolo traccia: 0142_Buono_ascolto - Testo: “Buon ascolto!”
+59. Titolo traccia: 0143_Buona_musica - Testo: “Buona musica!”
+60. Titolo traccia: 0144_Pronto_per_nuova_richiesta - Testo: “Pronto per una nuova richiesta.”
+61. Titolo traccia: 0145_Altro_aiuto - Testo: “Hai bisogno di altro aiuto?”
+62. Titolo traccia: 0146_Posso_fare_altro - Testo: “Posso fare altro per te?”
+63. Titolo traccia: 0147_Vuoi_suggerimento - Testo: “Vuoi un suggerimento?”
+64. Titolo traccia: 0148_Ecco_un_suggerimento - Testo: “Ecco un suggerimento.”
+65. Titolo traccia: 0149_Prova_altro_genere - Testo: “Prova un altro genere.”
+66. Titolo traccia: 0150_Ascolta_un_altra_anteprima - Testo: “Ascolta un’altra anteprima.”
+67. Titolo traccia: 0151_Artista_non_trovato - Testo: “Artista non trovato.”
+68. Titolo traccia: 0152_Brano_non_disponibile - Testo: “Brano non disponibile.”
+69. Titolo traccia: 0153_Pagina_non_disponibile - Testo: “Pagina non disponibile.”
+70. Titolo traccia: 0154_Accesso_negato - Testo: “Accesso negato.”
+71. Titolo traccia: 0155_Errore_inaspettato - Testo: “Si è verificato un errore inaspettato.”
+72. Titolo traccia: 0156_Sto_proteggendo_dati - Testo: “Sto proteggendo i tuoi dati.”
+73. Titolo traccia: 0157_Connessione_lenta - Testo: “La connessione è lenta, attendi.”
+74. Titolo traccia: 0158_Tempo_scaduto - Testo: “Tempo scaduto, riprova.”
+75. Titolo traccia: 0159_Non_autorizzato - Testo: “Non sei autorizzato a eseguire questa azione.”
+76. Titolo traccia: 0160_Richiesta_troppo_lunga - Testo: “La richiesta è troppo lunga.”
+77. Titolo traccia: 0161_Riduci_testo - Testo: “Riduci il testo e riprova.”
+78. Titolo traccia: 0162_Dati_aggiornati - Testo: “Dati aggiornati.”
+79. Titolo traccia: 0163_Ho_aggiornato - Testo: “Ho aggiornato quello che mi hai chiesto.”
+80. Titolo traccia: 0164_File_caricato - Testo: “File caricato.”
+81. Titolo traccia: 0165_File_pronto - Testo: “File pronto.”
+82. Titolo traccia: 0166_File_non_valido - Testo: “File non valido.”
+83. Titolo traccia: 0167_Formato_non_supportato - Testo: “Formato non supportato.”
+84. Titolo traccia: 0168_Aggiorna_pagina - Testo: “Aggiorna la pagina se il problema persiste.”
+85. Titolo traccia: 0169_Registrazione_completata - Testo: “Registrazione completata.”
+86. Titolo traccia: 0170_Registrazione_annullata - Testo: “Registrazione annullata.”
+87. Titolo traccia: 0171_Riproduzione_avviata - Testo: “Riproduzione avviata.”
+88. Titolo traccia: 0172_Riproduzione_fermata - Testo: “Riproduzione fermata.”
+89. Titolo traccia: 0173_Riproduzione_pausa - Testo: “Riproduzione in pausa.”
+90. Titolo traccia: 0174_Riproduzione_ripresa - Testo: “Riproduzione ripresa.”
+91. Titolo traccia: 0175_Aggiorno_libreria - Testo: “Aggiorno la libreria.”
+92. Titolo traccia: 0176_Libreria_pronta - Testo: “Libreria pronta.”
+93. Titolo traccia: 0177_Bio_non_disponibile - Testo: “Biografia non disponibile.”
+94. Titolo traccia: 0178_Bio_troppo_lunga - Testo: “La biografia è troppo lunga per intero.”
+95. Titolo traccia: 0179_Vuoi_leggere_tutto - Testo: “Vuoi leggere tutto?”
+96. Titolo traccia: 0180_Ecco_la_biografia - Testo: “Ecco la biografia.”
+97. Titolo traccia: 0181_Pagina_caricata - Testo: “Pagina caricata.”
+98. Titolo traccia: 0182_Sessione_attiva - Testo: “Sessione attiva.”
+99. Titolo traccia: 0183_Sessione_scaduta - Testo: “Sessione scaduta.”
+100. Titolo traccia: 0184_Avvia_login - Testo: “Avvia il login.”
+101. Titolo traccia: 0185_Logout_eseguito - Testo: “Logout eseguito.”
+102. Titolo traccia: 0186_Credenziali_mancanti - Testo: “Credenziali mancanti.”
+103. Titolo traccia: 0187_Credenziali_errate - Testo: “Credenziali errate.”
+104. Titolo traccia: 0188_Autenticazione_successo - Testo: “Autenticazione avvenuta con successo.”
+105. Titolo traccia: 0189_Permessi_aggiornati - Testo: “Permessi aggiornati.”
+106. Titolo traccia: 0190_In_attesa_conferma - Testo: “In attesa di conferma.”
+107. Titolo traccia: 0191_Conferma_ricevuta - Testo: “Conferma ricevuta.”
+108. Titolo traccia: 0192_Puoi_procedere - Testo: “Puoi procedere.”
+109. Titolo traccia: 0193_Hai_cancellato - Testo: “Hai cancellato l’operazione.”
+110. Titolo traccia: 0194_Operazione_annullata - Testo: “Operazione annullata.”
+111. Titolo traccia: 0195_Attendi_download - Testo: “Attendi il download.”
+112. Titolo traccia: 0196_Download_pronto - Testo: “Download pronto.”
+113. Titolo traccia: 0197_Licenza_generata - Testo: “Licenza generata.”
+114. Titolo traccia: 0198_Licenza_non_disponibile - Testo: “Licenza non disponibile.”
+115. Titolo traccia: 0199_Pagamento_in_corso - Testo: “Pagamento in corso.”
+116. Titolo traccia: 0200_Pagamento_completato - Testo: “Pagamento completato.”
+117. Titolo traccia: 0201_Pagamento_non_riuscito - Testo: “Pagamento non riuscito.”
+118. Titolo traccia: 0202_Ricevuta_inviata - Testo: “Ricevuta inviata.”
+119. Titolo traccia: 0203_Ricevuta_non_inviata - Testo: “Ricevuta non inviata.”
+120. Titolo traccia: 0204_Carica_un_file - Testo: “Carica un file.”
+121. Titolo traccia: 0205_Scegli_un_file - Testo: “Scegli un file.”
+122. Titolo traccia: 0206_Trascina_qui_file - Testo: “Trascina qui il file.”
+123. Titolo traccia: 0207_File_troppo_grande - Testo: “File troppo grande.”
+124. Titolo traccia: 0208_Spazio_insufficiente - Testo: “Spazio insufficiente.”
+125. Titolo traccia: 0209_Riprova_caricamento - Testo: “Riprova il caricamento.”
+126. Titolo traccia: 0210_Sto_sincronizzando - Testo: “Sto sincronizzando.”
+127. Titolo traccia: 0211_Sincronizzazione_completata - Testo: “Sincronizzazione completata.”
+128. Titolo traccia: 0212_Sincronizzazione_fallita - Testo: “Sincronizzazione fallita.”
+129. Titolo traccia: 0213_Aggiorna_elenco - Testo: “Aggiorna l’elenco.”
+130. Titolo traccia: 0214_Elenco_vuoto - Testo: “Elenco vuoto.”
+131. Titolo traccia: 0215_Elemento_gia_esistente - Testo: “Elemento già esistente.”
+132. Titolo traccia: 0216_Elemento_aggiunto - Testo: “Elemento aggiunto.”
+133. Titolo traccia: 0217_Elemento_non_valido - Testo: “Elemento non valido.”
+134. Titolo traccia: 0218_Richiedi_conferma - Testo: “Richiedi conferma.”
+135. Titolo traccia: 0219_Confermi_operazione - Testo: “Confermi l’operazione?”
+136. Titolo traccia: 0220_Scelta_confermata - Testo: “Scelta confermata.”
+137. Titolo traccia: 0221_Scelta_annullata - Testo: “Scelta annullata.”
+138. Titolo traccia: 0222_Azione_irreversibile - Testo: “Azione irreversibile.”
+139. Titolo traccia: 0223_Attenzione - Testo: “Attenzione.”
+140. Titolo traccia: 0224_Avviso_importante - Testo: “Avviso importante.”
+141. Titolo traccia: 0225_Procedo - Testo: “Procedo.”
+142. Titolo traccia: 0226_Ecco_un_altro - Testo: “Ecco un altro risultato.”
+143. Titolo traccia: 0227_Piu_risultati - Testo: “Ci sono più risultati.”
+144. Titolo traccia: 0228_Solo_un_risultato - Testo: “C’è un solo risultato.”
+145. Titolo traccia: 0229_Non_ci_sono_novita - Testo: “Non ci sono novità.”
+146. Titolo traccia: 0230_Ci_sono_novita - Testo: “Ci sono novità.”
+147. Titolo traccia: 0231_Ora_disponibile - Testo: “Ora è disponibile.”
+148. Titolo traccia: 0232_Non_ancora_disponibile - Testo: “Non è ancora disponibile.”
+149. Titolo traccia: 0233_Preparazione - Testo: “In preparazione.”
+150. Titolo traccia: 0234_Pronto - Testo: “Pronto.”
+151. Titolo traccia: 0235_E_inoltre - Testo: “E inoltre.”
+152. Titolo traccia: 0236_E_poi - Testo: “E poi.”
+153. Titolo traccia: 0237_Inoltre - Testo: “Inoltre.”
+154. Titolo traccia: 0238_Percio - Testo: “Perciò.”
+155. Titolo traccia: 0239_Dunque - Testo: “Dunque.”
+156. Titolo traccia: 0240_Allora - Testo: “Allora.”
+157. Titolo traccia: 0241_In_questo_momento - Testo: “In questo momento.”
+158. Titolo traccia: 0242_Subito_dopo - Testo: “Subito dopo.”
+159. Titolo traccia: 0243_Poi_continua - Testo: “Poi continua.”
+160. Titolo traccia: 0244_E_adesso - Testo: “E adesso.”
+161. Titolo traccia: 0245_Eccellente - Testo: “Eccellente.”
+162. Titolo traccia: 0246_Perfetto - Testo: “Perfetto.”
+163. Titolo traccia: 0247_Ottimo - Testo: “Ottimo.”
+164. Titolo traccia: 0248_Ben_fatto - Testo: “Ben fatto.”
+165. Titolo traccia: 0249_Fantastico - Testo: “Fantastico.”
+166. Titolo traccia: 0250_Geniale - Testo: “Geniale.”
+167. Titolo traccia: 0251_Mi_piace - Testo: “Mi piace.”
+168. Titolo traccia: 0252_Buona_idea - Testo: “Buona idea.”
+169. Titolo traccia: 0253_Ispirazione - Testo: “Ispirazione.”
+170. Titolo traccia: 0254_Incredibile - Testo: “Incredibile.”
+171. Titolo traccia: 0255_Sorprendente - Testo: “Sorprendente.”
+172. Titolo traccia: 0256_Fine_messaggio - Testo: “Fine messaggio.”
+173. Titolo traccia: 0257_A_presto - Testo: “A presto.”
+174. Titolo traccia: 0258_A_piu_tardi - Testo: “A più tardi.”
+175. Titolo traccia: 0259_Buona_giornata - Testo: “Buona giornata.”
+176. Titolo traccia: 0260_Buona_serata - Testo: “Buona serata.”
+177. Titolo traccia: 0261_Buona_notte - Testo: “Buona notte.”
+178. Titolo traccia: 0262_Resto_a_disposizione - Testo: “Resto a disposizione.”
+179. Titolo traccia: 0263_Chiedi_altro - Testo: “Chiedi pure altro.”
+180. Titolo traccia: 0264_Grazie_e_a_presto - Testo: “Grazie e a presto.”
+181. Titolo traccia: 0265_Fine_sessione - Testo: “Fine sessione.”
+182. Titolo traccia: 0266_Sessione_terminata - Testo: “Sessione terminata.”
+183. Titolo traccia: 0267_Riavvio_processo - Testo: “Riavvio il processo.”
+184. Titolo traccia: 0268_Processo_riavviato - Testo: “Processo riavviato.”
+185. Titolo traccia: 0269_Manutenzione - Testo: “Modalità manutenzione.”
+186. Titolo traccia: 0270_Fine_lista - Testo: “Fine della lista di frasi registrate.”
+
+Suggerimenti aggiuntivi opzionali (se vuoi registrare ancora più frammenti) puoi continuare numerando da 0271 in poi con varianti sinonime o versioni più corte (es. “Operazione eseguita.”, “Pronto per procedere.”, “Ancora qui.”).
+
+Procedura caricamento consigliata:
+1. Registra tutte le frasi in blocchi tematici, mantenendo livello di ingresso costante.
+2. Esporta ogni take singolarmente nominando esattamente come Titolo traccia + estensione .wav.
+3. Carica in Voice Admin; verifica che transcript coincida (usa copia/incolla dal campo Testo senza le virgolette per evitare differenze).
+4. Testa in pagina PublicSite e Buy Music ricaricando (cache del browser può ritardare 1–2 minuti l’uso dei nuovi sample).
+5. Aggiungi varianti se l’assistente produce spesso frasi non coperte (guarda log interazioni).
+
+Futuro miglioramento (facoltativo): implementare match token‑wise per usare frammenti più corti e combinare risposte più flessibili.
+
+Fine script.

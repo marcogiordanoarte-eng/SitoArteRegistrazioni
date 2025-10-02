@@ -1,0 +1,24 @@
+RewriteEngine On
+
+# 1) Forza HTTPS e www
+RewriteCond %{HTTPS} !=on [OR]
+RewriteCond %{HTTP_HOST} !^www\. [NC]
+RewriteRule ^ https://www.arteregistrazioni.com%{REQUEST_URI} [L,R=301]
+
+# 2) Se il file/cartella esiste, servilo
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule - [L]
+
+# 3) Fallback SPA: tutto a index.html
+RewriteRule ^ index.html [L]
+
+# (Opzionale) Cache: asset lunghi, HTML no-store
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|png|jpe?g|gif|svg|webp|woff2?|ttf|eot)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "index\.html$">
+    Header set Cache-Control "no-store, max-age=0"
+  </FilesMatch>
+</IfModule>
