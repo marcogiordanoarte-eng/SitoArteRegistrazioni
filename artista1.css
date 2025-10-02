@@ -1,0 +1,229 @@
+/* Stili comuni pagine artista */
+:root {
+    --gold: #ffd700;
+    --bg: #000;
+    --panel: rgba(0,0,0,0.8);
+    --text: #fff;
+    --shadow-panel: #222;
+}
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0;
+}
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: rgba(0,0,0,0.8);
+    border-radius: 16px;
+    box-shadow: 0 0 24px #222;
+    padding: 32px;
+    text-align: center;
+}
+.artist-header {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    margin-bottom: 32px;
+}
+.artist-photo {
+    width: 220px;
+    height: 275px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 0 12px #ffd700;
+}
+.artist-info {
+    flex: 1;
+}
+h1 {
+    color: #ffd700;
+    margin-bottom: 12px;
+}
+.discography-title {
+    color: var(--gold);
+    margin-top: 8px;
+    margin-bottom: 32px;
+    font-size: 1.6em;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.artist-description {
+    font-size: 1.2em;
+    line-height: 1.5;
+}
+.artist-name, h1.artist-name {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--gold);
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.artist-bio {
+    font-size: 1.1em;
+    line-height: 1.6;
+    text-align: left;
+    margin: 0 auto;
+    max-width: 500px;
+}
+.gallery {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    margin-top: 32px;
+}
+.gallery-row {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    align-items: center;
+    width: 100%;
+}
+.cover-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 40px;
+    width: 100%;
+}
+.cover-img-lg {
+    width: 520px;
+    height: 520px;
+    object-fit: cover;
+    border-radius: 22px;
+    box-shadow: 0 0 32px #ffd700;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 18px;
+}
+.cover-info {
+    margin-top: 8px;
+}
+.icon-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    margin-top: 0;
+}
+/* New action row (player controls + service links) */
+.action-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+    margin: 0 auto 14px;
+    max-width: 520px;
+    flex-wrap: nowrap;
+}
+.action-row .play-toggle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #111;
+    border: 2px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 12px var(--gold);
+    transition: background .3s, transform .2s, box-shadow .3s;
+}
+.action-row .play-toggle:hover { background:#222; transform:scale(1.05); }
+.action-row .play-toggle svg { fill: var(--gold); width:26px; height:26px; }
+.action-row .icon-btn-lg { margin:0; animation: pulse 1.4s infinite alternate; }
+/* Navigation arrows row */
+.nav-row {
+    display:flex;
+    justify-content:center;
+    gap:40px;
+    margin:0 auto 16px;
+    max-width:520px;
+}
+.nav-btn {
+    background:#111;
+    color:var(--gold);
+    border:2px solid var(--gold);
+    padding:10px 22px;
+    font-size:1em;
+    border-radius:30px;
+    cursor:pointer;
+    box-shadow:0 0 12px #111;
+    transition:background .2s,color .2s, box-shadow .3s;
+}
+.nav-btn:hover { background:var(--gold); color:#111; box-shadow:0 0 18px var(--gold),0 0 8px #fff; }
+/* Disc visualization */
+.disc-visual { position:relative; width:160px; height:160px; margin:0 auto 18px; }
+.disc-glow { position:absolute; inset:0; border-radius:50%; background:radial-gradient(circle at 50% 50%, var(--gold) 0%, rgba(255,215,0,0.15) 50%, rgba(255,215,0,0.03) 70%, transparent 75%); filter:blur(6px) brightness(0.8); opacity:0; transition:opacity .4s ease; }
+.disc-spin { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; animation: spin 4s linear infinite; animation-play-state: paused; filter:drop-shadow(0 0 12px var(--gold)); }
+.cover-box.playing .disc-spin { animation-play-state: running; }
+.cover-box.playing .disc-glow { opacity:1; }
+@keyframes spin { from { transform:rotate(0deg);} to { transform:rotate(360deg);} }
+.play-icon { display:block; }
+.pause-icon { display:none; }
+.cover-box.playing .play-icon { display:none; }
+.cover-box.playing .pause-icon { display:block; }
+.cover-info { margin-top:4px; }
+.icon-btn-lg {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--gold);
+    transition: box-shadow 0.3s, filter 0.3s;
+    background: #222;
+    padding: 4px;
+    filter: brightness(0.85);
+    animation: pulse 1.2s infinite alternate;
+}
+.icon-btn-lg:hover {
+    box-shadow: 0 0 16px #ffd700, 0 0 8px #fff;
+    filter: brightness(1.05);
+}
+@keyframes pulse {
+    0% { box-shadow: 0 0 8px var(--gold); }
+    100% { box-shadow: 0 0 24px var(--gold), 0 0 12px #fff; }
+}
+.back-link {
+    display: inline-block;
+    margin-top: 24px;
+    color: var(--gold);
+    text-decoration: none;
+    font-size: 1.1em;
+    border-radius: 8px;
+    padding: 8px 18px;
+    background: #222;
+    box-shadow: 0 0 8px #222;
+    transition: background 0.2s, color 0.2s;
+}
+.back-link-top { margin-bottom:32px; display:block; }
+.back-link-bottom { margin-top:32px; display:block; }
+.back-link:hover {
+    background: var(--gold);
+    color: #222;
+}
+/* Focus accessibility */
+.back-link:focus-visible, .icon-btn-lg:focus-visible, .maps-link:focus-visible, .glow-btn:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+}
+/* Lazy loading fade-in */
+img[loading="lazy"] { opacity:0; transition:opacity .5s ease; }
+img.lazy-loaded { opacity:1; }
+@media (max-width: 600px) {
+    .container {
+        padding: 8px;
+    }
+    .gallery img, .artist-photo { width: 90vw; height: auto; max-width: 340px; }
+    .cover-img-lg { width:90vw; height:auto; }
+    .action-row { max-width:90vw; gap:14px; }
+    .action-row .play-toggle { width:48px; height:48px; }
+    .nav-row { max-width:90vw; gap:28px; }
+    .disc-visual { width:120px; height:120px; }
+    .gallery {
+        gap: 18px;
+    }
+}

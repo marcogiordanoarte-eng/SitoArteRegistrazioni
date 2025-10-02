@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="it">
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artisti | Arte Registrazioni</title>
+    <style>
+        .artist-photo {
+            position: relative;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            background-image: url('foto.png');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            margin: 0;
+            padding: 40px;
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, #000 30%, rgba(0,0,0,0.5) 60%, #000 100%);
+            z-index: 0;
+            pointer-events: none;
+            mix-blend-mode: multiply;
+        }
+        body > * {
+            position: relative;
+            z-index: 1;
+        }
+        .logo-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 24px;
+            margin-top: 80px;
+        }
+        .logo-stack {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto;
+        }
+        .disco-img {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            box-shadow: 0 0 16px #222;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .logo-img {
+            width: 120px;
+            height: 120px;
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            filter: drop-shadow(0 0 12px #ffd700);
+        }
+        .navbar {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+            margin-top: 32px;
+        }
+        .navbar ul {
+            list-style: none;
+            display: flex;
+            gap: 32px;
+            padding: 0;
+            margin: 0;
+        }
+        .navbar li {
+            display: inline;
+        }
+        .navbar a {
+            text-decoration: none;
+            color: #fcfbfb;
+            font-family: Arial, sans-serif;
+            font-size: 1.1em;
+            padding: 8px 18px;
+            border-radius: 8px;
+            transition: background 0.2s, color 0.2s, box-shadow 0.3s;
+            box-shadow: 0 0 8px #222;
+            position: relative;
+        }
+        .navbar a:hover {
+            background: #222;
+            color: #ffd700;
+            box-shadow: 0 0 16px 4px #ffd700, 0 0 32px 8px #fff;
+            text-shadow: 0 0 8px #ffd700, 0 0 16px #fff;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 24px 8px #ffd700, 0 0 48px 16px #fff; }
+            50% { box-shadow: 0 0 8px 2px #ffd700, 0 0 16px 4px #fff; }
+            100% { box-shadow: 0 0 24px 8px #ffd700, 0 0 48px 16px #fff; }
+        }
+        .navbar a.active {
+            background: #222 !important;
+            color: #ffd700 !important;
+            animation: pulse-glow 1.2s infinite;
+            box-shadow: 0 0 24px 8px #ffd700, 0 0 48px 16px #fff;
+            text-shadow: 0 0 8px #ffd700, 0 0 16px #fff;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            justify-items: center;
+            margin: 40px auto 0 auto;
+            max-width: 900px;
+        }
+        @media (max-width: 900px) {
+            .gallery {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 600px) {
+            .gallery {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                max-width: 98vw;
+            }
+        }
+        .artist-photo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            border-radius: 16px;
+            box-shadow: 0 0 16px #222;
+            padding: 16px 8px 12px 8px;
+            transition: box-shadow 0.3s;
+        }
+        .artist-photo img {
+            width: 220px;
+            height: 275px;
+            object-fit: cover;
+            border-radius: 12px;
+            box-shadow: 0 0 12px #ffd700;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            outline: none;
+            border: none;
+            background: none;
+            /* animation rimossa, verrà aggiunta solo nel modal */
+        }
+        .artist-photo img:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 32px #ffd700, 0 0 16px #fff;
+        }
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.98);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        #modal.show {
+            display: flex;
+        }
+        #modal-img {
+            max-width: 90vw;
+            max-height: 90vh;
+            margin: auto;
+            border-radius: 16px;
+            box-shadow: 0 0 32px #ffd700, 0 0 16px #fff;
+            background: #222;
+            display: block;
+            animation: pulse-glow 1.2s infinite;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            background-image: url('foto.png');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            margin: 0;
+            padding: 40px;
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, #000 30%, rgba(0,0,0,0.5) 60%, #000 100%);
+            z-index: 0;
+            pointer-events: none;
+            mix-blend-mode: multiply;
+        }
+        .logo-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 24px;
+            margin-top: 80px;
+        }
+        .logo-stack {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto;
+        }
+        .disco-img {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            box-shadow: 0 0 16px #222;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .logo-img {
+            width: 120px;
+            height: 120px;
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            filter: drop-shadow(0 0 12px #ffd700);
+        }
+        .navbar {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+            margin-top: 32px;
+        }
+        .navbar ul {
+            list-style: none;
+            display: flex;
+            gap: 32px;
+            padding: 0;
+            margin: 0;
+        }
+        .navbar li {
+            display: inline;
+        }
+        .navbar a {
+            text-decoration: none;
+            color: #fcfbfb;
+            font-family: Arial, sans-serif;
+            font-size: 1.1em;
+            padding: 8px 18px;
+            border-radius: 8px;
+            transition: background 0.2s, color 0.2s, box-shadow 0.3s;
+            box-shadow: 0 0 8px #222;
+            position: relative;
+        }
+        .navbar a:hover {
+            background: #222;
+            color: #ffd700;
+            box-shadow: 0 0 16px 4px #ffd700, 0 0 32px 8px #fff;
+            text-shadow: 0 0 8px #ffd700, 0 0 16px #fff;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 24px 8px #ffd700, 0 0 48px 16px #fff; }
+            50% { box-shadow: 0 0 8px 2px #ffd700, 0 0 16px 4px #fff; }
+            100% { box-shadow: 0 0 24px 8px #ffd700, 0 0 48px 16px #fff; }
+        }
+        .navbar a.active {
+            background: #222 !important;
+            color: #ffd700 !important;
+            animation: pulse-glow 1.2s infinite;
+            box-shadow: 0 0 24px 8px #ffd700, 0 0 48px 16px #fff;
+            text-shadow: 0 0 8px #ffd700, 0 0 16px #fff;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            justify-items: center;
+            margin: 40px auto 0 auto;
+            max-width: 900px;
+        }
+        @media (max-width: 900px) {
+            .gallery {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 600px) {
+            .gallery {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                max-width: 98vw;
+            }
+        }
+        .artist-photo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            border-radius: 16px;
+            box-shadow: 0 0 16px #222;
+            padding: 16px 8px 12px 8px;
+            transition: box-shadow 0.3s;
+        }
+        .artist-photo img {
+            width: 220px;
+            height: 275px;
+            object-fit: cover;
+            border-radius: 12px;
+            box-shadow: 0 0 12px #ffd700;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            outline: none;
+            border: none;
+            background: none;
+            /* animation rimossa, verrà aggiunta solo nel modal */
+        }
+        .artist-photo img:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 32px #ffd700, 0 0 16px #fff;
+        }
+        #modal {
+            display: none;
+            position: fixed;
+        }
+        #modal-img {
+            max-width: 90vw;
+            max-height: 90vh;
+            margin: auto;
+            border-radius: 16px;
+            box-shadow: 0 0 32px #ffd700, 0 0 16px #fff;
+            background: #222;
+            display: block;
+            animation: pulse-glow 1.2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-wrapper">
+        <div class="logo-stack">
+            <img src="disco.png" alt="Disco" class="disco-img">
+            <img src="logo.png" alt="Logo Arte Registrazioni" class="logo-img">
+        </div>
+    </div>
+    <nav class="navbar">
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="artisti.html" class="active">Artisti</a></li>
+            <li><a href="PaginaStudio/artestudio.html">Arte Registrazioni</a></li>
+            <li><a href="contatti.html">Contatti</a></li>
+        </ul>
+    </nav>
+    <section class="gallery">
+        <div class="artist-photo">
+            <img src="Artisti/artista1.jpg" alt="Artista 1" id="artista1">
+        </div>
+        <div class="artist-photo">
+            <img src="Artisti/artista2.jpg" alt="Artista 2" id="artista2">
+        </div>
+        <div class="artist-photo">
+            <img src="Artisti/artista3.jpg" alt="Artista 3" id="artista3">
+        </div>
+    </section>
+    <div id="modal">
+    <div style="position:relative; width:100%; height:100%; display:flex; justify-content:center; align-items:center;">
+    <img id="modal-img" src="" alt="Immagine artista" style="max-width:90vw; max-height:90vh; border-radius:16px; box-shadow:0 0 32px #ffd700, 0 0 16px #fff; background:#222; display:block; animation:pulse-glow 1.2s infinite;">
+    <div id="modal-error" style="color:#ffd700; font-size:1.2em; text-align:center; margin-top:20px; display:none; position:absolute; bottom:40px; left:0; right:0;"></div>
+    </div>
+    </div>
+    <script>
+    const artistaSteps = {
+        artista1: [
+            'Artisti/artista1.jpg',
+            'PrimaPaginaA/artista1-2.jpg',
+            'SecondaPaginaA/artista1-3.jpg'
+        ],
+        artista2: [
+            'Artisti/artista2.jpg',
+            'PrimaPaginaA/artista2-2.jpg',
+            'SecondaPaginaA/artisti2-3.jpg'
+        ],
+        artista3: [
+            'Artisti/artista3.jpg',
+            'PrimaPaginaA/artista3-2.jpg',
+            'SecondaPaginaA/artista3-3.jpg'
+        ]
+    };
+    let currentArtista = null;
+    let currentIndex = 0;
+    const modal = document.getElementById('modal');
+    const modalImg = document.getElementById('modal-img');
+    // Selettore robusto per il pulsante Artisti
+    const menuArtisti = document.querySelector('.navbar a[href="artisti.html"]');
+    const imgEls = {
+        artista1: document.getElementById('artista1'),
+        artista2: document.getElementById('artista2'),
+        artista3: document.getElementById('artista3')
+    };
+    const modalError = document.getElementById('modal-error');
+    Object.keys(imgEls).forEach(function(id) {
+        imgEls[id].addEventListener('click', function() {
+            currentArtista = id;
+            currentIndex = 0;
+            modalImg.alt = '';
+            modalImg.src = artistaSteps[id][currentIndex];
+            modal.classList.add('show');
+            modalError.style.display = 'none';
+            modalError.textContent = '';
+            if (menuArtisti) menuArtisti.classList.add('pulsing');
+        });
+    });
+    modalImg.onerror = function() {
+        modalError.textContent = 'Immagine non trovata: ' + modalImg.src.split('/').pop();
+        modalError.style.display = 'block';
+    };
+    modalImg.onload = function() {
+        modalError.style.display = 'none';
+        modalError.textContent = '';
+    };
+    modal.addEventListener('click', function() {
+        if (!currentArtista) return;
+        currentIndex++;
+        if (currentIndex < artistaSteps[currentArtista].length) {
+            modalImg.src = artistaSteps[currentArtista][currentIndex];
+            modalError.style.display = 'none';
+            modalError.textContent = '';
+        } else {
+            // Apri la pagina personale dell'artista
+            let artistPage = '';
+            if (currentArtista === 'artista1') artistPage = 'artista1.html';
+            else if (currentArtista === 'artista2') artistPage = 'artista2.html';
+            else if (currentArtista === 'artista3') artistPage = 'artista3.html';
+            if (artistPage) {
+                window.location.href = artistPage;
+            } else {
+                modal.classList.remove('show');
+                if (menuArtisti) menuArtisti.classList.remove('pulsing');
+                currentArtista = null;
+                modalImg.alt = '';
+                modalImg.src = '';
+                modalError.style.display = 'none';
+                modalError.textContent = '';
+            }
+        }
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            modal.classList.remove('show');
+            if (menuArtisti) menuArtisti.classList.remove('pulsing');
+            currentArtista = null;
+            modalImg.alt = '';
+            modalImg.src = '';
+            modalError.style.display = 'none';
+            modalError.textContent = '';
+        }
+    });
+    if (menuArtisti) menuArtisti.classList.add('active');
+    </script>
+</body>
+</html>

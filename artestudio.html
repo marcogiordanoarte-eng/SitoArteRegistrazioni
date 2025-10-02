@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arte Registrazioni Studio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            background-image: url('../foto.png');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            margin: 0;
+            padding: 40px;
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, #000 30%, rgba(0,0,0,0.5) 60%, #000 100%);
+            z-index: 0;
+            pointer-events: none;
+            mix-blend-mode: multiply;
+        }
+        body > * {
+            position: relative;
+            z-index: 1;
+        }
+        .navbar {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+            margin-top: 32px;
+        }
+        .navbar ul {
+            list-style: none;
+            display: flex;
+            gap: 32px;
+            padding: 0;
+            margin: 0;
+        }
+        .navbar li {
+            display: inline;
+        }
+        .navbar a {
+            text-decoration: none;
+            color: #fcfbfb;
+            font-family: Arial, sans-serif;
+            font-size: 1.1em;
+            padding: 8px 18px;
+            border-radius: 8px;
+            transition: background 0.2s, color 0.2s, box-shadow 0.3s;
+            box-shadow: 0 0 8px #222;
+            position: relative;
+        }
+        .navbar a:hover {
+            background: #222;
+            color: #ffd700;
+            box-shadow: 0 0 16px 4px #ffd700, 0 0 32px 8px #fff;
+            text-shadow: 0 0 8px #ffd700, 0 0 16px #fff;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 24px 8px #ffd700, 0 0 48px 16px #fff; }
+            50% { box-shadow: 0 0 8px 2px #ffd700, 0 0 16px 4px #fff; }
+            100% { box-shadow: 0 0 24px 8px #ffd700, 0 0 48px 16px #fff; }
+        }
+        .navbar a.active {
+            background: #222 !important;
+            color: #ffd700 !important;
+            animation: pulse-glow 1.2s infinite;
+            box-shadow: 0 0 24px 8px #ffd700, 0 0 48px 16px #fff;
+            text-shadow: 0 0 8px #ffd700, 0 0 16px #fff;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 60vh;
+        }
+        .studio-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 32px;
+            box-shadow: 0 0 32px #ffd700, 0 0 64px #fff;
+            animation: pulse-glow 1.2s infinite;
+            background: none;
+            border: 6px solid #ffd700;
+            padding: 0;
+            cursor: pointer;
+        }
+        .studio-btn img {
+            display: block;
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 24px;
+            box-shadow: 0 0 32px #ffd700, 0 0 16px #fff;
+        }
+        @media (max-width: 900px) {
+            .navbar ul { gap: 16px; }
+            .container { padding: 20px; }
+        }
+        @media (max-width: 600px) {
+            .navbar ul { gap: 8px; }
+            .container { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../artisti.html">Artisti</a></li>
+            <li><a href="artestudio.html" class="active">Arte Registrazioni</a></li>
+            <li><a href="../contatti.html">Contatti</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <a class="studio-btn" href="#">
+            <img src="artestudio.jpg" alt="Arte Studio a schermo intero">
+        </a>
+    </div>
+</body>
+</html>
