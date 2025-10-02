@@ -27,3 +27,4 @@ tortoise/voices/
 tracce_iA_Voce_Audio/
 tracce_iA_Voce_Audio_mono/
 
+.env.local # se non già presente
