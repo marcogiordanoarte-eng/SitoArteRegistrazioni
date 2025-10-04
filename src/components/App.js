@@ -22,6 +22,7 @@ import { AuthProvider, useAuth } from "./AuthContext";
 import { ADMIN_UIDS } from './config';
 import AIAssistantWidget from './AIAssistantWidget';
 import { useVoiceNavigator } from './useVoiceNavigator';
+import VoiceAssistantLite from './VoiceAssistantLite';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -304,6 +305,7 @@ export default function App() {
             <Route path="/pagamento-esempio" element={<PagamentoEsempio />} />
           </Routes>
           <GlobalAssistant />
+          <VoiceAssistantLite />
           {/* Output semplice listener vocale baseline */}
           {voiceNavReply && (
             <div style={{ position:'fixed', right:10, bottom:10, zIndex:14000, background:'rgba(0,0,0,0.6)', color:'#dffaff', padding:'8px 12px', border:'1px solid #00b7ff', borderRadius:12, fontSize:'.65rem', maxWidth:240 }}>

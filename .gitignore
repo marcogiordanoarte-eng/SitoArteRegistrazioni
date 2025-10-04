@@ -28,3 +28,8 @@ tracce_iA_Voce_Audio/
 tracce_iA_Voce_Audio_mono/
 
 .env.local # se non già presente
+
+# Large local audio bundles
+Audio_iA-Sounds/
+voices/
+tortoise 
