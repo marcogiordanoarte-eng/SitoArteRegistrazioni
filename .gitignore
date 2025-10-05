@@ -3,33 +3,31 @@ build/
 dist/
 .DS_Store
 
-# Python / venv
-tortoise/.venv/
+# Environment and Python virtualenvs
+.env
+.env.*
+venv/
+.venv/
+**/.venv/
 __pycache__/
 *.pyc
 
-# Media grezzi molto grandi (togli se vuoi davvero versionarli)
+# Entire TTS/AI voice workspace and artifacts
+tortoise/
+voices/
+Audio_iA-Sounds/
+tracce_iA_Voce_Audio/
+tracce_iA_Voce_Audio_mono/
+
+# Large raw media (uncomment if you intend to version them later)
 videopromo.mp4
 audio/
-tortoise/voices/
-tracce_iA_Voce_Audio/
-tracce_iA_Voce_Audio_mono/
 
-# Log
+# Firebase/Cloudflare local state
+.firebase/
+.wrangler/
+
+# Logs and archives
 npm-debug.log*
 yarn-error.log*
-.env.local
 build.zip
-audio/
-build.zip
-tortoise/.venv/
-tortoise/voices/
-tracce_iA_Voce_Audio/
-tracce_iA_Voce_Audio_mono/
-
-.env.local # se non già presente
-
-# Large local audio bundles
-Audio_iA-Sounds/
-voices/
-tortoise 
