@@ -693,39 +693,9 @@ body {
     transform: translateY(-2px) scale(1.04);
     filter: drop-shadow(0 0 18px rgba(255,255,255,0.45));
 }
-.social-halo {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: calc(var(--social-icon-size, 88px) + 28px);
-    height: calc(var(--social-icon-size, 88px) + 28px);
-    border-radius: 50%;
-    z-index: 0; /* luce dietro l'icona */
-    box-shadow: 0 0 80px 40px #ffd700, 0 0 120px 60px #fff;
-    animation: pulse-glow 1.2s infinite;
-    border-radius: 50%;
-    opacity: 0.92;
-    animation: iconHaloPulse 2.2s ease-in-out infinite;
-    pointer-events: none; /* non intercetta click/tap */
-}
+.social-halo { display: none !important; }
 /* Colori halo brand */
-.social-btn--fb .social-halo {
-    background: radial-gradient(50% 50% at 50% 50%, rgba(8,102,255,0.35), rgba(8,102,255,0.12) 55%, rgba(0,0,0,0) 75%);
-}
-.social-btn--yt .social-halo {
-    background: radial-gradient(50% 50% at 50% 50%, rgba(255,0,0,0.38), rgba(255,0,0,0.14) 55%, rgba(0,0,0,0) 75%);
-}
-.social-btn--ig .social-halo {
-    background: radial-gradient(50% 50% at 50% 50%, rgba(220,39,67,0.36), rgba(188,24,136,0.16) 55%, rgba(0,0,0,0) 75%);
-}
-.social-btn:hover .social-halo,
-.social-btn:focus-visible .social-halo {
-    filter: blur(1px);
-    opacity: 1;
-    animation-duration: 1.4s;
-}
+/* Halo rimosso per richiesta: nessuna luce dietro i pulsanti */
 .social-label {
     position: absolute;
     left: 50%;

@@ -23,7 +23,6 @@ export default function YouTubeButton({ layout = 'column', style = {}, gap: gapP
         aria-label="Apri Facebook"
         className="social-btn social-btn--fb"
       >
-        <span className="social-halo" />
         <img src="/icons/facebook.png" alt="Facebook" />
         <span className="social-label">Facebook</span>
       </a>
@@ -35,7 +34,6 @@ export default function YouTubeButton({ layout = 'column', style = {}, gap: gapP
         aria-label="Apri YouTube"
         className="social-btn social-btn--yt"
       >
-        <span className="social-halo" />
         <img src="/icons/youtube.png" alt="YouTube" />
         <span className="social-label">YouTube</span>
       </a>
@@ -47,7 +45,6 @@ export default function YouTubeButton({ layout = 'column', style = {}, gap: gapP
         aria-label="Apri Instagram"
         className="social-btn social-btn--ig"
       >
-        <span className="social-halo" />
         <img src="/icons/instagram.png" alt="Instagram" />
         <span className="social-label">Instagram</span>
       </a>
