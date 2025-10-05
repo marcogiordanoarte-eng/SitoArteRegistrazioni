@@ -680,6 +680,8 @@ body {
     object-fit: contain;
     filter: drop-shadow(0 0 10px rgba(255,255,255,0.22));
     transition: transform 0.12s ease, filter 0.2s ease;
+    position: relative; /* garantisce che l'icona stia sopra l'halo */
+    z-index: 1;
 }
 /* Riduci leggermente YouTube per uniformare la percezione visiva */
 .social-btn--yt img {
@@ -700,12 +702,13 @@ body {
     width: calc(var(--social-icon-size, 88px) + 28px);
     height: calc(var(--social-icon-size, 88px) + 28px);
     border-radius: 50%;
-    z-index: 2;
+    z-index: 0; /* luce dietro l'icona */
     box-shadow: 0 0 80px 40px #ffd700, 0 0 120px 60px #fff;
     animation: pulse-glow 1.2s infinite;
     border-radius: 50%;
     opacity: 0.92;
     animation: iconHaloPulse 2.2s ease-in-out infinite;
+    pointer-events: none; /* non intercetta click/tap */
 }
 /* Colori halo brand */
 .social-btn--fb .social-halo {
@@ -740,6 +743,7 @@ body {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 2; /* etichetta sopra icona/halo */
 }
 .social-btn:hover .social-label,
 .social-btn:focus-visible .social-label {
