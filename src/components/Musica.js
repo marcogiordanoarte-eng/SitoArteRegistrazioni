@@ -7,14 +7,12 @@ import NavBar from './NavBar';
 import { db } from './firebase';
 import { collection, onSnapshot, getDocs, doc } from 'firebase/firestore';
 import LogoPrompt from './LogoPrompt';
-import AIAssistantWidget from './AIAssistantWidget';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import './Artisti.css';
-import PageVoiceIntro from './PageVoiceIntro';
 
 export default function Musica() {
   const navigate = useNavigate();
-  const [currentIdx, setCurrentIdx] = useState(0); // (non più mostrato ma tenuto se servirà in futuro)
+  // Rimosso currentIdx: non usato nell'interfaccia corrente
   const [tracks, setTracks] = useState([]); // streaming + acquistabili
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -24,7 +22,6 @@ export default function Musica() {
   const [studioVideoUrl, setStudioVideoUrl] = useState('');
   const [logoVideoUrl, setLogoVideoUrl] = useState('');
   const [overlaySource, setOverlaySource] = useState(null); // 'studio' | 'logo'
-  const [overlayForceMuted, setOverlayForceMuted] = useState(false);
   const [logoDismissed, setLogoDismissed] = useState(() => {
     try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
   });
@@ -129,10 +126,7 @@ export default function Musica() {
     if (!q) return true;
     return (t.title||'').toLowerCase().includes(q) || (t.artist||'').toLowerCase().includes(q);
   });
-  const currentTrack = filteredTracks[currentIdx] || null;
-
-  const goPrev = () => setCurrentIdx(i => filteredTracks.length ? (i > 0 ? i - 1 : filteredTracks.length - 1) : 0);
-  const goNext = () => setCurrentIdx(i => filteredTracks.length ? (i < filteredTracks.length - 1 ? i + 1 : 0) : 0);
+  // Nessun currentTrack necessario: la UI non mostra una traccia "corrente"
 
   function playPreview(track) {
     if (!track?.isBuyMusic || !track.audioUrl) return;
@@ -155,13 +149,7 @@ export default function Musica() {
 
   return (
     <div className="publicsite-bg page-musica">
-      <PageVoiceIntro
-        pageKey="musica"
-        transcript={"Eccoci in Musica! Qui puoi ascoltare e scaricare tutta la musica degli artisti di Arte Registrazioni, usa il motore di ricerca con titolo o nome artista, se presente comparirà immediatamente il tuo brano!"}
-        pageText={"Eccoci in Musica! Qui puoi ascoltare e scaricare tutta la musica degli artisti di Arte Registrazioni, usa il motore di ricerca con titolo o nome artista, se presente comparirà immediatamente il tuo brano!"}
-        delayMs={380}
-        resumePrevious={false}
-      />
+      {/* Intro vocale rimossa */}
       <Link to="/login" className="dash-badge">Dashboard</Link>
       {/* Logo centrale cliccabile */}
   <div className="logo-wrapper" style={{ margin: isMobile ? '22px 0 34px 0' : '28px 0 56px 0', cursor:'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} setOverlaySource('logo'); setShowOverlay(true); }} title="Video Logo">
@@ -359,13 +347,13 @@ export default function Musica() {
       />
       <NavBar />
       <div style={{ marginTop: 12, display:'flex', justifyContent:'center' }}>
-        <a onClick={() => { setOverlaySource('studio'); setShowOverlay(true); }} style={{ textDecoration:'none' }}>
-          {/* Re-using gradient brand style via button if desired later; simple trigger link for now */}
-          <span style={{ background:'linear-gradient(135deg,#004b92 0%,#008dff 55%,#00e0ff 100%)', padding:'10px 28px', borderRadius:16, fontWeight:800, color:'#fff', cursor:'pointer', boxShadow:'0 0 18px #00bbff' }}>Arte Registrazioni</span>
-        </a>
+        <button type="button" onClick={() => { setOverlaySource('studio'); setShowOverlay(true); }}
+          style={{ background:'linear-gradient(135deg,#004b92 0%,#008dff 55%,#00e0ff 100%)', padding:'10px 28px', borderRadius:16, fontWeight:800, color:'#fff', cursor:'pointer', boxShadow:'0 0 18px #00bbff', border:'none' }}
+          aria-label="Mostra video Arte Registrazioni">
+          Arte Registrazioni
+        </button>
       </div>
   <Footer />
-  <AIAssistantWidget page="musica" />
     </div>
   );
 }

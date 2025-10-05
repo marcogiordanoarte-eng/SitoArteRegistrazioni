@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { FaDownload } from 'react-icons/fa';
 import { db, storage } from "./firebase";
 import { collection, doc, onSnapshot, setDoc, addDoc, serverTimestamp, getDocs, writeBatch, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -63,7 +62,7 @@ export default function DashboardTracks() {
     if (!file) return;
     try {
       setUploadingAudio(p => ({ ...p, [track.id]: true }));
-      const safe = file.name.replace(/[^a-zA-Z0-9_\.-]/g,'_');
+  const safe = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
       const r = ref(storage, `musica/audio/${track.id}_${Date.now()}_${safe}`);
       await uploadBytes(r, file);
       const url = await getDownloadURL(r);
@@ -80,7 +79,7 @@ export default function DashboardTracks() {
     if (!file) return;
     try {
       setUploadingPreview(p => ({ ...p, [track.id]: true }));
-      const safe = file.name.replace(/[^a-zA-Z0-9_\.-]/g,'_');
+  const safe = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
       const r = ref(storage, `musica/previews/${track.id}_${Date.now()}_${safe}`);
       await uploadBytes(r, file);
       const url = await getDownloadURL(r);
@@ -278,7 +277,7 @@ export default function DashboardTracks() {
     if (!file) return;
     try {
       setUploadingZip(p => ({ ...p, [track.id]: true }));
-      const safe = file.name.replace(/[^a-zA-Z0-9_\.-]/g,'_');
+  const safe = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
       const r = ref(storage, `musica/zips/${track.id}_${Date.now()}_${safe}`);
       await uploadBytes(r, file);
       const url = await getDownloadURL(r);

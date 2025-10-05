@@ -5,7 +5,6 @@ import YouTubeButton from './YouTubeButton';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
 import LogoPrompt from './LogoPrompt';
-import AIAssistantWidget from './AIAssistantWidget';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import { db } from './firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -18,7 +17,6 @@ export default function Studio() {
   const [logoVideoUrl, setLogoVideoUrl] = React.useState('');
   const [overlaySource, setOverlaySource] = React.useState(null); // 'studio' | 'logo'
   const promoRef = React.useRef(null);
-  const [overlayForceMuted, setOverlayForceMuted] = React.useState(false);
   const [logoDismissed, setLogoDismissed] = React.useState(() => {
     try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
   });
@@ -92,7 +90,6 @@ export default function Studio() {
         <BrandButton onClick={() => openOverlay('studio')} />
       </div>
   <Footer showArteButton={false} />
-  <AIAssistantWidget page="studio" />
     </div>
   );
 }

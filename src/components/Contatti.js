@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import NavBar from './NavBar';
 import YouTubeButton from './YouTubeButton';
@@ -6,9 +6,7 @@ import Footer from './Footer';
 import BrandButton from './BrandButton';
 import ContactForm from './ContactForm';
 import LogoPrompt from './LogoPrompt';
-import AIAssistantWidget from './AIAssistantWidget';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import "./Artisti.css";
 
 export default function Contatti() {
@@ -17,8 +15,6 @@ export default function Contatti() {
   const [studioVideoUrl, setStudioVideoUrl] = React.useState('');
   const [logoVideoUrl, setLogoVideoUrl] = React.useState('');
   const [overlaySource, setOverlaySource] = React.useState(null); // 'studio' | 'logo'
-  const overlayVideoRef = useRef(null);
-  const [overlayForceMuted, setOverlayForceMuted] = useState(false);
   const [logoDismissed, setLogoDismissed] = useState(() => {
     try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
   });
@@ -35,20 +31,7 @@ export default function Contatti() {
     });
   }, []);
 
-  // Autoplay attempt when overlay appears (mobile support)
-  useEffect(() => {
-    if (showOverlay) {
-      setTimeout(() => {
-        const v = overlayVideoRef.current; if (!v) return;
-        try {
-          v.muted = false; v.volume = 1;
-          v.play().then(()=> setOverlayForceMuted(false)).catch(()=>{
-            try { v.muted = true; v.volume = 0; setOverlayForceMuted(true); v.play().catch(()=>{}); } catch {}
-          });
-        } catch {}
-      }, 40);
-    }
-  }, [showOverlay, overlaySource]);
+  // Autoplay gestito internamente dal componente FullscreenVideoOverlay
   return (
     <div className="publicsite-bg page-contatti">
       <Link to="/login" className="dash-badge">Dashboard</Link>
@@ -149,7 +132,6 @@ export default function Contatti() {
   <BrandButton onClick={() => { setOverlaySource('studio'); setShowOverlay(true); }} />
       </div>
   <Footer showArteButton={false} />
-  <AIAssistantWidget page="contatti" />
     </div>
   );
 }

@@ -6,8 +6,6 @@ import Footer from './Footer';
 import "./Artisti.css";
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
-// Voce reale registrata
-import { loadVoiceInventory, planClips, playClips } from './assistantVoice';
 import CustomAudio from './CustomAudio';
 
 // Utility: controlla se un URL punta a un file audio/video riproducibile direttamente
@@ -31,10 +29,7 @@ export default function ArtistDetail() {
   const [videoError, setVideoError] = useState({});
   const [showIntroForIdx, setShowIntroForIdx] = useState(null); // fullscreen video index
   const [showPortraitFs, setShowPortraitFs] = useState(false); // fullscreen portrait
-  const [speakingBio, setSpeakingBio] = useState(false);
-  const [playingIntro, setPlayingIntro] = useState(false);
-  const bioCancelRef = useRef(null);
-  const introCancelRef = useRef(null);
+  // Pulsanti voce reale disattivati: stati e riferimenti rimossi
 
   const audioRefs = useRef({});
   const videoRefs = useRef({});
@@ -102,69 +97,10 @@ export default function ArtistDetail() {
         )}
         <h1 className="artist-name" style={{ textAlign: 'center', maxWidth: '92vw' }}>{artist.nome || artist.name || 'Artista'}</h1>
         {artist.bio && (
-          <div className="bio-box" style={{ maxWidth: 860, width: 'min(92vw,860px)', marginTop: 12, lineHeight: 1.55, color: '#fcfbfb', position:'relative', paddingTop: speakingBio ? 4 : 0 }}>
+          <div className="bio-box" style={{ maxWidth: 860, width: 'min(92vw,860px)', marginTop: 12, lineHeight: 1.55, color: '#fcfbfb', position:'relative', paddingTop: 0 }}>
             <p className="bio-text" style={{ margin: 0, whiteSpace: 'pre-wrap', color: '#fcfbfb', fontSize: '1.02rem' }}>{artist.bio}</p>
             <div style={{ marginTop: 14, display:'flex', gap:12, flexWrap:'wrap' }}>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    if (bioCancelRef.current) { bioCancelRef.current(); bioCancelRef.current = null; setSpeakingBio(false); return; }
-                    await loadVoiceInventory(db);
-                    const phrase = `${artist.nome || artist.name}. ${artist.bio}. Visita la sezione Musica e usa Buy Music per scaricare i brani che ti piacciono e supportare l'artista.`;
-                    const clips = planClips(phrase);
-                    if (!clips.length) {
-                      // Nessuna ricostruzione possibile con i campioni attuali; per policy niente TTS -> mostriamo feedback minimo
-                      alert('Registrazioni non disponibili per leggere la biografia con la voce reale. Aggiungi campioni che coprano queste frasi.');
-                      return;
-                    }
-                    setSpeakingBio(true);
-                    const chain = playClips(clips, { onEnd: () => { bioCancelRef.current = null; setSpeakingBio(false); } });
-                    bioCancelRef.current = chain.cancel;
-                  } catch {}
-                }}
-                style={{ background: speakingBio ? '#b3002d' : '#024d74', border:'1px solid #00b7ff', color:'#fff', padding:'8px 14px', borderRadius:12, cursor:'pointer', fontWeight:600, fontSize:'.8rem', letterSpacing:.5, display:'flex', alignItems:'center', gap:6 }}
-                aria-label={speakingBio ? 'Ferma riproduzione biografia' : 'Riproduci biografia con voce registrata'}
-              >
-                {speakingBio ? '⏹ Ferma' : '🔊 Voce Reale Bio'}
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    if (introCancelRef.current) { introCancelRef.current(); introCancelRef.current = null; setPlayingIntro(false); return; }
-                    // Tenta prima URL diretto configurato
-                    let directUrl = null;
-                    try {
-                      const snap = await getDoc(doc(db,'site','config'));
-                      if (snap.exists()) {
-                        const data = snap.data()||{};
-                        if (data.pageIntro_artisti) directUrl = data.pageIntro_artisti;
-                      }
-                    } catch {}
-                    if (directUrl) {
-                      setPlayingIntro(true);
-                      const chain = playClips([directUrl], { onEnd: () => { introCancelRef.current = null; setPlayingIntro(false); } });
-                      introCancelRef.current = chain.cancel;
-                      return;
-                    }
-                    await loadVoiceInventory(db);
-                    const fallbackPhrase = 'Sezione Artisti. Esplora le biografie e scopri la musica. Usa Buy Music per supportare gli artisti che ami.';
-                    const clips = planClips(fallbackPhrase);
-                    if (!clips.length) {
-                      alert('Nessuna intro ricostruibile con i campioni attuali. Assegna un file diretto in VoiceAdmin o aggiungi frasi corrispondenti.');
-                      return;
-                    }
-                    setPlayingIntro(true);
-                    const chain = playClips(clips, { onEnd: () => { introCancelRef.current = null; setPlayingIntro(false); } });
-                    introCancelRef.current = chain.cancel;
-                  } catch {}
-                }}
-                style={{ background: playingIntro ? '#7b002e' : '#3b0466', border:'1px solid #b480ff', color:'#fff', padding:'8px 14px', borderRadius:12, cursor:'pointer', fontWeight:600, fontSize:'.8rem', letterSpacing:.5, display:'flex', alignItems:'center', gap:6 }}
-                aria-label={playingIntro ? 'Ferma intro pagina' : 'Riproduci intro pagina'}
-              >
-                {playingIntro ? '⏹ Intro' : '🎙 Intro Pagina'}
-              </button>
+              {/* Pulsanti voce reale disattivati */}
               <button
                 type="button"
                 onClick={() => {
@@ -263,7 +199,7 @@ export default function ArtistDetail() {
                               v.muted = true; v.defaultMuted = true; v.volume = 0; v.currentTime = ael.currentTime || 0; if (ael.paused) v.pause(); else { try { await v.play(); } catch {} }
                             }
                           } catch (err) {
-                            const name = err && (err.name || err.code) || '';
+                            const name = (err && (err.name || err.code)) || '';
                             if (name === 'NotAllowedError' || name === 'AbortError') setAudioUiMsg('Se la musica non parte, disattiva silenzioso e tocca Play.');
                             else setAudioUiMsg('Errore avvio audio. Riprova.');
                           }
@@ -293,15 +229,17 @@ export default function ArtistDetail() {
                       </button>
                     ) : playBtn ? (
                       <a className="icon-cell icon-cell--play pulse-on-hover" onPointerDown={showLabelHint} href={playBtn.link} target="_blank" rel="noopener noreferrer" aria-label="Play" data-label="Play"><img src="/icons/play4.png" alt="Play" /></a>
-                    ) : hasTracks && firstTrackLink ? (
-                      <a className="icon-cell icon-cell--play pulse-on-hover" onPointerDown={showLabelHint} href={firstTrackLink} target="_blank" rel="noopener noreferrer" aria-label="Play" data-label="Play"><img src="/icons/play4.png" alt="Play" /></a>
-                    ) : null}
+                    ) : (hasTracks ? (
+                      firstTrackLink ? (
+                        <a className="icon-cell icon-cell--play pulse-on-hover" onPointerDown={showLabelHint} href={firstTrackLink} target="_blank" rel="noopener noreferrer" aria-label="Play" data-label="Play"><img src="/icons/play4.png" alt="Play" /></a>
+                      ) : null
+                    ) : null)}
                     {spotifyBtn && <a className="icon-cell pulse-on-hover" onPointerDown={showLabelHint} href={spotifyBtn.link} target="_blank" rel="noopener noreferrer" aria-label="Spotify" data-label="Spotify"><img src="/icons/spotify1.png" alt="Spotify" /></a>}
                     {appleBtn && <a className="icon-cell pulse-on-hover" onPointerDown={showLabelHint} href={appleBtn.link} target="_blank" rel="noopener noreferrer" aria-label="Apple Music" data-label="Apple Music"><img src="/icons/apple3.png" alt="Apple Music" /></a>}
                     {ytBtn && <a className="icon-cell pulse-on-hover" onPointerDown={showLabelHint} href={ytBtn.link} target="_blank" rel="noopener noreferrer" aria-label="YouTube" data-label="YouTube"><img src="/icons/youtube2.png" alt="YouTube" /></a>}
                     {album.paymentLinkUrl ? (
                       <a className="icon-cell icon-cell--download pulse-on-hover" onPointerDown={showLabelHint} href={album.paymentLinkUrl} target="_blank" rel="noopener noreferrer" aria-label="Buy & Download" data-label="Buy & Download" data-price={priceLabel}><img src="/icons/download5.png" alt="Buy & Download" /></a>
-                    ) : (album.paypalHostedButtonId || true) ? (
+                    ) : (
                       <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top" className="icon-cell icon-cell--download pulse-on-hover" style={{ display: 'inline-flex' }} onPointerDown={showLabelHint} aria-label="Buy & Download" data-label="Buy & Download" data-price={priceLabel}>
                         <input type="hidden" name="cmd" value="_s-xclick" />
                         <input type="hidden" name="hosted_button_id" value={album.paypalHostedButtonId || (isSingle ? '5CGE5SB2DM2G2' : 'P7FKWUEHQGCFE')} />
@@ -313,7 +251,7 @@ export default function ArtistDetail() {
                           <img src="/icons/download5.png" alt="Buy & Download" />
                         </button>
                       </form>
-                    ) : (downloadBtn && <a className="icon-cell icon-cell--download pulse-on-hover" onPointerDown={showLabelHint} href={downloadBtn.link} target="_self" rel="noopener noreferrer" aria-label="Buy & Download" data-label="Buy & Download" data-price={priceLabel}><img src="/icons/download5.png" alt="Buy & Download" /></a>)}
+                    )}
                   </div>
                   {/* 3) Navigazione tracce */}
                   {hasTracks && (

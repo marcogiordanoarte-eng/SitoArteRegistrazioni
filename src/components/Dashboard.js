@@ -13,7 +13,6 @@ import {
   onSnapshot,
   setDoc,
   serverTimestamp,
-  getDocs
 } from "firebase/firestore";
 // NOTE: removed backfillCreatedAt / normalize order buttons (obsolete)
 import BuyMusicAdmin from './BuyMusicAdmin';
@@ -22,7 +21,6 @@ import PodcastAdmin from './PodcastAdmin';
 import CountdownAdmin from './CountdownAdmin';
 import DashboardVideoManager from './DashboardVideoManager';
 import DashboardLogoVideoManager from './DashboardLogoVideoManager';
-import VoiceAdmin from './VoiceAdmin';
 import ArtistTracksManager from './ArtistTracksManager';
 
 function Dashboard() {
@@ -415,12 +413,7 @@ function Dashboard() {
         >
           Impostazioni Sito
         </button>
-        <button
-          className="dash-btn dash-btn--ghost"
-          onClick={() => setView('voice')}
-        >
-          Voce AI
-        </button>
+        {/* Voce AI rimossa */}
       </div>
       {/* Removed obsolete buttons: Backfill createdAt & Normalizza ordine */}
 
@@ -744,11 +737,7 @@ function Dashboard() {
         </div>
       )}
 
-      {view === 'voice' && (
-        <div className="dash-editor dash-container">
-          <VoiceAdmin />
-        </div>
-      )}
+      {/* Sezione Voce AI rimossa */}
 
       {view === "create" && (
         <div className="dash-editor dash-container">

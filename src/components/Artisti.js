@@ -1,5 +1,5 @@
 import { doc, collection, onSnapshot } from 'firebase/firestore';
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import YouTubeButton from './YouTubeButton';
 import Footer from './Footer';
@@ -10,7 +10,6 @@ import "./Artisti.css";
 import { db } from "./firebase";
 import Icon from "./Icon";
 import NavBar from './NavBar';
-import PageVoiceIntro from './PageVoiceIntro';
 
 export default function Artisti() {
   const [showOverlay, setShowOverlay] = useState(false);
@@ -18,15 +17,10 @@ export default function Artisti() {
   const [logoVideoUrl, setLogoVideoUrl] = useState('');
   const [overlaySource, setOverlaySource] = useState(null); // 'studio' | 'logo'
   const navigate = useNavigate();
-  const [modalOpen, setModalOpen] = useState(false);
   const [currentArtista, setCurrentArtista] = useState(null);
-  const [modalError, setModalError] = useState("");
   const [artists, setArtists] = useState([]);
-  const [stepIndex, setStepIndex] = useState(0);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [fullscreenIdx, setFullscreenIdx] = useState(0);
-  const overlayVideoRef = useRef(null);
-  const [overlayForceMuted, setOverlayForceMuted] = useState(false);
   const [logoDismissed, setLogoDismissed] = useState(() => {
     try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
   });
@@ -74,18 +68,13 @@ export default function Artisti() {
   };
   const prevFs = () => setFullscreenIdx(i => Math.max(0, i - 1));
 
-  const handleClose = () => {
-    setModalOpen(false);
-    setCurrentArtista(null);
-    setStepIndex(0);
-    setModalError("");
-  };
+  // Deprecated modal handlers removed; fullscreen overlay is the current UX
 
   return (
     <div className="publicsite-bg">
       {/* Quick access to Dashboard in top-right, consistent with Home */}
       <Link to="/login" className="dash-badge">Dashboard</Link>
-  <PageVoiceIntro pageKey="artisti" transcript="Pagina Artisti. Sfoglia i profili e scopri le biografie e le produzioni." pageText="Sezione Artisti" delayMs={650} resumePrevious={false} />
+  {/* Intro vocale rimossa */}
   <div className="logo-wrapper" style={{ cursor: 'pointer', marginBottom: '24px', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} setOverlaySource('logo'); setShowOverlay(true); }} title="Video Logo">
     <LogoPrompt show={!showOverlay && !logoDismissed} text="Premi" position="top" />
         <div className="logo-stack">

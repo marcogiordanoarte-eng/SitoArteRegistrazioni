@@ -146,7 +146,7 @@ export default function BuyMusicAdmin() {
   const uploadTrackZip = async (gid, tid, file, setLocalTracks) => {
     if (!file) return;
     try {
-      const safeName = file.name.replace(/[^a-zA-Z0-9_\.-]/g, '_');
+  const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
       const r = ref(storage, `buy/zips/${gid}_${tid}_${Date.now()}_${safeName}`);
       await uploadBytes(r, file);
       const url = await getDownloadURL(r);

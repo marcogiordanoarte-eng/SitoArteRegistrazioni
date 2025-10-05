@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import PublicSite from "./PublicSite";
 import DownloadConfirm from "./DownloadConfirm";
@@ -20,9 +20,6 @@ import Dashboard from "./Dashboard";
 import Login from "./Login";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { ADMIN_UIDS } from './config';
-import AIAssistantWidget from './AIAssistantWidget';
-import { useVoiceNavigator } from './useVoiceNavigator';
-import VoiceAssistantLite from './VoiceAssistantLite';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -42,127 +39,7 @@ function PrivateRoute({ children }) {
 }
 
 export default function App() {
-  // Stato risposta rapida da listener vocale globale (base, separato da widget avanzato)
-  const [voiceNavReply, setVoiceNavReply] = useState('');
-  const [voiceNavLastCmd, setVoiceNavLastCmd] = useState('');
-  // Refs MUST be declared at top-level (non dentro useEffect) per rispettare le Rules of Hooks
-  const ttsCacheRef = useRef(new Map()); // text -> dataURL
-  const playingRef = useRef(null); // Audio element attivo
-  const functionsModulePromiseRef = useRef(null); // memo import dinamico
-  useEffect(() => {
-    // Listener vocale minimale (baseline) per comandi "vai al" e scroll
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return; // browser non supporta
-    const recognition = new SR();
-    recognition.lang = 'it-IT';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    function stopCurrent(){
-      try { if (playingRef.current) { playingRef.current.pause(); playingRef.current.src = ''; playingRef.current = null; } } catch {}
-      if (window.speechSynthesis && window.speechSynthesis.speaking) { try { window.speechSynthesis.cancel(); } catch {} }
-    }
-    async function speakViaSamplesOrTTS(text){
-      if (!text) return;
-      const clean = text.trim();
-      if (!clean) return;
-      stopCurrent();
-      // 1. Campioni preregistrati
-      try {
-        const mod = await import('./assistantVoice');
-        const clips = mod.planClips(clean);
-        if (clips.length) { mod.playClips(clips, {}); return; }
-      } catch {}
-      // 2. Cache locale (in-memory) TTS
-      const cached = ttsCacheRef.current.get(clean);
-      if (cached) {
-        const a = new Audio(cached);
-        playingRef.current = a;
-        a.play().catch(()=>{});
-        return;
-      }
-      // 3. Callable Firebase Function: ttsSynthesize (ElevenLabs proxy)
-      try {
-        if (!functionsModulePromiseRef.current) functionsModulePromiseRef.current = import('firebase/functions');
-        const [{ getFunctions, httpsCallable }] = await Promise.all([functionsModulePromiseRef.current]);
-        // Usa la app già inizializzata se disponibile globalmente (window.firebaseApp) altrimenti fallback default
-        let fns;
-        try {
-          fns = getFunctions();
-        } catch {
-          fns = getFunctions(undefined, 'us-central1');
-        }
-        const call = httpsCallable(fns, 'ttsSynthesize');
-        const { data } = await call({ text: clean });
-        if (data && data.audioBase64) {
-          const mime = data.mime || 'audio/mpeg';
-          const url = `data:${mime};base64,${data.audioBase64}`;
-          ttsCacheRef.current.set(clean, url);
-          const a = new Audio(url);
-          playingRef.current = a;
-          a.play().catch(()=>{});
-          return;
-        }
-      } catch (e) {
-        // log silenzioso
-        try { console.warn('[TTS] errore', e); } catch {}
-      }
-      // 4. Fallback finale: Web Speech API
-      if (window.speechSynthesis) {
-        try {
-          const ut = new SpeechSynthesisUtterance(clean);
-            ut.lang = 'it-IT'; ut.rate = 1; ut.pitch = 1; ut.volume = 1;
-            window.speechSynthesis.speak(ut);
-        } catch {}
-      }
-    }
-    function scrollToId(id){
-      const el = document.getElementById(id);
-      if (el) { el.scrollIntoView({ behavior:'smooth', block:'start' }); return true; }
-      return false;
-    }
-    function handleCommand(comando){
-      const raw = comando.toLowerCase().trim();
-      setVoiceNavLastCmd(raw);
-      // Navigazione pagine
-      if (raw.startsWith('vai al ') || raw.startsWith('vai alla ') || raw.startsWith('vai a ') || raw.startsWith('portami a ') || raw.startsWith('portami al ') || raw.startsWith('portami alla ')) {
-        const cleaned = raw.replace(/^(vai|portami) (a |al |alla )/,'').trim();
-        // alias
-        const map = { artisti:'/artisti', musica:'/musica', studio:'/studio', festival:'/festival', podcast:'/podcast', countdown:'/countdown', contatti:'/contatti', home:'/', buy:'/buy', termini:'/termini', privacy:'/privacy', licenza:'/licenza' };
-        if (map[cleaned]) {
-          try { window.history.pushState({}, '', map[cleaned]); } catch {}
-          setVoiceNavReply(`Ti porto a ${cleaned}`);
-          speakViaSamplesOrTTS(`Ti porto a ${cleaned}`);
-          return;
-        }
-        // scroll locale (es: footer)
-        if (cleaned === 'footer' || cleaned === 'piè di pagina' || cleaned === 'piè' ) {
-          if (scrollToId('site-footer-anchor') || scrollToId('site-footer')) {
-            setVoiceNavReply('Scorro al footer');
-            speakViaSamplesOrTTS('Scorro al footer');
-            return;
-          }
-        }
-        setVoiceNavReply('Sezione non trovata');
-        speakViaSamplesOrTTS('Non trovo quella sezione');
-        return;
-      }
-      // Scroll comandi
-      if (/scroll( a| )?giu|scendi|più giù/.test(raw)) { window.scrollBy({ top: window.innerHeight*0.8, behavior:'smooth' }); setVoiceNavReply('Scrollo giù'); speakViaSamplesOrTTS('Scrollo giù'); return; }
-      if (/scroll( a| )?su|torna su|vai su|all inizio|all’inizio/.test(raw)) { window.scrollTo({ top:0, behavior:'smooth' }); setVoiceNavReply('Torno su'); speakViaSamplesOrTTS('Torno su'); return; }
-      // Fallback
-      setVoiceNavReply('Non ho capito, ripeti?');
-      speakViaSamplesOrTTS('Non ho capito, ripeti?');
-    }
-    recognition.onresult = (e) => {
-      try {
-        const comando = e.results[0][0].transcript;
-        handleCommand(comando);
-      } catch {}
-    };
-    recognition.onend = () => { try { recognition.start(); } catch {} };
-    try { recognition.start(); } catch {}
-    return () => { try { recognition.onend = null; recognition.stop(); } catch {} };
-  }, []);
+  // Nessun listener vocale o UI di assistente: rimosso su richiesta
   useEffect(() => {
     // Inject public fonts stylesheet
     const id = 'vintaface-fonts-css';
@@ -246,39 +123,7 @@ export default function App() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-  // Component interno per gestire la visibilità/context dell'assistente "Sounds"
-  function GlobalAssistant() {
-    const location = useLocation();
-    const path = location.pathname || '/';
-    const suppressed = path.startsWith('/dashboard') || path.startsWith('/login');
-    // Chiamare SEMPRE l'hook alla stessa profondità; se disabilitato passa enabled:false
-    const { listening, transcript, response } = useVoiceNavigator({ enabled: !suppressed, onCommand:(info)=>{ if (window && !window.__voiceNavLog) window.__voiceNavLog=[]; try { window.__voiceNavLog.push({ t:Date.now(), ...info }); } catch {} } });
-    // Mappa semplice path -> page key per prompt contestuale
-    let pageKey = 'global';
-    if (path === '/' || path === '/index.html') pageKey = 'home';
-    else if (path.startsWith('/artista/')) pageKey = 'artist';
-    else if (path === '/artisti') pageKey = 'artisti';
-    else if (path.startsWith('/buy')) pageKey = 'buy';
-    else if (path === '/musica') pageKey = 'musica';
-    else if (path === '/studio') pageKey = 'studio';
-    else if (path === '/festival') pageKey = 'festival';
-    else if (path === '/podcast') pageKey = 'podcast';
-    else if (path === '/countdown') pageKey = 'countdown';
-    else if (path === '/contatti') pageKey = 'contatti';
-    if (suppressed) return null;
-    return (
-      <>
-        <AIAssistantWidget page={pageKey} forceWelcome={pageKey === 'home'} />
-        <div style={{ position:'fixed', left:12, bottom:12, zIndex:13000, pointerEvents:'none', display:'flex', flexDirection:'column', gap:4 }}>
-          <div style={{ background:'rgba(0,0,0,0.55)', color:'#bdefff', padding:'6px 10px', border:'1px solid rgba(0,200,255,0.4)', borderRadius:12, fontSize:'.6rem', maxWidth:220 }}>
-            <strong style={{ color:listening? '#0ff':'#ccc' }}>{listening? '🎤 Ascolto':'🕓 Inattivo'}</strong><br/>
-            {transcript && <span style={{ display:'block', opacity:.85 }}>Tu: {transcript}</span>}
-            {response && <span style={{ display:'block', color:'#7fe9ff' }}>AI: {response}</span>}
-          </div>
-        </div>
-      </>
-    );
-  }
+  // Nessun GlobalAssistant: UI/AI disattivata completamente
 
   return (
     <AuthProvider>
@@ -304,15 +149,8 @@ export default function App() {
             <Route path="/download-confirm" element={<DownloadConfirm />} />
             <Route path="/pagamento-esempio" element={<PagamentoEsempio />} />
           </Routes>
-          <GlobalAssistant />
-          <VoiceAssistantLite />
-          {/* Output semplice listener vocale baseline */}
-          {voiceNavReply && (
-            <div style={{ position:'fixed', right:10, bottom:10, zIndex:14000, background:'rgba(0,0,0,0.6)', color:'#dffaff', padding:'8px 12px', border:'1px solid #00b7ff', borderRadius:12, fontSize:'.65rem', maxWidth:240 }}>
-              <div style={{ opacity:.7 }}>Comando: {voiceNavLastCmd}</div>
-              <strong>{voiceNavReply}</strong>
-            </div>
-          )}
+          {/* Nessun assistente o finestrella: UI IA rimossa */}
+            {/* Nessun assistente o finestrella: UI IA rimossa */}
         </div>
       </BrowserRouter>
     </AuthProvider>

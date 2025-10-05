@@ -34,7 +34,6 @@ export default function FullscreenVideoOverlay({
 }) {
   const videoRef = useRef(null);
   const [forceMuted, setForceMuted] = useState(false);
-  const [ready, setReady] = useState(false);
   const triedRef = useRef(false);
 
   // Attempt autoplay (unmuted first, fallback to muted)
@@ -59,14 +58,14 @@ export default function FullscreenVideoOverlay({
             } else {
               setForceMuted(true);
             }
-            setReady(true);
+            // video ready
           }).catch(() => {
             if (wantAudio) {
               // Retry muted
               tryPlay(false);
             } else {
               setForceMuted(true);
-              setReady(true);
+              // video ready (muted fallback)
             }
           });
         }
@@ -75,7 +74,7 @@ export default function FullscreenVideoOverlay({
           tryPlay(false);
         } else {
           setForceMuted(true);
-          setReady(true);
+          // video ready (muted fallback)
         }
       }
     };

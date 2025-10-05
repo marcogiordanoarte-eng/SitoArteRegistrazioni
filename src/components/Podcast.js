@@ -5,12 +5,10 @@ import YouTubeButton from './YouTubeButton';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
 import LogoPrompt from './LogoPrompt';
-import AIAssistantWidget from './AIAssistantWidget';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import './Artisti.css';
 import { db } from './firebase';
 import { collection, onSnapshot, doc } from 'firebase/firestore';
-import PageVoiceIntro from './PageVoiceIntro';
 
 // Funzione di utilità per timestamp (se serve)
 function toMs(ts) {
@@ -42,7 +40,6 @@ export default function Podcast() {
   const [logoVideoUrl, setLogoVideoUrl] = useState('');
   const [overlaySource, setOverlaySource] = useState(null);
   const promoRef = useRef(null);
-  const [overlayForceMuted, setOverlayForceMuted] = useState(false);
   const [logoDismissed, setLogoDismissed] = useState(() => {
     try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
   });
@@ -100,8 +97,7 @@ export default function Podcast() {
 
   return (
     <div className="publicsite-bg page-podcast">
-      <Link to="/login" className="dash-badge">Dashboard</Link>
-      <PageVoiceIntro pageKey="podcast" transcript="Pagina Podcast. Ascolta le interviste e scopri le storie dietro la musica di Arte Registrazioni." pageText="Pagina Podcast di Arte Registrazioni." delayMs={800} />
+  <Link to="/login" className="dash-badge">Dashboard</Link>
   <div className="logo-wrapper" style={{ cursor: 'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} openOverlay('logo'); }} title="Video Logo">
     <LogoPrompt show={!showOverlay && !logoDismissed} text="Premi" position="top" />
         <div className="logo-stack">
@@ -198,7 +194,6 @@ export default function Podcast() {
   <BrandButton onClick={() => openOverlay('studio')} />
       </div>
   <Footer showArteButton={false} />
-  <AIAssistantWidget page="podcast" />
     </div>
   );
 }

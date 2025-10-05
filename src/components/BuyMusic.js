@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import NavBar from './NavBar';
 import YouTubeButton from './YouTubeButton';
@@ -6,42 +6,10 @@ import Footer from './Footer';
 import BrandButton from './BrandButton';
 import './Artisti.css';
 import { db } from './firebase';
-import { collection, doc, onSnapshot, onSnapshot as onDocSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
-// Voce reale (campioni) – eliminiamo completamente qualsiasi fallback TTS
-import { loadVoiceInventory, planClips, playClips } from './assistantVoice';
-import PageVoiceIntro from './PageVoiceIntro';
+import { collection, doc, onSnapshot, onSnapshot as onDocSnapshot } from 'firebase/firestore';
 
 export default function BuyMusic() {
-  // Stato per aggiunta traccia
-  const [newTrackTitle, setNewTrackTitle] = useState("");
-  const [newTrackUrl, setNewTrackUrl] = useState("");
-  const [newTrackPrice, setNewTrackPrice] = useState("");
-  const [selectedGenreId, setSelectedGenreId] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState("");
-
-  // Funzione per aggiungere traccia in buyGenres e musicaTracks
-  const handleAddTrack = async () => {
-    if (!newTrackTitle || !newTrackUrl || !selectedGenreId) return;
-    const trackData = {
-      title: newTrackTitle,
-      audioUrl: newTrackUrl,
-      genre: selectedGenre,
-      genreId: selectedGenreId,
-      price: newTrackPrice ? Number(newTrackPrice) : 1.99,
-      approved: false,
-      createdAt: serverTimestamp(),
-    };
-    // Aggiungi nella collezione Buy Music
-    const trackRef = collection(db, "buyGenres", selectedGenreId, "tracks");
-    await addDoc(trackRef, trackData);
-    // Aggiungi anche nella collezione Musica globale
-    const musicaRef = collection(db, "musicaTracks");
-    await addDoc(musicaRef, trackData);
-    setNewTrackTitle("");
-    setNewTrackUrl("");
-    setNewTrackPrice("");
-    alert("Traccia aggiunta e pubblicata su Musica!");
-  };
+  // Admin-only draft states removed (not used on public page)
 
   const [genres, setGenres] = useState([]); // [{id, name, coverUrl}]
   const logoCandidates = useMemo(() => [
@@ -57,9 +25,7 @@ export default function BuyMusic() {
   const [buyIntroIt, setBuyIntroIt] = useState('');
   const [buyIntroEn, setBuyIntroEn] = useState('');
   const [showEn, setShowEn] = useState(false);
-  // Riferimento per evitare doppia riproduzione intro registrata
-  const buyVoicePlayedRef = useRef(false);
-  const buyVoiceCancelRef = useRef(null);
+  // Nessun audio/intro AI su questa pagina
 
   useEffect(() => {
     const unsub = onDocSnapshot(doc(db, 'site', 'config'), (snap) => {
@@ -71,25 +37,7 @@ export default function BuyMusic() {
     return () => unsub();
   }, []);
 
-  // Tentativo (silenzioso se non ci sono match) di riprodurre intro usando SOLO clip registrate.
-  // Nota: l'autoplay audio può essere bloccato dai browser senza gesto utente; in tal caso non forziamo nulla.
-  useEffect(() => {
-    if (buyVoicePlayedRef.current) return;
-    let cancelled = false; let chain = null;
-    (async () => {
-      try {
-        await loadVoiceInventory(db);
-        if (cancelled) return;
-        const italianIntro = (buyIntroIt || 'In collaborazione con Sounds di Arte Registrazioni qui trovi brani di musica royalty-free da acquistare e utilizzare a piacimento; una volta acquistato un brano, diventa di tua proprietà e non sarà più possibile acquistarlo ulteriormente. Scopri il tuo sound perfetto: scegli un genere musicale, ascolta un’anteprima di 15 secondi e acquista il brano che ti conquista!');
-        const clips = planClips(italianIntro);
-        if (clips.length === 0) return; // Non abbiamo ancora registrazioni corrispondenti
-        buyVoicePlayedRef.current = true;
-        chain = playClips(clips, { onEnd: () => { buyVoiceCancelRef.current = null; } });
-        buyVoiceCancelRef.current = chain.cancel;
-      } catch {}
-    })();
-    return () => { cancelled = true; if (chain) chain.cancel(); };
-  }, [buyIntroIt]);
+  // Intro vocale rimossa
 
   // Load genres in realtime
   useEffect(() => {
@@ -113,12 +61,6 @@ export default function BuyMusic() {
     <div>
       {/* Pagina Buy Music */}
       <div className="publicsite-bg page-buymusic">
-        <PageVoiceIntro
-          pageKey="buy"
-          transcript={"Sounds Take Your Music! In collaborazione con Sounds di Arte Registrazioni qui trovi brani di musica royalty-free da acquistare e utilizzare a piacimento; una volta acquistato un brano, diventa di tua proprietà e non sarà più possibile acquistarlo ulteriormente. Scopri il tuo sound perfetto: scegli un genere musicale, ascolta un’anteprima di 15 secondi e acquista il brano che ti conquista! Sei un videomaker, YouTuber o un creator di reels, post social e podcast? Cerchi relax per dormire meglio o meditare? Qui puoi acquistare, scaricare e sfruttare musica royalty-free per ogni tua avventura creativa!"}
-          pageText={buyIntroIt}
-          delayMs={650}
-        />
         <Link to="/login" className="dash-badge">Dashboard</Link>
         <div className="logo-wrapper">
           <div className="logo-stack">

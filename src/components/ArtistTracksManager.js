@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { db, storage } from './firebase';
-import { collection, doc, onSnapshot, query, where, addDoc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, addDoc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 /*
@@ -116,7 +116,7 @@ export default function ArtistTracksManager({ artist }) {
     if (!file) return;
     try {
       setUploadingFull(p => ({ ...p, [t.id]: true }));
-      const safe = file.name.replace(/[^a-zA-Z0-9_\.-]/g,'_');
+  const safe = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
       const r = ref(storage, `artists/${artistId}/tracks/${t.id}_${Date.now()}_${safe}`);
       await uploadBytes(r, file);
       const url = await getDownloadURL(r);
@@ -134,7 +134,7 @@ export default function ArtistTracksManager({ artist }) {
     if (!file) return;
     try {
       setUploadingZip(p => ({ ...p, [t.id]: true }));
-      const safe = file.name.replace(/[^a-zA-Z0-9_\.-]/g,'_');
+  const safe = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
       const r = ref(storage, `artists/${artistId}/tracks/${t.id}_zip_${Date.now()}_${safe}`);
       await uploadBytes(r, file);
       const url = await getDownloadURL(r);

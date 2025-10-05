@@ -1,12 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
-import PageVoiceIntro from './PageVoiceIntro';
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import NavBar from './NavBar';
 import YouTubeButton from './YouTubeButton';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
 import LogoPrompt from './LogoPrompt';
-import AIAssistantWidget from './AIAssistantWidget';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import { onSnapshot, doc } from 'firebase/firestore';
 import "./Artisti.css";
@@ -21,8 +19,6 @@ export default function Festival({ pdfUrl }) {
   const [overlaySource, setOverlaySource] = useState(null);
   const videoPresentazioneRef = React.useRef(null);
   const [finalPdf, setFinalPdf] = useState(pdfUrl || '');
-  const overlayVideoRef = useRef(null);
-  const [overlayForceMuted, setOverlayForceMuted] = useState(false);
   const [logoDismissed, setLogoDismissed] = useState(() => {
     try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
   });
@@ -85,12 +81,7 @@ export default function Festival({ pdfUrl }) {
 
   return (
     <div className="publicsite-bg page-festival">
-      <PageVoiceIntro
-        pageKey="festival"
-        transcript={"Art Music è un festival musicale pensato per far emergere nuovi artisti creando un punto di riferimento per la musica. Gli artisti saranno selezionati dall’etichetta discografica Arte Registrazioni con particolare attenzione alla musica sperimentale e ai generi musicali innovativi. Art Music Festival non è solo un festival, ma un progetto culturale che evolve con il territorio. Il nostro obiettivo è creare un evento che diventi un punto di riferimento per la musica in Italia, con un impatto duraturo sulla nostra cultura. Per partecipare al bando di concorso di Art Music Festival scaricare il bando quando sarà presente, assieme alle specifiche tecniche e seguire le istruzioni. È facile, presto la vostra musica potrà andare live con performance uniche per un'evento indimenticabile!"}
-        pageText={description}
-        delayMs={700}
-      />
+        {/* Intro vocale rimossa */}
       <Link to="/login" className="dash-badge">Dashboard</Link>
   <div className="logo-wrapper" style={{ cursor: 'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} openOverlay('logo'); }} title="Video Logo">
     <LogoPrompt show={!showOverlay && !logoDismissed} text="Premi" position="top" />
@@ -185,7 +176,6 @@ export default function Festival({ pdfUrl }) {
   <BrandButton onClick={() => openOverlay('studio')} />
       </div>
   <Footer showArteButton={false} />
-  <AIAssistantWidget page="festival" />
     </div>
   );
 }

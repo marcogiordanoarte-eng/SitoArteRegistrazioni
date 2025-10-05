@@ -7,8 +7,6 @@ import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import "./Artisti.css";
 import { db } from './firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { loadVoiceInventory, planClips, playClips } from './assistantVoice';
-import PageVoiceIntro from './PageVoiceIntro';
 import NavBar from './NavBar';
 import LogoPrompt from './LogoPrompt';
 
@@ -20,17 +18,10 @@ export default function PublicSite() {
   const [logoVideoUrl, setLogoVideoUrl] = useState('');
   const [showOverlay, setShowOverlay] = useState(false);
   const [overlaySource, setOverlaySource] = useState(null); // 'studio' | 'logo'
-  const overlayVideoRef = useRef(null);
-  const [overlayForceMuted, setOverlayForceMuted] = useState(false); // true if browser blocked audio autoplay
-  const [overlayTried, setOverlayTried] = useState(false);
   const [logoDismissed, setLogoDismissed] = useState(() => {
     try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
   });
-  const spokeWelcomeRef = useRef(false);
-  const welcomeCancelRef = useRef(null);
-
-  // Frase estesa che desideri registrare: se esiste un sample identico verrà usata, altrimenti tenta match parziale.
-  const HOME_FULL_INTRO = "Ciao io sono Sounds, l'intelligenza artificiale di Arte Registrazioni! Scopri i nostri artisti, ascolta la loro musica e vivi l'esperienza unica di questo sito! Utilizza il menu per navigare tra le pagine e accedere a tutte le funzionalità! Se hai bisogno sono qui per aiutarti, basta chiedere!";
+  // Nessuna intro vocale o AI: rimosso su richiesta
 
   // Carica homeVideoUrl e studioVideoUrl da Firestore (real-time)
   useEffect(() => {
@@ -59,16 +50,6 @@ export default function PublicSite() {
       try { localStorage.setItem('ar_logo_clicked','1'); } catch {}
       setLogoDismissed(true);
     }
-    setTimeout(() => {
-      const v = overlayVideoRef.current; if (!v) return;
-      try {
-        v.muted = false; v.volume = 1;
-        v.play().then(()=>{ setOverlayForceMuted(false); setOverlayTried(true); }).catch(()=>{
-          // fallback muted
-          try { v.muted = true; v.volume = 0; setOverlayForceMuted(true); v.play().catch(()=>{}); setOverlayTried(true); } catch {}
-        });
-      } catch {}
-    }, 40);
   };
   const openStudioOverlay = () => {
     try {
@@ -80,15 +61,6 @@ export default function PublicSite() {
     } catch {}
     setOverlaySource('studio');
     setShowOverlay(true);
-    setTimeout(() => {
-      const v = overlayVideoRef.current; if (!v) return;
-      try {
-        v.muted = false; v.volume = 1;
-        v.play().then(()=>{ setOverlayForceMuted(false); setOverlayTried(true); }).catch(()=>{
-          try { v.muted = true; v.volume = 0; setOverlayForceMuted(true); v.play().catch(()=>{}); setOverlayTried(true); } catch {}
-        });
-      } catch {}
-    }, 40);
   };
   // Quando si chiude l'overlay, riattiva il video principale ma lascia sempre in mute
   const closeOverlay = () => {
@@ -150,7 +122,6 @@ export default function PublicSite() {
           controls
         />
   <h1 className="publicsite-title">Benvenuto su Arte Registrazioni</h1>
-  <PageVoiceIntro pageKey="home" transcript={HOME_FULL_INTRO} pageText={HOME_FULL_INTRO} delayMs={600} />
         <p className="publicsite-desc">
           Scopri i nostri artisti, ascolta la loro musica e vivi l'esperienza unica di Arte Registrazioni.<br />
           Utilizza il menu per navigare tra le pagine e accedere a tutte le funzionalità.

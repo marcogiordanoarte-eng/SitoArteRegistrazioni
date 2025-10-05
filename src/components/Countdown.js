@@ -5,12 +5,10 @@ import YouTubeButton from './YouTubeButton';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
 import LogoPrompt from './LogoPrompt';
-import AIAssistantWidget from './AIAssistantWidget';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import { doc, collection, onSnapshot } from 'firebase/firestore';
 import './Artisti.css';
 import { db } from './firebase';
-import PageVoiceIntro from './PageVoiceIntro';
 
 function toMillis(ts) {
   if (!ts) return null;
@@ -45,7 +43,6 @@ export default function Countdown() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const promoRef = React.useRef(null);
-  const [overlayForceMuted, setOverlayForceMuted] = useState(false);
   const [logoDismissed, setLogoDismissed] = useState(() => {
     try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
   });
@@ -200,7 +197,7 @@ export default function Countdown() {
   return (
     <div className="publicsite-bg page-countdown">
       <Link to="/login" className="dash-badge">Dashboard</Link>
-      <PageVoiceIntro pageKey="countdown" transcript="Pagina Countdown. Segui le prossime uscite e preparati a nuove pubblicazioni musicali." pageText="Countdown nuove uscite" delayMs={700} />
+  {/* Intro vocale rimossa */}
   <div className="logo-wrapper" style={{ cursor: 'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} openOverlay('logo'); }} title="Video Logo">
     <LogoPrompt show={!showOverlay && !logoDismissed} text="Premi" position="top" />
         <div className="logo-stack">
@@ -267,7 +264,6 @@ export default function Countdown() {
   <BrandButton onClick={() => openOverlay('studio')} />
       </div>
   <Footer showArteButton={false} />
-  <AIAssistantWidget page="countdown" />
     </div>
   );
 }
