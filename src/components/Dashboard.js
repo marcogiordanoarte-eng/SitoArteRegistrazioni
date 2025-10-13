@@ -348,7 +348,11 @@ function Dashboard() {
             Logout
           </button>
         </div>
-        <div className="dash-user">{user && user.email}</div>
+        <div className="dash-user">{user && (<>
+          <span>{user.email}</span>
+          <span style={{ marginLeft: 8, color: '#888', fontSize: 12 }} title="Firebase UID">UID: {user.uid}</span>
+        </>)}
+        </div>
       </header>
   <div className="dash-views">
         <button className="dash-btn dash-btn--ghost" onClick={() => setView('video')}>Gestione Video Studio</button>
