@@ -5,7 +5,7 @@ import './Login.css';
 import { ADMIN_UIDS } from './config';
 
 export default function Login() {
-  const { login, signup, user, loading, logout } = useAuth();
+  const { login, signup, user, loading } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
   const [email, setEmail] = useState('');
@@ -19,6 +19,9 @@ export default function Login() {
       if (ADMIN_UIDS.includes(user.uid)) {
         console.info('[Login] Utente admin autenticato, redirect /dashboard');
         navigate('/dashboard');
+      } else {
+        console.info('[Login] Utente artista autenticato, redirect /artist-dashboard');
+        navigate('/artist-dashboard');
       }
     }
   }, [user, loading, navigate]);
@@ -33,7 +36,7 @@ export default function Login() {
       } else {
         await login(email.trim(), password);
       }
-      navigate('/dashboard');
+  // Il redirect viene gestito nel useEffect in base a user/admin
     } catch (err) {
       setError(err.message || 'Errore autenticazione');
     } finally {
@@ -56,9 +59,9 @@ export default function Login() {
       <form onSubmit={handleSubmit} className="login-form">
         <h2 className="login-title">{mode === 'login' ? 'Accedi' : 'Registrati'}</h2>
         {user && !ADMIN_UIDS.includes(user.uid) && (
-          <div className="login-error" style={{ background: 'rgba(0,0,0,0.4)', padding: '8px 10px', borderRadius: 8, marginBottom: 16 }}>
-            <div style={{ marginBottom: 8 }}>Il tuo account non è abilitato come admin. Contatta l'amministratore per ottenere accesso alla dashboard.</div>
-            <button type="button" onClick={logout} className="login-mode-btn" style={{ width: '100%' }}>Logout</button>
+          <div className="login-info" style={{ background: 'rgba(0,0,0,0.35)', padding: '8px 10px', borderRadius: 8, marginBottom: 16 }}>
+            <div style={{ marginBottom: 8 }}>Sei autenticato come artista. Verrai reindirizzato alla tua Dashboard personale.</div>
+            <button type="button" onClick={() => navigate('/artist-dashboard')} className="login-mode-btn" style={{ width: '100%' }}>Apri la mia Dashboard</button>
           </div>
         )}
         <div className="login-mode-switch">

@@ -77,13 +77,30 @@ export default function PublicSite() {
     }, 300);
   };
 
+  // Accessibilità: attiva overlay con tastiera (Enter/Space)
+  const handleLogoKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openLogoOverlay();
+    }
+  };
+
   return (
     <>
-      <Link to="/login" className="dash-badge">Dashboard</Link>
+  <Link to="/artist-dashboard" className="dash-badge" title="La mia Dashboard">Dashboard</Link>
       <div className="publicsite-bg page-home">
-        {/* DISCO ANIMATO SOTTO LE FRECCE */}
-  <div className="logo-wrapper" style={{ cursor: 'pointer', margin: '18px 0 0 0', position:'relative' }} onClick={openLogoOverlay} title="Video Logo">
-    <LogoPrompt show={!showOverlay && !logoDismissed} text="Premi" position="top" />
+    {/* DISCO ANIMATO SOTTO LE FRECCE */}
+  <div
+      className="logo-wrapper"
+      style={{ cursor: 'pointer', margin: '18px 0 0 0', position:'relative' }}
+      onClick={openLogoOverlay}
+      onKeyDown={handleLogoKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label="Apri video logo"
+      title="Video Logo"
+    >
+  <LogoPrompt show={!showOverlay} text="Premi" position="bottom" />
           <div className="logo-stack">
             <img src="/disco.png" alt="Disco" className="disco-img" />
             <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />

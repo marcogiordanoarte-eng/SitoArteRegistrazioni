@@ -20,6 +20,7 @@ import Dashboard from "./Dashboard";
 import Login from "./Login";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { ADMIN_UIDS } from './config';
+import ArtistSelfDashboard from './ArtistSelfDashboard';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -34,6 +35,19 @@ function PrivateRoute({ children }) {
   if (!ADMIN_UIDS.includes(user.uid)) {
     console.warn('[PrivateRoute] Utente autenticato ma NON admin. Redirect a /login', { uid: user.uid, from: location.pathname });
     return <Navigate to="/login" replace state={{ from: location.pathname, reason: 'not-admin' }} />;
+  }
+  return children;
+}
+
+// Rotta protetta per qualsiasi utente autenticato (dashboard personale artista)
+function AuthRoute({ children }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  if (loading) {
+    return <div style={{ color: '#ffd700', textAlign: 'center', marginTop: 80 }}>Verifica sessione...</div>;
+  }
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location.pathname, reason: 'not-auth' }} />;
   }
   return children;
 }
@@ -146,6 +160,7 @@ export default function App() {
             <Route path="/licenza" element={<Licenza />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/artist-dashboard" element={<AuthRoute><ArtistSelfDashboard /></AuthRoute>} />
             <Route path="/download-confirm" element={<DownloadConfirm />} />
             <Route path="/pagamento-esempio" element={<PagamentoEsempio />} />
           </Routes>

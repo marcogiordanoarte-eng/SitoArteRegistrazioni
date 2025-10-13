@@ -68,6 +68,18 @@ export default function NavBar() {
           Contatti
         </Link>
       </div>
+
+      {/* Pulsante blu Dashboard Artista (sempre visibile) */}
+      <div className="nav-row nav-row--single nav-row--tail">
+        <Link
+          to="/artist-dashboard"
+          className="glow-btn glow-btn--blue"
+          title="Dashboard Artista"
+          aria-label="Dashboard Artista"
+        >
+          Dashboard Artista
+        </Link>
+      </div>
     </nav>
   );
 }

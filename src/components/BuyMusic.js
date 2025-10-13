@@ -5,14 +5,14 @@ import YouTubeButton from './YouTubeButton';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
 import './Artisti.css';
-import { db, PROJECT_ID } from './firebase';
+import { db } from './firebase';
 import { collection, doc, onSnapshot, onSnapshot as onDocSnapshot } from 'firebase/firestore';
 
 export default function BuyMusic() {
   // Admin-only draft states removed (not used on public page)
 
   const [genres, setGenres] = useState([]); // [{id, name, coverUrl}]
-  const [genresError, setGenresError] = useState('');
+  // nessun errore mostrato in produzione; rimosso debug
   const logoCandidates = useMemo(() => [
     '/soundslogo.jpg', '/soundslogo.jpeg', '/icons/soundslogo.jpg', '/icons/soundslogo.jpeg',
     '/sounds.png', '/sounds.svg', '/sounds.jpg', '/sounds.jpeg',
@@ -42,24 +42,15 @@ export default function BuyMusic() {
 
   // Load genres in realtime
   useEffect(() => {
-    const unsub = onSnapshot(
-      collection(db, 'buyGenres'),
-      (snap) => {
-        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        // Ordine per inserimento: createdAt asc; i mancanti finiscono in fondo
-        list.sort((a, b) => {
-          const ams = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
-          const bms = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
-          return ams - bms;
-        });
-        setGenres(list);
-        setGenresError('');
-      },
-      (err) => {
-        console.error('[BuyMusic] Errore lettura generi:', err);
-        setGenresError(err?.message || String(err));
-      }
-    );
+    const unsub = onSnapshot(collection(db, 'buyGenres'), (snap) => {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => {
+        const ams = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
+        const bms = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
+        return ams - bms;
+      });
+      setGenres(list);
+    });
     return () => unsub();
   }, []);
 

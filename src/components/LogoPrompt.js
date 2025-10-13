@@ -54,20 +54,20 @@ export default function LogoPrompt({
 
   if (!visible) return null;
 
-  const posStyle = position === 'top' ? { top: '-70px' } : { bottom: '-70px' };
+  const posStyle = position === 'top' ? { top: '-86px' } : { bottom: '-44px' };
   return (
-    <div className="logo-prompt" style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, pointerEvents: 'none', ...posStyle }}>
+    <div className="logo-prompt" style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, pointerEvents: 'none', zIndex: 100, ...posStyle }}>
       <style>{`
         @keyframes lp-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         @keyframes lp-pulse { 0%,100% { box-shadow: 0 0 6px ${accent}, 0 0 18px rgba(255,215,0,0.3); } 50% { box-shadow: 0 0 14px ${accent}, 0 0 28px rgba(255,215,0,0.55); } }
-        .logo-prompt .lp-badge { font-size: 0.78rem; letter-spacing: 1px; font-weight: 700; padding: 6px 14px; border-radius: 18px; background: linear-gradient(145deg, rgba(0,0,0,0.65), rgba(0,0,0,0.2)); border:1px solid ${accent}; color: ${accent}; text-transform: uppercase; animation: lp-pulse 2.2s ease-in-out infinite; backdrop-filter: blur(4px); opacity: 0; animation: lp-pulse 2.2s ease-in-out infinite; transition: opacity .6s ease; }
+        .logo-prompt .lp-badge { font-size: 0.82rem; letter-spacing: 1px; font-weight: 800; padding: 7px 16px; border-radius: 18px; background: linear-gradient(145deg, rgba(0,0,0,0.7), rgba(0,0,0,0.25)); border:1px solid ${accent}; color: ${accent}; text-transform: uppercase; animation: lp-pulse 2.2s ease-in-out infinite; backdrop-filter: blur(4px); opacity: 0; animation: lp-pulse 2.2s ease-in-out infinite; transition: opacity .6s ease; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
         .logo-prompt .lp-chevrons { display:flex; flex-direction:column; align-items:center; gap:2px; }
-        .logo-prompt svg { width: 22px; height: 22px; stroke: ${accent}; stroke-width: 2.2; fill: none; filter: drop-shadow(0 0 4px ${accent}); animation: lp-bounce 1.6s infinite; }
+        .logo-prompt svg { width: 26px; height: 26px; stroke: #ffffff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; fill: none; filter: drop-shadow(0 0 8px rgba(255,215,0,0.65)) drop-shadow(0 0 4px rgba(255,255,255,0.9)); animation: lp-bounce 1.6s infinite; }
         .logo-prompt svg:nth-child(2) { animation-delay: .25s; }
         .logo-prompt svg:nth-child(3) { animation-delay: .5s; }
         .logo-prompt { animation: lp-fadeIn .5s forwards; }
         @keyframes lp-fadeIn { from { opacity:0; } to { opacity:1; } }
-        @media (max-width:600px){ .logo-prompt .lp-badge { font-size: 0.7rem; padding:5px 12px; } .logo-prompt svg { width:18px; height:18px; } }
+        @media (max-width:600px){ .logo-prompt .lp-badge { font-size: 0.74rem; padding:6px 12px; } .logo-prompt svg { width:22px; height:22px; } }
       `}</style>
       {position === 'top' && (
         <div className="lp-chevrons" aria-hidden="true">

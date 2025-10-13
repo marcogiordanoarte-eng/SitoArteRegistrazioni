@@ -65,9 +65,9 @@ export default function ArtistDetail() {
   if (error) return <div style={{ color: 'tomato', textAlign: 'center', marginTop: 80 }}>{error}</div>;
   if (!artist) return null;
   // Usa la QUARTA foto caricata (index 3) come ritratto principale, fallback a photo e poi alla prima.
-  const portraitSrc = (artist.steps && artist.steps[3])
+  const portraitSrc = artist.profileUrl || ((artist.steps && artist.steps[3])
     ? artist.steps[3]
-    : (artist.photo || (artist.steps && artist.steps[0]) || null);
+    : (artist.photo || (artist.steps && artist.steps[0]) || null));
 
   return (
     <div className="publicsite-bg artist-detail" style={{ paddingBottom: 60 }}>
@@ -96,6 +96,47 @@ export default function ArtistDetail() {
           </div>
         )}
         <h1 className="artist-name" style={{ textAlign: 'center', maxWidth: '92vw' }}>{artist.nome || artist.name || 'Artista'}</h1>
+        {/* Social bar */}
+        {(artist.socials && (artist.socials.instagram || artist.socials.youtube || artist.socials.spotify || artist.socials.apple || artist.socials.facebook)) && (
+          <div className="social-bar" style={{ marginTop: 6, marginBottom: 6 }}>
+            {artist.socials.facebook && (
+              <a className="social-btn social-btn--fb" href={artist.socials.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                <span className="social-halo"></span>
+                <img src="/icons/facebook.png" alt="Facebook" />
+                <span className="social-label">Facebook</span>
+              </a>
+            )}
+            {artist.socials.youtube && (
+              <a className="social-btn social-btn--yt" href={artist.socials.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+                <span className="social-halo"></span>
+                <img src="/icons/yt.png" alt="YouTube" />
+                <span className="social-label">YouTube</span>
+              </a>
+            )}
+            {artist.socials.instagram && (
+              <a className="social-btn social-btn--ig" href={artist.socials.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <span className="social-halo"></span>
+                <img src="/icons/instagram.png" alt="Instagram" />
+                <span className="social-label">Instagram</span>
+              </a>
+            )}
+            {artist.socials.spotify && (
+              <a className="social-btn" href={artist.socials.spotify} target="_blank" rel="noopener noreferrer" aria-label="Spotify">
+                <span className="social-halo"></span>
+                <img src="/icons/spotify1.png" alt="Spotify" />
+                <span className="social-label">Spotify</span>
+              </a>
+            )}
+            {artist.socials.apple && (
+              <a className="social-btn" href={artist.socials.apple} target="_blank" rel="noopener noreferrer" aria-label="Apple Music">
+                <span className="social-halo"></span>
+                <img src="/icons/apple3.png" alt="Apple Music" />
+                <span className="social-label">Apple</span>
+              </a>
+            )}
+          </div>
+        )}
+
         {artist.bio && (
           <div className="bio-box" style={{ maxWidth: 860, width: 'min(92vw,860px)', marginTop: 12, lineHeight: 1.55, color: '#fcfbfb', position:'relative', paddingTop: 0 }}>
             <p className="bio-text" style={{ margin: 0, whiteSpace: 'pre-wrap', color: '#fcfbfb', fontSize: '1.02rem' }}>{artist.bio}</p>
@@ -116,6 +157,19 @@ export default function ArtistDetail() {
         )}
 
         {/* Elenco dischi: nuovo ordine 1) Cover 2) Pulsanti 3) Frecce 4) Disco animato */}
+        {/* Spotlight */}
+        {Array.isArray(artist.spotlight) && artist.spotlight.length > 0 && (
+          <div style={{ marginTop: 26, display: 'grid', gridTemplateColumns: '1fr', gap: 10, width:'min(92vw, 560px)' }}>
+            <h3 className="dash-section-title" style={{ textAlign:'center' }}>In evidenza</h3>
+            {artist.spotlight.map((it, i) => (
+              <a key={i} href={it.url} target="_blank" rel="noopener noreferrer" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', borderRadius:10, background:'rgba(0,0,0,0.55)', border:'1px solid rgba(255,255,255,0.08)', color:'#fff', textDecoration:'none' }}>
+                <span style={{ fontWeight:700 }}>{it.title || it.url}</span>
+                <span style={{ color:'#ffd700' }}>→</span>
+              </a>
+            ))}
+          </div>
+        )}
+
         {(artist.albums || []).length > 0 && (
           <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column', gap: 56, alignItems: 'center', width: '100%' }}>
             {(artist.albums || []).map((album, idx) => {

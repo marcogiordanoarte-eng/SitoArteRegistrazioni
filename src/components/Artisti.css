@@ -1150,6 +1150,17 @@ body {
     background: #fffbe6;
     box-shadow: 0 0 32px #ffd700, 0 0 16px #fff;
 }
+
+/* Variante blu per "Dashboard Artista" */
+.glow-btn--blue {
+    background: #1976d2; /* blu accessibile */
+    color: #fff;
+    box-shadow: 0 0 16px rgba(25,118,210,0.6), 0 0 8px rgba(255,255,255,0.2);
+}
+.glow-btn--blue:hover {
+    background: #1e88e5;
+    box-shadow: 0 0 28px rgba(30,136,229,0.8), 0 0 12px rgba(255,255,255,0.3);
+}
 .publicsite-title {
     /* color and backdrop are defined above for readability */
     margin-bottom: 12px;
