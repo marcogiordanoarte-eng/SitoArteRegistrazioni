@@ -673,6 +673,9 @@ body {
     line-height: 0;
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
+    /* Create stacking context so the halo can live behind with z-index:-1 */
+    z-index: 0;
+    overflow: visible;
 }
 .social-btn img {
     width: var(--social-icon-size, 88px);
@@ -680,6 +683,8 @@ body {
     object-fit: contain;
     filter: drop-shadow(0 0 10px rgba(255,255,255,0.22));
     transition: transform 0.12s ease, filter 0.2s ease;
+    position: relative; /* ensure it stacks above the halo */
+    z-index: 1;
 }
 /* Riduci leggermente YouTube per uniformare la percezione visiva */
 .social-btn--yt img {
@@ -697,14 +702,19 @@ body {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: calc(var(--social-icon-size, 88px) + 28px);
-    height: calc(var(--social-icon-size, 88px) + 28px);
+    /* Fit strictly within the icon area to avoid visible glow outside */
+    width: calc(var(--social-icon-size, 88px) - 10px);
+    height: calc(var(--social-icon-size, 88px) - 10px);
     border-radius: 50%;
-    z-index: 2;
-    box-shadow: 0 0 80px 40px #ffd700, 0 0 120px 60px #fff;
-    animation: pulse-glow 1.2s infinite;
+    /* Place the light just behind the icon image (inside the same stacking context) */
+    z-index: 0;
+    pointer-events: none;
+    /* Remove outer box-shadow so nothing bleeds outside */
+    box-shadow: none;
+    /* Soft inner radial light contained within the icon bounds */
     border-radius: 50%;
-    opacity: 0.92;
+    opacity: 0.9;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(255,215,0,0.18) 0%, rgba(255,215,0,0.10) 55%, rgba(0,0,0,0) 100%);
     animation: iconHaloPulse 2.2s ease-in-out infinite;
 }
 /* Colori halo brand */
@@ -719,7 +729,7 @@ body {
 }
 .social-btn:hover .social-halo,
 .social-btn:focus-visible .social-halo {
-    filter: blur(1px);
+    filter: none;
     opacity: 1;
     animation-duration: 1.4s;
 }
@@ -1510,11 +1520,18 @@ body > * {
     position: relative;
     width: 100%;
     aspect-ratio: 1 / 1;
+    min-height: 140px; /* extra fallback to avoid collapse in rare cases */
     max-width: 340px;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 0 36px #ffd700aa, 0 0 12px rgba(255,255,255,0.15);
     background: #000;
+}
+.buy-genre-cover-wrap::before {
+    /* Fallback per browser che non rispettano aspect-ratio su elementi non sostituibili */
+    content: "";
+    display: block;
+    padding-top: 100%;
 }
 .buy-genre-cover-wrap img {
     position: absolute;
@@ -1523,6 +1540,7 @@ body > * {
     height: 100%;
     object-fit: cover;
     object-position: center center;
+    z-index: 1; /* ensure above ::before fallback */
     transition: transform .5s ease, filter .4s ease;
 }
 .buy-genre-card:hover .buy-genre-cover-wrap img { transform: scale(1.07); filter: brightness(1.04) saturate(1.12); }

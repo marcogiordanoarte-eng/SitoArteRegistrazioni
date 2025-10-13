@@ -139,14 +139,37 @@ export default function BuyMusic() {
             <div style={{ color: '#ffd700', textAlign: 'center', marginTop: 24 }}>Nessun genere disponibile al momento.</div>
           ) : (
             <div className="buy-genres-grid">
-              {genres.map(g => (
+              {genres.map(g => {
+                const coverSrc = g.coverUrl || g.cover || g.coverImage || g.cover_image || g.imageUrl || g.image || '/logo.png';
+                return (
                 <div key={g.id} className="buy-genre-card" onClick={() => openGenre(g.id)}>
-                  <div className="buy-genre-cover-wrap">
-                    <img src={g.coverUrl || '/logo.png'} alt={g.name || 'Genere'} loading="lazy" />
+                  <div
+                    className="buy-genre-cover-wrap"
+                    style={{
+                      backgroundImage: `url(${coverSrc})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundColor: '#111',
+                      border: '1px solid #222'
+                    }}
+                  >
+                    <img
+                      src={coverSrc}
+                      alt={g.name || 'Genere'}
+                      loading="lazy"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => { if (e.currentTarget.src !== window.location.origin + '/logo.png') { e.currentTarget.src = '/logo.png'; } }}
+                    />
                   </div>
                   <div className="buy-genre-name">{g.name || 'Genere'}</div>
+                  {process.env.NODE_ENV !== 'production' && (
+                    <div style={{ color:'#999', fontSize:12, marginTop:6, wordBreak:'break-all' }}>
+                      URL cover: {coverSrc}
+                    </div>
+                  )}
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>
