@@ -69,6 +69,7 @@ export const db = getFirestore(app);
 // Usa il bucket di default dal config (appspot.com)
 export const storage = getStorage(app);
 export const STORAGE_BUCKET = firebaseConfig.storageBucket;
+export const PROJECT_ID = firebaseConfig.projectId;
 // Functions (callable)
 export const functions = getFunctions(app);
 // Usa l'emulatore di Storage in sviluppo se richiesto via env

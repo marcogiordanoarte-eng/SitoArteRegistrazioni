@@ -5,7 +5,7 @@ import YouTubeButton from './YouTubeButton';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
 import './Artisti.css';
-import { db } from './firebase';
+import { db, PROJECT_ID } from './firebase';
 import { collection, doc, onSnapshot, onSnapshot as onDocSnapshot } from 'firebase/firestore';
 
 export default function BuyMusic() {
@@ -201,6 +201,7 @@ export default function BuyMusic() {
               Debug generi: count={genres.length} {genres.length>0 && (<>
                 <div>Titoli: {genres.map(g => g.name || '(senza nome)').join(', ')}</div>
               </>)}
+              <div>Firebase projectId: {PROJECT_ID}</div>
             </div>
           )}
         </div>
