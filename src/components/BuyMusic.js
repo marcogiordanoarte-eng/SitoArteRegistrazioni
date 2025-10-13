@@ -12,6 +12,7 @@ export default function BuyMusic() {
   // Admin-only draft states removed (not used on public page)
 
   const [genres, setGenres] = useState([]); // [{id, name, coverUrl}]
+  const [genresError, setGenresError] = useState('');
   const logoCandidates = useMemo(() => [
     '/soundslogo.jpg', '/soundslogo.jpeg', '/icons/soundslogo.jpg', '/icons/soundslogo.jpeg',
     '/sounds.png', '/sounds.svg', '/sounds.jpg', '/sounds.jpeg',
@@ -41,16 +42,24 @@ export default function BuyMusic() {
 
   // Load genres in realtime
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'buyGenres'), (snap) => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Ordine per inserimento: createdAt asc; i mancanti finiscono in fondo
-      list.sort((a, b) => {
-        const ams = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
-        const bms = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
-        return ams - bms;
-      });
-      setGenres(list);
-    });
+    const unsub = onSnapshot(
+      collection(db, 'buyGenres'),
+      (snap) => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Ordine per inserimento: createdAt asc; i mancanti finiscono in fondo
+        list.sort((a, b) => {
+          const ams = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
+          const bms = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
+          return ams - bms;
+        });
+        setGenres(list);
+        setGenresError('');
+      },
+      (err) => {
+        console.error('[BuyMusic] Errore lettura generi:', err);
+        setGenresError(err?.message || String(err));
+      }
+    );
     return () => unsub();
   }, []);
 
@@ -136,7 +145,21 @@ export default function BuyMusic() {
             <strong>Come funziona</strong>: scegli un genere, ascolta l’anteprima di 15s e acquista il brano che preferisci. I prezzi sono indicati accanto ad ogni brano (esempi: € 1,99 singolo, € 9,99 album, € 100 pacchetto). Dopo il pagamento ottieni il download immediato e la licenza d’uso. Per provare una pagina di pagamento funzionante, apri <Link to="/pagamento-esempio" style={{ color: '#ffd700', textDecoration: 'underline' }}>questa demo</Link>.
           </div>
           {genres.length === 0 ? (
-            <div style={{ color: '#ffd700', textAlign: 'center', marginTop: 24 }}>Nessun genere disponibile al momento.</div>
+            <div style={{ color: '#ffd700', textAlign: 'center', marginTop: 24 }}>
+              Nessun genere disponibile al momento.
+              {process.env.NODE_ENV !== 'production' && (
+                <div style={{ marginTop: 10, color: '#bbb', fontSize: 13 }}>
+                  {genresError ? (
+                    <>
+                      <div>Errore Firestore: {genresError}</div>
+                      <div>Controlla le regole di sicurezza e che la collezione "buyGenres" esista.</div>
+                    </>
+                  ) : (
+                    <div>Nessun documento letto (collezione vuota o problemi di permessi).</div>
+                  )}
+                </div>
+              )}
+            </div>
           ) : (
             <div className="buy-genres-grid">
               {genres.map(g => {
@@ -166,10 +189,18 @@ export default function BuyMusic() {
                   {process.env.NODE_ENV !== 'production' && (
                     <div style={{ color:'#999', fontSize:12, marginTop:6, wordBreak:'break-all' }}>
                       URL cover: {coverSrc}
+                      {g?.name ? null : <div style={{color:'#c66'}}>ATTENZIONE: questo documento non ha il campo <code>name</code></div>}
                     </div>
                   )}
                 </div>
               )})}
+            </div>
+          )}
+          {process.env.NODE_ENV !== 'production' && (
+            <div style={{ marginTop: 16, color:'#aaa', fontSize: 12, background:'#121212', border:'1px solid #222', padding:10, borderRadius:8 }}>
+              Debug generi: count={genres.length} {genres.length>0 && (<>
+                <div>Titoli: {genres.map(g => g.name || '(senza nome)').join(', ')}</div>
+              </>)}
             </div>
           )}
         </div>

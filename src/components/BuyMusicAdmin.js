@@ -21,19 +21,26 @@ export default function BuyMusicAdmin() {
 
   useEffect(() => {
     // Legge tutti i generi senza orderBy per includere anche i documenti storici senza createdAt
-    const unsub = onSnapshot(collection(db, 'buyGenres'), (snap) => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Ordine in memoria: createdAt asc, fallback a name/id
-      list.sort((a, b) => {
-        const ams = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
-        const bms = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
-        if (ams !== bms) return ams - bms;
-        const an = (a.name || '').localeCompare(b.name || '');
-        if (an !== 0) return an;
-        return (a.id || '').localeCompare(b.id || '');
-      });
-      setGenres(list);
-    });
+    const unsub = onSnapshot(
+      collection(db, 'buyGenres'),
+      (snap) => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Ordine in memoria: createdAt asc, fallback a name/id
+        list.sort((a, b) => {
+          const ams = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
+          const bms = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
+          if (ams !== bms) return ams - bms;
+          const an = (a.name || '').localeCompare(b.name || '');
+          if (an !== 0) return an;
+          return (a.id || '').localeCompare(b.id || '');
+        });
+        setGenres(list);
+      },
+      (err) => {
+        console.error('[BuyMusicAdmin] Errore lettura generi:', err);
+        alert('Errore nel leggere la lista generi: ' + (err?.message || String(err)));
+      }
+    );
     return () => unsub();
   }, []);
 
