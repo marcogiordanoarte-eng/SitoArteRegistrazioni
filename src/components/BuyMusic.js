@@ -145,21 +145,7 @@ export default function BuyMusic() {
             <strong>Come funziona</strong>: scegli un genere, ascolta l’anteprima di 15s e acquista il brano che preferisci. I prezzi sono indicati accanto ad ogni brano (esempi: € 1,99 singolo, € 9,99 album, € 100 pacchetto). Dopo il pagamento ottieni il download immediato e la licenza d’uso. Per provare una pagina di pagamento funzionante, apri <Link to="/pagamento-esempio" style={{ color: '#ffd700', textDecoration: 'underline' }}>questa demo</Link>.
           </div>
           {genres.length === 0 ? (
-            <div style={{ color: '#ffd700', textAlign: 'center', marginTop: 24 }}>
-              Nessun genere disponibile al momento.
-              {process.env.NODE_ENV !== 'production' && (
-                <div style={{ marginTop: 10, color: '#bbb', fontSize: 13 }}>
-                  {genresError ? (
-                    <>
-                      <div>Errore Firestore: {genresError}</div>
-                      <div>Controlla le regole di sicurezza e che la collezione "buyGenres" esista.</div>
-                    </>
-                  ) : (
-                    <div>Nessun documento letto (collezione vuota o problemi di permessi).</div>
-                  )}
-                </div>
-              )}
-            </div>
+            <div style={{ color: '#ffd700', textAlign: 'center', marginTop: 24 }}>Nessun genere disponibile al momento.</div>
           ) : (
             <div className="buy-genres-grid">
               {genres.map(g => {
@@ -186,24 +172,11 @@ export default function BuyMusic() {
                     />
                   </div>
                   <div className="buy-genre-name">{g.name || 'Genere'}</div>
-                  {process.env.NODE_ENV !== 'production' && (
-                    <div style={{ color:'#999', fontSize:12, marginTop:6, wordBreak:'break-all' }}>
-                      URL cover: {coverSrc}
-                      {g?.name ? null : <div style={{color:'#c66'}}>ATTENZIONE: questo documento non ha il campo <code>name</code></div>}
-                    </div>
-                  )}
                 </div>
               )})}
             </div>
           )}
-          {process.env.NODE_ENV !== 'production' && (
-            <div style={{ marginTop: 16, color:'#aaa', fontSize: 12, background:'#121212', border:'1px solid #222', padding:10, borderRadius:8 }}>
-              Debug generi: count={genres.length} {genres.length>0 && (<>
-                <div>Titoli: {genres.map(g => g.name || '(senza nome)').join(', ')}</div>
-              </>)}
-              <div>Firebase projectId: {PROJECT_ID}</div>
-            </div>
-          )}
+
         </div>
         {/* Anteprima audio non presente in questa lista */}
         <div className="youtube-under-menu">
