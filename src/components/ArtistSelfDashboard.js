@@ -26,10 +26,25 @@ export default function ArtistSelfDashboard() {
     async function load() {
       if (!user) return;
       try {
-        const dref = doc(db, 'artisti', user.uid);
-        const snap = await getDoc(dref);
-        if (mounted && snap.exists()) {
+        // Primo tentativo: doc con uid
+        let dref = doc(db, 'artisti', user.uid);
+        let snap = await getDoc(dref);
+        // Se non esiste, prova a cercare un doc diverso che abbia authUid = user.uid
+        if (!snap.exists()) {
+          // Non abbiamo query server-side semplice senza indicizzazione; fallback: niente.
+          // (Opzionale: potremmo caricare tutti e filtrare, ma evitato per costi.)
+          // Qui assumiamo che la migrazione salvi authUid nel primo login artistico.
+        }
+        if (snap.exists()) {
           const data = snap.data();
+          if (data.authUid && data.authUid !== user.uid) {
+            // Sicurezza: se authUid salvato non coincide, blocca editing
+            console.warn('[ArtistSelfDashboard] authUid mismatch, blocco salvataggio');
+            setMessage('Il tuo account non è autorizzato a modificare questo profilo. Contatta l\'admin.');
+          } else if (!data.authUid) {
+            // Aggiorna silenziosamente
+            try { await setDoc(dref, { authUid: user.uid }, { merge: true }); } catch(_){}
+          }
           setBio(data.bio || '');
           setCoverUrl(data.coverUrl || '');
           setProfileUrl(data.profileUrl || '');
@@ -42,9 +57,12 @@ export default function ArtistSelfDashboard() {
           });
           setSpotlight(Array.isArray(data.spotlight) ? data.spotlight.map(it => ({ title: it.title || '', url: it.url || '' })) : []);
           setWebsite(data.website || '');
+        } else {
+          setMessage('Nessun profilo artista collegato a questo account.');
         }
       } catch (e) {
         console.warn('[ArtistSelfDashboard] load error', e);
+        setMessage('Errore caricamento profilo.');
       } finally {
         mounted = false;
         setLoading(false);

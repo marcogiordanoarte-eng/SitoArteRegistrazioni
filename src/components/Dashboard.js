@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import ArtistPageEditable from "./ArtistPageEditable";
+import { useAuth } from './AuthContext';
 import { storage } from './firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from "./firebase";
-import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
   collection,
@@ -22,9 +22,11 @@ import CountdownAdmin from './CountdownAdmin';
 import DashboardVideoManager from './DashboardVideoManager';
 import DashboardLogoVideoManager from './DashboardLogoVideoManager';
 import ArtistTracksManager from './ArtistTracksManager';
+import { auth, resetPassword } from './firebase';
+import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 
 function Dashboard() {
-  const { logout, user } = useAuth();
+  const { logout, user, changeCurrentUserPassword } = useAuth();
   const navigate = useNavigate();
   const [view, setView] = useState("list"); // aggiunto 'videoLogo'
   const [podItems, setPodItems] = useState([]);
@@ -51,6 +53,19 @@ function Dashboard() {
   const [artists, setArtists] = useState([]);
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [artistLoginCode, setArtistLoginCode] = useState('');
+  const [artistEmail, setArtistEmail] = useState('');
+  const [artistPassword, setArtistPassword] = useState('');
+  const [creatingArtistUser, setCreatingArtistUser] = useState(false);
+  const [artistAuthExists, setArtistAuthExists] = useState(false);
+  const [checkingArtistEmail, setCheckingArtistEmail] = useState(false);
+  const [artistEmailStatusMsg, setArtistEmailStatusMsg] = useState('');
+  const [autoSendReset, setAutoSendReset] = useState(true);
+  const [artistActionMessage, setArtistActionMessage] = useState('');
+  const [artistActionError, setArtistActionError] = useState('');
+  const [adminPwNew, setAdminPwNew] = useState('');
+  const [adminPwConfirm, setAdminPwConfirm] = useState('');
+  const [adminPwMsg, setAdminPwMsg] = useState('');
+  const [adminPwErr, setAdminPwErr] = useState('');
 
   // Sincronizza artisti da Firestore in tempo reale
   useEffect(() => {
@@ -138,8 +153,37 @@ function Dashboard() {
   const handleSelectArtist = (artist) => {
     setSelectedArtist(artist);
     setArtistLoginCode((artist && artist.loginCode) || '');
+    setArtistEmail((artist && (artist.loginEmail || artist.email)) || '');
+    setArtistPassword('');
     setView("edit");
   };
+
+  // Effettua lookup su Auth quando cambia l'email (debounce leggero)
+  useEffect(() => {
+    let active = true;
+    if (!artistEmail || !artistEmail.includes('@')) {
+      setArtistAuthExists(false);
+      setArtistEmailStatusMsg('');
+      return;
+    }
+    setCheckingArtistEmail(true);
+    const t = setTimeout(async () => {
+      try {
+        const methods = await fetchSignInMethodsForEmail(auth, artistEmail.trim());
+        if (!active) return;
+        const exists = methods && methods.length > 0;
+        setArtistAuthExists(exists);
+        setArtistEmailStatusMsg(exists ? 'Utente Auth trovato' : 'Nessun utente Auth per questa email');
+      } catch (e) {
+        if (!active) return;
+        setArtistAuthExists(false);
+        setArtistEmailStatusMsg(e.message || 'Errore verifica email');
+      } finally {
+        if (active) setCheckingArtistEmail(false);
+      }
+    }, 500);
+    return () => { active = false; clearTimeout(t); };
+  }, [artistEmail]);
 
   // Handler per aggiornare artista
   const handleUpdateArtist = async (updatedArtist) => {
@@ -148,7 +192,8 @@ function Dashboard() {
     const payload = { ...updatedArtist };
     const existing = artists.find(a => a.id === updatedArtist.id);
     if (existing && existing.createdAt && !payload.createdAt) payload.createdAt = existing.createdAt;
-    if (artistLoginCode && artistLoginCode.trim()) payload.loginCode = artistLoginCode.trim();
+  if (artistLoginCode && artistLoginCode.trim()) payload.loginCode = artistLoginCode.trim();
+  if (artistEmail && artistEmail.trim()) payload.loginEmail = artistEmail.trim();
     await setDoc(ref, payload, { merge: true });
     // Resta in modalità modifica e mantieni i dati appena inseriti
     setSelectedArtist(updatedArtist);
@@ -357,6 +402,22 @@ function Dashboard() {
         </>)}
         </div>
       </header>
+        {user && (
+          <div style={{margin:'10px 0 20px', padding: '12px 16px', background:'#111', border:'1px solid #333', borderRadius:10, display:'flex', flexDirection:'column', gap:10}}>
+            <strong style={{color:'#ffd700', fontSize:14}}>Cambio password admin (solo per te)</strong>
+            <div style={{display:'flex', flexWrap:'wrap', gap:10}}>
+              <input type="password" placeholder="Nuova password" value={adminPwNew} onChange={e=>setAdminPwNew(e.target.value)} style={{flex:'1 1 200px', minWidth:180, padding:8, borderRadius:8, border:'1px solid #444', background:'#000', color:'#fff'}} />
+              <input type="password" placeholder="Conferma" value={adminPwConfirm} onChange={e=>setAdminPwConfirm(e.target.value)} style={{flex:'1 1 200px', minWidth:180, padding:8, borderRadius:8, border:'1px solid #444', background:'#000', color:'#fff'}} />
+              <button className="dash-small-btn dash-small-btn--primary" disabled={!adminPwNew || adminPwNew.length<6 || adminPwNew!==adminPwConfirm} onClick={async ()=>{
+                setAdminPwMsg(''); setAdminPwErr('');
+                try { await changeCurrentUserPassword(adminPwNew.trim()); setAdminPwMsg('Password aggiornata.'); setAdminPwNew(''); setAdminPwConfirm(''); }
+                catch(e){ setAdminPwErr(e.message||'Errore cambio password'); }
+              }}>Aggiorna</button>
+              <button className="dash-small-btn" onClick={async ()=>{ if(user?.email){ try{ await resetPassword(user.email); setAdminPwMsg('Email reset inviata al tuo indirizzo.'); } catch(e){ setAdminPwErr('Errore invio reset: '+(e.message||e)); } } }}>Invia reset via email</button>
+            </div>
+            {(adminPwMsg || adminPwErr) && <div style={{fontSize:12}}>{adminPwMsg && <span style={{color:'#6fda8b'}}>{adminPwMsg}</span>} {adminPwErr && <span style={{color:'#ff6464'}}>{adminPwErr}</span>}</div>}
+          </div>
+        )}
   <div className="dash-views">
         <button className="dash-btn dash-btn--ghost" onClick={() => setView('video')}>Gestione Video Studio</button>
         <button className="dash-btn dash-btn--ghost" onClick={() => setView('videoLogo')}>Gestione Video Logo</button>
@@ -767,6 +828,86 @@ function Dashboard() {
           {/* Gestione codice login artista e link dedicato */}
           <div style={{ marginTop: 24, padding: 16, border: '1px dashed #444', borderRadius: 10 }}>
             <h4 className="dash-section-title" style={{ marginTop: 0 }}>Accesso Dashboard Artista</h4>
+            <div style={{ display:'flex', flexDirection:'column', gap:12, maxWidth:640, marginBottom:12 }}>
+              <label style={{color:'#ffd700', fontWeight:600, display:'flex', flexDirection:'column', gap:4}}>Email artista
+                <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                  <input type="email" value={artistEmail} onChange={e=>setArtistEmail(e.target.value)} placeholder="email artista" style={{ flex:1, padding:10, borderRadius:8, border:'1px solid #444', background:'#111', color:'#fff' }} />
+                  {artistEmail && (
+                    <span style={{
+                      fontSize:11,
+                      padding:'4px 8px',
+                      borderRadius:20,
+                      background: checkingArtistEmail ? '#333' : (artistAuthExists ? '#0d4d2a' : '#555'),
+                      color: artistAuthExists ? '#6fda8b' : '#ddd',
+                      border: artistAuthExists ? '1px solid #16a34a' : '1px solid #666',
+                      whiteSpace:'nowrap'
+                    }}>
+                      {checkingArtistEmail ? 'Verifica…' : (artistAuthExists ? 'Esiste' : 'Non creato')}
+                    </span>
+                  )}
+                </div>
+                {artistEmailStatusMsg && <div style={{ fontSize:11, color: artistAuthExists ? '#6fda8b' : '#bbb', marginTop:4 }}>{artistEmailStatusMsg}</div>}
+              </label>
+              <label style={{color:'#ffd700', fontWeight:600}}>Password iniziale (solo per creare/reset manuale)
+                <input type="text" value={artistPassword} onChange={e=>setArtistPassword(e.target.value)} placeholder="Nuova password (min 6)" style={{ width:'100%', marginTop:6, padding:10, borderRadius:8, border:'1px solid #444', background:'#111', color:'#fff' }} />
+              </label>
+              <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+                <button className="dash-small-btn dash-small-btn--primary" disabled={creatingArtistUser || !artistEmail || artistPassword.length<6} onClick={async ()=>{
+                  setArtistActionMessage('');
+                  setArtistActionError('');
+                  try {
+                    setCreatingArtistUser(true);
+                    const preExists = artistAuthExists; // stato prima
+                    await createUserWithEmailAndPassword(auth, artistEmail.trim(), artistPassword.trim());
+                    setArtistAuthExists(true);
+                    if (!preExists) {
+                      // creato ora
+                      setArtistActionMessage('Utente creato. Ricorda di premere Salva artista.');
+                      if (autoSendReset) {
+                        try {
+                          await resetPassword(artistEmail.trim());
+                          setArtistActionMessage(prev => prev + ' Email reset inviata (l\'artista può impostare una nuova password).');
+                        } catch (re) {
+                          setArtistActionError('Creato ma invio email reset fallito: '+ (re.message||re));
+                        }
+                      }
+                    } else {
+                      setArtistActionMessage('Utente già esistente. Puoi usare Invia email reset se serve.');
+                    }
+                  } catch (e) {
+                    if (e && e.code === 'auth/email-already-in-use') {
+                      setArtistAuthExists(true);
+                      try {
+                        await resetPassword(artistEmail.trim());
+                        setArtistActionMessage('Utente esistente: inviato link reset password.');
+                      } catch (re) {
+                        setArtistActionError('Utente esistente, reset fallito: ' + (re.message||re));
+                      }
+                    } else {
+                      setArtistActionError('Errore creazione: ' + (e.message||e));
+                    }
+                  } finally { setCreatingArtistUser(false); }
+                }}>{creatingArtistUser ? 'Creo...' : (artistAuthExists ? 'Forza / Reset' : 'Crea utente')}</button>
+                <button className="dash-small-btn" disabled={!artistEmail || checkingArtistEmail} onClick={async ()=>{
+                  if (!artistEmail) return;
+                  try { await resetPassword(artistEmail.trim()); alert('Email di reset inviata.'); }
+                  catch(e){ alert('Errore invio reset: '+ (e.message||e)); }
+                }}>Invia email reset</button>
+                <button className="dash-small-btn" type="button" onClick={()=>alert('Per cambiare password usa "Recupera / Reset password" nella pagina di login artista. Per sicurezza non si legge / modifica qui.')}>Info reset password</button>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:4 }}>
+                <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, cursor:'pointer', color:'#ccc' }}>
+                  <input type="checkbox" checked={autoSendReset} onChange={e=>setAutoSendReset(e.target.checked)} />
+                  Invia automaticamente email reset dopo creazione (consigliato)
+                </label>
+              </div>
+              {(artistActionMessage || artistActionError) && (
+                <div style={{ marginTop:6, fontSize:12, lineHeight:1.4 }}>
+                  {artistActionMessage && <div style={{ color:'#6fda8b' }}>{artistActionMessage}</div>}
+                  {artistActionError && <div style={{ color:'#ff6464' }}>{artistActionError}</div>}
+                </div>
+              )}
+            </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap: 10, alignItems:'center', maxWidth: 640 }}>
               <input
                 type="text"

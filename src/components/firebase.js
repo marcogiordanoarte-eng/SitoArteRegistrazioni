@@ -2,7 +2,7 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
-import { getAuth, connectAuthEmulator, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { getAuth, connectAuthEmulator, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword } from "firebase/auth";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
@@ -132,6 +132,17 @@ export async function loginUser(email, password) {
 
 export async function logoutUser() {
   await signOut(auth);
+}
+
+// Password reset (email link)
+export async function resetPassword(email) {
+  await sendPasswordResetEmail(auth, email);
+}
+
+// Update current user password (requires recent login)
+export async function changeCurrentUserPassword(newPassword) {
+  if (!auth.currentUser) throw new Error('Nessun utente autenticato');
+  await updatePassword(auth.currentUser, newPassword);
 }
 
 // Log (solo sviluppo) per tracciare cambi utente
