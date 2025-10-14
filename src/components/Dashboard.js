@@ -50,6 +50,7 @@ function Dashboard() {
   const [homeVideoUploading, setHomeVideoUploading] = useState(false);
   const [artists, setArtists] = useState([]);
   const [selectedArtist, setSelectedArtist] = useState(null);
+  const [artistLoginCode, setArtistLoginCode] = useState('');
 
   // Sincronizza artisti da Firestore in tempo reale
   useEffect(() => {
@@ -136,6 +137,7 @@ function Dashboard() {
   // Handler per selezionare artista da gestire
   const handleSelectArtist = (artist) => {
     setSelectedArtist(artist);
+    setArtistLoginCode((artist && artist.loginCode) || '');
     setView("edit");
   };
 
@@ -146,6 +148,7 @@ function Dashboard() {
     const payload = { ...updatedArtist };
     const existing = artists.find(a => a.id === updatedArtist.id);
     if (existing && existing.createdAt && !payload.createdAt) payload.createdAt = existing.createdAt;
+    if (artistLoginCode && artistLoginCode.trim()) payload.loginCode = artistLoginCode.trim();
     await setDoc(ref, payload, { merge: true });
     // Resta in modalità modifica e mantieni i dati appena inseriti
     setSelectedArtist(updatedArtist);
@@ -761,6 +764,32 @@ function Dashboard() {
             onSave={handleUpdateArtist}
             onCancel={handleBack}
           />
+          {/* Gestione codice login artista e link dedicato */}
+          <div style={{ marginTop: 24, padding: 16, border: '1px dashed #444', borderRadius: 10 }}>
+            <h4 className="dash-section-title" style={{ marginTop: 0 }}>Accesso Dashboard Artista</h4>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap: 10, alignItems:'center', maxWidth: 640 }}>
+              <input
+                type="text"
+                placeholder="Codice univoco (es. AR-7F29-KQ)"
+                value={artistLoginCode}
+                onChange={(e)=>setArtistLoginCode(e.target.value)}
+                style={{ padding: 10, borderRadius: 8, border: '1px solid #444', background:'#111', color:'#fff' }}
+              />
+              <button className="dash-small-btn" onClick={() => setArtistLoginCode(() => {
+                const rnd = Math.random().toString(36).toUpperCase().slice(2, 6);
+                const rnd2 = Math.random().toString(36).toUpperCase().slice(2, 6);
+                return `AR-${rnd}-${rnd2}`;
+              })}>Genera</button>
+            </div>
+            <div style={{ marginTop: 10, color: '#bbb', fontSize: 13 }}>Ricorda di premere Salva nella scheda artista per salvare il codice.</div>
+            <div style={{ marginTop: 12, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+              <input readOnly value={`${window.location.origin}/artist-login?aid=${encodeURIComponent(selectedArtist.id)}`} style={{ flex: 1, minWidth: 260, padding: 10, borderRadius: 8, border:'1px solid #444', background:'#111', color:'#fff' }} />
+              <button className="dash-small-btn" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/artist-login?aid=${encodeURIComponent(selectedArtist.id)}`); }}>Copia Link</button>
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <a className="dash-small-btn dash-small-btn--primary" href={`/artist-login?aid=${encodeURIComponent(selectedArtist.id)}`} target="_blank" rel="noreferrer">Apri pagina di accesso artista</a>
+            </div>
+          </div>
           <div style={{ marginTop: 40 }}>
             <ArtistTracksManager artist={selectedArtist} />
           </div>

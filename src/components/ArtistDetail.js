@@ -7,6 +7,7 @@ import "./Artisti.css";
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import CustomAudio from './CustomAudio';
+import { Link } from 'react-router-dom';
 
 // Utility: controlla se un URL punta a un file audio/video riproducibile direttamente
 function isPlayableAudioUrl(url) {
@@ -71,6 +72,16 @@ export default function ArtistDetail() {
 
   return (
     <div className="publicsite-bg artist-detail" style={{ paddingBottom: 60 }}>
+      {/* Pulsante blu per Dashboard Artista, visibile solo su pagina artista */}
+      <Link
+        to={`/artist-login?aid=${encodeURIComponent(artist.id || id)}`}
+        className="glow-btn glow-btn--blue"
+        title="Dashboard Artista"
+        aria-label="Dashboard Artista"
+        style={{ position:'fixed', top:12, right:12, zIndex:10001 }}
+      >
+        Dashboard Artista
+      </Link>
       <button
         onClick={() => navigate(-1)}
         aria-label="Torna indietro"
@@ -134,6 +145,13 @@ export default function ArtistDetail() {
                 <span className="social-label">Apple</span>
               </a>
             )}
+          </div>
+        )}
+        {artist.website && (
+          <div style={{ marginTop: 6 }}>
+            <a href={artist.website} target="_blank" rel="noopener noreferrer" className="social-btn" aria-label="Sito web" style={{ textDecoration:'none', color:'#ffd700', fontWeight:700 }}>
+              🌐 Sito web
+            </a>
           </div>
         )}
 

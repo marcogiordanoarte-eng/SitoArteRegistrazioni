@@ -20,8 +20,8 @@ export default function Login() {
         console.info('[Login] Utente admin autenticato, redirect /dashboard');
         navigate('/dashboard');
       } else {
-        console.info('[Login] Utente artista autenticato, redirect /artist-dashboard');
-        navigate('/artist-dashboard');
+        // Non reindirizziamo automaticamente gli artisti: devono usare il login con codice
+        console.info('[Login] Utente autenticato non admin. Vai su /artist-login con il tuo codice.');
       }
     }
   }, [user, loading, navigate]);
@@ -60,8 +60,7 @@ export default function Login() {
         <h2 className="login-title">{mode === 'login' ? 'Accedi' : 'Registrati'}</h2>
         {user && !ADMIN_UIDS.includes(user.uid) && (
           <div className="login-info" style={{ background: 'rgba(0,0,0,0.35)', padding: '8px 10px', borderRadius: 8, marginBottom: 16 }}>
-            <div style={{ marginBottom: 8 }}>Sei autenticato come artista. Verrai reindirizzato alla tua Dashboard personale.</div>
-            <button type="button" onClick={() => navigate('/artist-dashboard')} className="login-mode-btn" style={{ width: '100%' }}>Apri la mia Dashboard</button>
+            <div>Per accedere alla tua dashboard usa il link con codice personale (Dashboard Artista) che ti mandiamo noi.</div>
           </div>
         )}
         <div className="login-mode-switch">

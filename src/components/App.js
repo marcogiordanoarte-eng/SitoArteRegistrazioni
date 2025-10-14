@@ -18,6 +18,7 @@ import Licenza from "./Licenza";
 import PagamentoEsempio from "./PagamentoEsempio";
 import Dashboard from "./Dashboard";
 import Login from "./Login";
+import ArtistLogin from './ArtistLogin';
 import { AuthProvider, useAuth } from "./AuthContext";
 import { ADMIN_UIDS } from './config';
 import ArtistSelfDashboard from './ArtistSelfDashboard';
@@ -159,6 +160,7 @@ export default function App() {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/licenza" element={<Licenza />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/artist-login" element={<ArtistLogin />} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/artist-dashboard" element={<AuthRoute><ArtistSelfDashboard /></AuthRoute>} />
             <Route path="/download-confirm" element={<DownloadConfirm />} />

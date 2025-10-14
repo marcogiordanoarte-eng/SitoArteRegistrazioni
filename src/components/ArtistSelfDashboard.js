@@ -17,6 +17,7 @@ export default function ArtistSelfDashboard() {
   const [profileFile, setProfileFile] = useState(null);
   const [profileUrl, setProfileUrl] = useState('');
   const [socials, setSocials] = useState({ instagram: '', youtube: '', spotify: '', apple: '', facebook: '' });
+  const [website, setWebsite] = useState('');
   const [spotlight, setSpotlight] = useState([]); // [{title,url}]
   const [message, setMessage] = useState('');
 
@@ -40,6 +41,7 @@ export default function ArtistSelfDashboard() {
             facebook: data.socials?.facebook || ''
           });
           setSpotlight(Array.isArray(data.spotlight) ? data.spotlight.map(it => ({ title: it.title || '', url: it.url || '' })) : []);
+          setWebsite(data.website || '');
         }
       } catch (e) {
         console.warn('[ArtistSelfDashboard] load error', e);
@@ -85,6 +87,7 @@ export default function ArtistSelfDashboard() {
           facebook: (socials.facebook||'').trim(),
         },
         spotlight: cleanSpotlight,
+        website: (website || '').trim(),
       }, { merge: true });
       setCoverUrl(newCoverUrl);
       setProfileUrl(newProfileUrl);
@@ -152,6 +155,9 @@ export default function ArtistSelfDashboard() {
           </label>
           <label style={{color:'#ccc'}}>Facebook URL
             <input type="url" value={socials.facebook} onChange={e=>setSocials(s=>({...s, facebook:e.target.value}))} placeholder="https://facebook.com/..." style={{width:'100%', padding:10, borderRadius:8, border:'1px solid #333', background:'#111', color:'#fff', marginTop:6}} />
+          </label>
+          <label style={{color:'#ccc'}}>Sito web
+            <input type="url" value={website} onChange={e=>setWebsite(e.target.value)} placeholder="https://esempio.com" style={{width:'100%', padding:10, borderRadius:8, border:'1px solid #333', background:'#111', color:'#fff', marginTop:6}} />
           </label>
         </div>
       </div>
