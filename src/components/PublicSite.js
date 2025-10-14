@@ -87,7 +87,7 @@ export default function PublicSite() {
 
   return (
     <>
-  <Link to="/artist-dashboard" className="dash-badge" title="La mia Dashboard">Dashboard</Link>
+  <Link to="/login" className="dash-badge" title="Dashboard">Dashboard</Link>
       <div className="publicsite-bg page-home">
     {/* DISCO ANIMATO SOTTO LE FRECCE */}
   <div
