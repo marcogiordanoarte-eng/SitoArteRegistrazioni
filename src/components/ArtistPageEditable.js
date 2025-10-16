@@ -514,7 +514,9 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
       form.append('Content-Type', contentType || 'application/octet-stream');
     }
   // Aggiungi un token di download Firebase in metadata, così getDownloadURL funziona subito
-  const token = (self.crypto && self.crypto.randomUUID) ? self.crypto.randomUUID() : (Math.random().toString(36).slice(2) + Date.now());
+    const token = (typeof window !== 'undefined' && window.crypto && typeof window.crypto.randomUUID === 'function')
+      ? window.crypto.randomUUID()
+      : (Math.random().toString(36).slice(2) + Date.now());
   form.append('x-goog-meta-firebaseStorageDownloadTokens', token);
   // Imposta status desiderato (201 o 204); 201 permette XML response
   form.append('success_action_status', '201');
