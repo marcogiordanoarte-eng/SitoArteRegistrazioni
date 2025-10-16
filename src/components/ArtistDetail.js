@@ -207,7 +207,7 @@ export default function ArtistDetail() {
               const ytBtn = album.buttons?.find(b => (b.name || '').toLowerCase().includes('youtube'));
               const downloadBtn = album.buttons?.find(b => (b.name || '').toLowerCase().includes('download'));
               const isPlaying = !!(audioRefs.current[idx]?.element && !audioRefs.current[idx].element.paused);
-              const btnCount = 1 /* play */ + (spotifyBtn?1:0) + (appleBtn?1:0) + (ytBtn?1:0) + ((album.paymentLinkUrl || album.paypalHostedButtonId || downloadBtn)?1:0);
+              const btnCount = 1 /* play */ + (spotifyBtn?1:0) + (appleBtn?1:0) + (ytBtn?1:0) + ((album.paymentLinkUrl || downloadBtn)?1:0);
               return (
                 <div
                   key={idx}
@@ -309,20 +309,8 @@ export default function ArtistDetail() {
                     {spotifyBtn && <a className="icon-cell pulse-on-hover" onPointerDown={showLabelHint} href={spotifyBtn.link} target="_blank" rel="noopener noreferrer" aria-label="Spotify" data-label="Spotify"><img src="/icons/spotify1.png" alt="Spotify" /></a>}
                     {appleBtn && <a className="icon-cell pulse-on-hover" onPointerDown={showLabelHint} href={appleBtn.link} target="_blank" rel="noopener noreferrer" aria-label="Apple Music" data-label="Apple Music"><img src="/icons/apple3.png" alt="Apple Music" /></a>}
                     {ytBtn && <a className="icon-cell pulse-on-hover" onPointerDown={showLabelHint} href={ytBtn.link} target="_blank" rel="noopener noreferrer" aria-label="YouTube" data-label="YouTube"><img src="/icons/youtube2.png" alt="YouTube" /></a>}
-                    {album.paymentLinkUrl ? (
+                    {album.paymentLinkUrl && (
                       <a className="icon-cell icon-cell--download pulse-on-hover" onPointerDown={showLabelHint} href={album.paymentLinkUrl} target="_blank" rel="noopener noreferrer" aria-label="Buy & Download" data-label="Buy & Download" data-price={priceLabel}><img src="/icons/download5.png" alt="Buy & Download" /></a>
-                    ) : (
-                      <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top" className="icon-cell icon-cell--download pulse-on-hover" style={{ display: 'inline-flex' }} onPointerDown={showLabelHint} aria-label="Buy & Download" data-label="Buy & Download" data-price={priceLabel}>
-                        <input type="hidden" name="cmd" value="_s-xclick" />
-                        <input type="hidden" name="hosted_button_id" value={album.paypalHostedButtonId || (isSingle ? '5CGE5SB2DM2G2' : 'P7FKWUEHQGCFE')} />
-                        <input type="hidden" name="currency_code" value="EUR" />
-                        <input type="hidden" name="custom" value={`${artist.id || ''}:${idx}`} />
-                        <input type="hidden" name="return" value={(typeof window !== 'undefined' ? window.location.origin : '') + `/download-confirm?cm=${encodeURIComponent(`${artist.id || ''}:${idx}`)}`} />
-                        <input type="hidden" name="cancel_return" value={(typeof window !== 'undefined' ? window.location.origin : '') + '/artisti'} />
-                        <button type="submit" title="Paga con PayPal" style={{ background: 'transparent', border: 'none', padding: 0, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', cursor: 'pointer' }}>
-                          <img src="/icons/download5.png" alt="Buy & Download" />
-                        </button>
-                      </form>
                     )}
                   </div>
                   {/* 3) Navigazione tracce */}

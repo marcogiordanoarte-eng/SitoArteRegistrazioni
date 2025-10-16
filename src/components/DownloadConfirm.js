@@ -14,10 +14,13 @@ function useQuery() {
 
 const DownloadConfirm = () => {
   const query = useQuery();
-  const custom = query.get("cm") || query.get("custom"); // PayPal può restituire custom oppure lo passiamo noi come query
+  const custom = query.get("cm") || query.get("custom"); // 'custom' legacy support; preferisci 'cm'
   const direct = query.get("dl"); // Fallback diretto: URL di download passato in query (per test Stripe Payment Link)
   const direct64 = query.get("dl64"); // Variante base64url per evitare validazioni Stripe su URL annidati
-  // custom formattato come: artistId:albumIndex
+  // Per BuyMusic (Stripe Payment Link) possiamo passare gid/tid per recuperare downloadLink dalla collezione buyGenres/{gid}/tracks/{tid}
+  const gid = query.get('gid');
+  const tid = query.get('tid');
+  // custom formattato come: artistId:albumIndex (per pagina artista)
   const [artistId, albumIndexStr] = (custom || ":").split(":");
   const albumIndex = Number.isFinite(Number(albumIndexStr)) ? Number(albumIndexStr) : null;
   // Nota: per semplificare e restare client-side, non verifichiamo la transazione.
@@ -46,21 +49,37 @@ const DownloadConfirm = () => {
             console.warn('DownloadConfirm: impossibile decodificare dl64', e);
           }
         }
-        if (!artistId || albumIndex === null) return;
-        const ref = doc(db, "artisti", artistId);
-        const snap = await getDoc(ref);
-        if (!snap.exists()) return;
-        const data = snap.data();
-        const album = (data.albums || [])[albumIndex];
-        const link = album && album.downloadLink;
-        if (mounted && link) setDownloadHref(link);
+        // 1) Priorità: percorso BuyMusic se presente (gid/tid)
+        if (gid && tid) {
+          try {
+            const ref2 = doc(db, 'buyGenres', gid, 'tracks', tid);
+            const snap2 = await getDoc(ref2);
+            if (snap2.exists()) {
+              const data2 = snap2.data();
+              const link2 = data2?.downloadLink;
+              if (mounted && link2) { setDownloadHref(link2); return; }
+            }
+          } catch (e) {
+            console.warn('DownloadConfirm: errore lookup buyGenres', e);
+          }
+        }
+        // 2) Percorso artisti con custom=artistId:albumIndex
+        if (artistId && albumIndex !== null) {
+          const ref = doc(db, "artisti", artistId);
+          const snap = await getDoc(ref);
+          if (!snap.exists()) return;
+          const data = snap.data();
+          const album = (data.albums || [])[albumIndex];
+          const link = album && album.downloadLink;
+          if (mounted && link) setDownloadHref(link);
+        }
       } catch (e) {
         console.warn("DownloadConfirm: impossibile ottenere link privato", e);
       }
     }
     fetchLink();
     return () => { mounted = false; };
-  }, [artistId, albumIndex, direct, direct64]);
+  }, [artistId, albumIndex, direct, direct64, gid, tid]);
 
   const navigate = useNavigate();
   return (

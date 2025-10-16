@@ -66,6 +66,13 @@ function Dashboard() {
   const [adminPwConfirm, setAdminPwConfirm] = useState('');
   const [adminPwMsg, setAdminPwMsg] = useState('');
   const [adminPwErr, setAdminPwErr] = useState('');
+  // removed dedupe logic
+
+  // Helper: normalizza nome per rilevare duplicati
+  const normalizeName = (s) => (s || '').toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
 
   // Sincronizza artisti da Firestore in tempo reale
   useEffect(() => {
@@ -84,6 +91,7 @@ function Dashboard() {
     });
     return () => unsub();
   }, []);
+
 
   // (Removed unused buyGenres state/effect; BuyMusicAdmin manages its own data)
 
@@ -145,7 +153,24 @@ function Dashboard() {
 
   // Handler per aggiungere un nuovo artista
   const handleAddArtist = async (artist) => {
-    await addDoc(collection(db, "artisti"), { ...artist, createdAt: serverTimestamp() });
+    // Guard: blocca creazione se esiste già un artista con nome normalizzato o email identica
+    const nName = normalizeName(artist.nome || artist.name || '');
+    if (nName) {
+      const dupByName = artists.find(a => normalizeName(a.nome || a.name) === nName);
+      if (dupByName) {
+        alert(`Esiste già un artista con nome simile: "${dupByName.nome}". Modifica quello esistente invece di crearne uno nuovo.`);
+        return;
+      }
+    }
+    const emailToCheck = (artist.loginEmail || artist.email || '').trim().toLowerCase();
+    if (emailToCheck) {
+      const dupByEmail = artists.find(a => ((a.loginEmail || a.email || '').trim().toLowerCase()) === emailToCheck);
+      if (dupByEmail) {
+        alert(`Questa email è già associata all'artista "${dupByEmail.nome}". Evito di creare un duplicato.`);
+        return;
+      }
+    }
+    await addDoc(collection(db, "artisti"), { ...artist, normalizedName: nName || null, createdAt: serverTimestamp() });
     setView("list");
   };
 
@@ -192,8 +217,21 @@ function Dashboard() {
     const payload = { ...updatedArtist };
     const existing = artists.find(a => a.id === updatedArtist.id);
     if (existing && existing.createdAt && !payload.createdAt) payload.createdAt = existing.createdAt;
-  if (artistLoginCode && artistLoginCode.trim()) payload.loginCode = artistLoginCode.trim();
-  if (artistEmail && artistEmail.trim()) payload.loginEmail = artistEmail.trim();
+    // Aggiorna normalizedName per migliorare il rilevamento duplicati
+    if ((payload.nome || payload.name)) {
+      payload.normalizedName = normalizeName(payload.nome || payload.name) || null;
+    }
+    // Guard su email duplicata (solo se cambiata)
+    const emailToCheck = (artistEmail || payload.loginEmail || payload.email || '').trim().toLowerCase();
+    if (emailToCheck) {
+      const dupByEmail = artists.find(a => a.id !== updatedArtist.id && ((a.loginEmail || a.email || '').trim().toLowerCase()) === emailToCheck);
+      if (dupByEmail) {
+        alert(`Email già usata da "${dupByEmail.nome}". Aggiorna l'email o elimina il duplicato prima di salvare.`);
+        return;
+      }
+    }
+    if (artistLoginCode && artistLoginCode.trim()) payload.loginCode = artistLoginCode.trim();
+    if (artistEmail && artistEmail.trim()) payload.loginEmail = artistEmail.trim();
     await setDoc(ref, payload, { merge: true });
     // Resta in modalità modifica e mantieni i dati appena inseriti
     setSelectedArtist(updatedArtist);
@@ -402,6 +440,8 @@ function Dashboard() {
         </>)}
         </div>
       </header>
+
+      {/* Duplicates section removed as requested */}
         {user && (
           <div style={{margin:'10px 0 20px', padding: '12px 16px', background:'#111', border:'1px solid #333', borderRadius:10, display:'flex', flexDirection:'column', gap:10}}>
             <strong style={{color:'#ffd700', fontSize:14}}>Cambio password admin (solo per te)</strong>
@@ -481,6 +521,12 @@ function Dashboard() {
         >
           Impostazioni Sito
         </button>
+        <button
+          className="dash-btn dash-btn--ghost"
+          onClick={() => setView('duplicates')}
+        >
+          Controllo Duplicati
+        </button>
         {/* Voce AI rimossa */}
       </div>
       {/* Removed obsolete buttons: Backfill createdAt & Normalizza ordine */}
@@ -547,6 +593,82 @@ function Dashboard() {
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {view === 'duplicates' && (
+        <div className="dash-list dash-container">
+          <h3 className="dash-section-title">Controllo Duplicati</h3>
+          <p style={{color:'#bbb'}}>Suggerimenti basati su nome normalizzato ed email. Usa Modifica per verificare e <em>Elimina</em> quello non più valido. Non viene effettuata alcuna fusione automatica.</p>
+          {/* Group by normalizedName */}
+          <div style={{marginTop:16}}>
+            <h4 className="dash-section-title" style={{marginTop:0}}>Per Nome</h4>
+            {(() => {
+              const groups = artists.reduce((acc, a) => {
+                const key = (a.normalizedName || (a.nome || a.name || '')).toString().toLowerCase()
+                  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                  .replace(/[^a-z0-9]+/g, '-')
+                  .replace(/(^-|-$)+/g, '') || '(vuoto)';
+                acc[key] = acc[key] || [];
+                acc[key].push(a);
+                return acc;
+              }, {});
+              const dups = Object.entries(groups).filter(([, list]) => list.length > 1);
+              if (dups.length === 0) return <div style={{color:'#8f8'}}>Nessun sospetto duplicato per nome.</div>;
+              return (
+                <ul>
+                  {dups.map(([key, list]) => (
+                    <li key={key} className="dash-item">
+                      <div style={{fontWeight:'bold'}}>"{key}"</div>
+                      <ul style={{marginTop:8}}>
+                        {list.map(a => (
+                          <li key={a.id} style={{display:'flex', alignItems:'center', gap:8, padding:'6px 0'}}>
+                            <span>{a.nome || a.name} <span style={{color:'#888'}}>({a.id})</span></span>
+                            {a.loginEmail || a.email ? <span style={{color:'#bbb'}}>{(a.loginEmail || a.email)}</span> : null}
+                            <button className="dash-small-btn dash-small-btn--primary" onClick={() => handleSelectArtist(a)}>Modifica</button>
+                            <button className="dash-small-btn dash-small-btn--danger" onClick={() => { if(window.confirm(`Eliminare definitivamente "${a.nome}"?`)) handleDeleteArtist(a.id); }}>Elimina</button>
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
+          </div>
+          {/* Group by email */}
+          <div style={{marginTop:24}}>
+            <h4 className="dash-section-title">Per Email</h4>
+            {(() => {
+              const groups = artists.reduce((acc, a) => {
+                const key = ((a.loginEmail || a.email || '').trim().toLowerCase()) || '(vuota)';
+                acc[key] = acc[key] || [];
+                acc[key].push(a);
+                return acc;
+              }, {});
+              const dups = Object.entries(groups)
+                .filter(([key, list]) => key !== '(vuota)' && list.length > 1);
+              if (dups.length === 0) return <div style={{color:'#8f8'}}>Nessun sospetto duplicato per email.</div>;
+              return (
+                <ul>
+                  {dups.map(([key, list]) => (
+                    <li key={key} className="dash-item">
+                      <div style={{fontWeight:'bold'}}>{key}</div>
+                      <ul style={{marginTop:8}}>
+                        {list.map(a => (
+                          <li key={a.id} style={{display:'flex', alignItems:'center', gap:8, padding:'6px 0'}}>
+                            <span>{a.nome || a.name} <span style={{color:'#888'}}>({a.id})</span></span>
+                            <button className="dash-small-btn dash-small-btn--primary" onClick={() => handleSelectArtist(a)}>Modifica</button>
+                            <button className="dash-small-btn dash-small-btn--danger" onClick={() => { if(window.confirm(`Eliminare definitivamente "${a.nome}"?`)) handleDeleteArtist(a.id); }}>Elimina</button>
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
+          </div>
         </div>
       )}
 

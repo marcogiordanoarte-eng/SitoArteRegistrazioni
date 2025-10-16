@@ -15,10 +15,7 @@ export default function BuyGenreDetail() {
   const audioRef = useRef(null);
   const [currentPreview, setCurrentPreview] = useState(null);
 
-  // PayPal default buttons (provided by user)
-  const PAYPAL_LINK_ALBUM_9_99 = 'https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=P7FKWUEHQGCFE';
-  const PAYPAL_LINK_SINGLE_1_99 = 'https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5CGE5SB2DM2G2';
-  const PAYPAL_LINK_BUY_100_00 = 'https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=49B6QFGV44SP4';
+  // PayPal rimosso: si usa solo Stripe Payment Link e/o download diretto
 
   useEffect(() => {
     let active = true;
@@ -126,28 +123,7 @@ export default function BuyGenreDetail() {
                   </span>
                 </div>
                 <div className="genre-track-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  {(() => {
-                    // Compute a default PayPal link based on price when none is provided
-                    const parseVal = (v) => {
-                      if (typeof v === 'number' && !Number.isNaN(v)) return v;
-                      if (typeof v === 'string') {
-                        const p = parseFloat(v.replace(',', '.'));
-                        if (Number.isFinite(p)) return p;
-                      }
-                      return null;
-                    };
-                    const approx = (a, b, eps = 0.02) => Math.abs((a ?? 0) - (b ?? 0)) <= eps;
-                    let val = parseVal(t.price);
-                    if (val === null) val = parseVal(genre?.defaultPrice);
-                    let link = '';
-                    if (val !== null) {
-                      if (approx(val, 1.99)) link = PAYPAL_LINK_SINGLE_1_99;
-                      else if (approx(val, 9.99)) link = PAYPAL_LINK_ALBUM_9_99;
-                      else if (approx(val, 100)) link = PAYPAL_LINK_BUY_100_00;
-                    }
-                    // Attach to element dataset for potential analytics/debug (no visual change)
-                    return <span style={{ display: 'none' }} data-default-paypal-link={link || undefined} />;
-                  })()}
+                  {/* PayPal rimosso */}
                   {(() => {
                     const parseVal = (v) => {
                       if (typeof v === 'number' && !Number.isNaN(v)) return v;
@@ -187,58 +163,6 @@ export default function BuyGenreDetail() {
                       }}
                     >
                       <img src="/icons/download5.png" alt="Buy & Download" />
-                    </button>
-                  ) : (t.paypalLinkUrl || (() => {
-                    // compute default PayPal link again for this branch
-                    const parseVal = (v) => {
-                      if (typeof v === 'number' && !Number.isNaN(v)) return v;
-                      if (typeof v === 'string') {
-                        const p = parseFloat(v.replace(',', '.'));
-                        if (Number.isFinite(p)) return p;
-                      }
-                      return null;
-                    };
-                    const approx = (a, b, eps = 0.02) => Math.abs((a ?? 0) - (b ?? 0)) <= eps;
-                    let val = parseVal(t.price);
-                    if (val === null) val = parseVal(genre?.defaultPrice);
-                    if (val !== null) {
-                      if (approx(val, 1.99)) return PAYPAL_LINK_SINGLE_1_99;
-                      if (approx(val, 9.99)) return PAYPAL_LINK_ALBUM_9_99;
-                      if (approx(val, 100)) return PAYPAL_LINK_BUY_100_00;
-                    }
-                    return '';
-                  })()) ? (
-                    <button
-                      type="button"
-                      className="icon-cell icon-cell--compact pulse-on-hover"
-                      onClick={() => {
-                        const href = t.paypalLinkUrl || (() => {
-                        const parseVal = (v) => {
-                          if (typeof v === 'number' && !Number.isNaN(v)) return v;
-                          if (typeof v === 'string') {
-                            const p = parseFloat(v.replace(',', '.'));
-                            if (Number.isFinite(p)) return p;
-                          }
-                          return null;
-                        };
-                        const approx = (a, b, eps = 0.02) => Math.abs((a ?? 0) - (b ?? 0)) <= eps;
-                        let val = parseVal(t.price);
-                        if (val === null) val = parseVal(genre?.defaultPrice);
-                        if (val !== null) {
-                          if (approx(val, 1.99)) return PAYPAL_LINK_SINGLE_1_99;
-                          if (approx(val, 9.99)) return PAYPAL_LINK_ALBUM_9_99;
-                          if (approx(val, 100)) return PAYPAL_LINK_BUY_100_00;
-                        }
-                        return '';
-                        })();
-                        if (href) {
-                          try { window.location.assign(href); } catch { try { window.location.href = href; } catch {} }
-                        }
-                      }}
-                      title="PayPal & Download"
-                      aria-label="PayPal & Download"
-                    >
-                      <img src="/icons/download5.png" alt="PayPal & Download" />
                     </button>
                   ) : t.downloadLink ? (
                     <button

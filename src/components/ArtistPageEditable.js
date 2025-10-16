@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import "./Artisti.css";
 // Reintroduciamo solo l'upload verso Firebase Storage al momento del salvataggio
-import { storage, functions, auth } from "./firebase";
+import { storage, functions, auth, STORAGE_BUCKET } from "./firebase";
 import { httpsCallable } from "firebase/functions";
 import Icon from "./Icon";
 import { ref, uploadBytesResumable, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -204,21 +204,9 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
       if (auth && auth.currentUser) {
         try {
           if (process.env.NODE_ENV !== 'production') console.info('[ZIP] Uso Signed POST (policy V4) per', storagePath);
-          await uploadWithSignedPost(storagePath, file, metadata.contentType, (pct) => setZipUploadPct(pct || 100));
-          // getDownloadURL può dare 404 per lieve latenza di consistenza: ritenta qualche volta
-          let urlSigned = null;
-          for (let i = 0; i < 5; i++) {
-            try {
-              urlSigned = await getDownloadURL(storageRef);
-              break;
-            } catch (e) {
-              if (String(e?.message || e).includes('404') && i < 4) {
-                await new Promise(r => setTimeout(r, 350 * (i + 1)));
-                continue;
-              }
-              throw e;
-            }
-          }
+          const dlToken = await uploadWithSignedPost(storagePath, file, metadata.contentType, (pct) => setZipUploadPct(pct || 100));
+          // Costruisci direttamente la URL pubblica con token, evitando getDownloadURL (che richiede SDK/rules/App Check)
+          const urlSigned = `https://firebasestorage.googleapis.com/v0/b/${STORAGE_BUCKET}/o/${encodeURIComponent(storagePath)}?alt=media&token=${encodeURIComponent(dlToken)}`;
           setAlbumForm(prev => ({ ...prev, downloadLink: urlSigned }));
           return;
         } catch (eSigned) {
@@ -527,6 +515,7 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
       throw new Error(`Signed POST fallita: ${resp.status} ${txt}`);
     }
     onProgress && onProgress(100);
+    return token;
   }
 
   

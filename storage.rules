@@ -1,10 +1,26 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // ATTENZIONE: Regole aperte SOLO per l'emulatore locale.
-    // Non influisce sulla produzione. Usare solo per sviluppo.
+    // Lettura pubblica dei file statici (immagini, audio, zip): mantenuta per semplicità
     match /{allPaths=**} {
-      allow read, write: if true;
+      allow read: if true;
+    }
+
+    // Scrittura consentita solo ad utenti autenticati nelle cartelle usate dall'app
+    match /{folder}/{rest=**} {
+      allow write: if request.auth != null && (
+        folder in [
+          'artist-photo',
+          'gallery',
+          'album-cover',
+          'album-video',
+          'tracks',
+          'album-zips',
+          'buy',
+          'musica',
+          'site'
+        ]
+      );
     }
   }
 }

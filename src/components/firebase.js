@@ -10,7 +10,10 @@ const firebaseConfig = {
   apiKey: "AIzaSyBOE3Mq6wXNBUWYxUHxq0iBKecjpVWJuCE",
   authDomain: "arteregistrazioni-2025.firebaseapp.com",
   projectId: "arteregistrazioni-2025",
-  // Bucket reale attivo per questo progetto (verificato con gsutil)
+  // Nome BUCKET corretto (non dominio): <project-id>.appspot.com
+  // Nota: usare il nome bucket, non l'host firebasestorage.app
+  // Per i progetti nuovi, il bucket di default è <project-id>.firebasestorage.app
+  // Allineiamo al bucket effettivo per evitare mismatch con Signed POST
   storageBucket: "arteregistrazioni-2025.firebasestorage.app",
   messagingSenderId: "130523873354",
   appId: "1:130523873354:web:eb48aea4dd9446270e66b3",
@@ -70,8 +73,8 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const STORAGE_BUCKET = firebaseConfig.storageBucket;
 export const PROJECT_ID = firebaseConfig.projectId;
-// Functions (callable)
-export const functions = getFunctions(app);
+// Functions (callable) - specifica regione esplicitamente
+export const functions = getFunctions(app, 'us-central1');
 // Usa l'emulatore di Storage in sviluppo se richiesto via env
 if (process.env.REACT_APP_USE_STORAGE_EMULATOR === 'true') {
   try {

@@ -21,9 +21,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-  "voice-backend": "HOST=127.0.0.1 PORT=5005 SIMPLE_TTS_ENABLED=1 python3 ../voice_server.py || HOST=127.0.0.1 PORT=5005 SIMPLE_TTS_ENABLED=1 python ../voice_server.py",
-  "voice-backend-full": "HOST=127.0.0.1 PORT=5005 python3 ../voice_server.py || HOST=127.0.0.1 PORT=5005 python ../voice_server.py",
-  "voice-backend-venv": "HOST=127.0.0.1 PORT=5005 SIMPLE_TTS_ENABLED=1 ../.venv/bin/python ../voice_server.py",
+    "voice-backend": "HOST=127.0.0.1 PORT=5005 SIMPLE_TTS_ENABLED=1 python3 ../voice_server.py || HOST=127.0.0.1 PORT=5005 SIMPLE_TTS_ENABLED=1 python ../voice_server.py",
+    "voice-backend-full": "HOST=127.0.0.1 PORT=5005 python3 ../voice_server.py || HOST=127.0.0.1 PORT=5005 python ../voice_server.py",
+    "voice-backend-venv": "HOST=127.0.0.1 PORT=5005 SIMPLE_TTS_ENABLED=1 ../.venv/bin/python ../voice_server.py",
     "dev:all": "concurrently \"npm:start\" \"npm:voice-backend\""
   },
   "eslintConfig": {
@@ -45,6 +45,7 @@
     ]
   },
   "devDependencies": {
+    "firebase-tools": "^14.20.0",
     "react-scripts": "^5.0.1"
   }
 }

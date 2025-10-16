@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Footer from './Footer';
 import { db, storage } from './firebase';
 import { collection, addDoc, deleteDoc, setDoc, serverTimestamp, doc, onSnapshot } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 export default function BuyMusicAdmin() {
   const [showOverlay, setShowOverlay] = useState(false);
@@ -125,7 +125,6 @@ export default function BuyMusicAdmin() {
         order: 0,
         audioUrl: '',
         paymentLinkUrl: '',
-        paypalLinkUrl: '',
         downloadLink: '',
         sold: false,
         price: (typeof defaultPrice === 'number' && !Number.isNaN(defaultPrice)) ? defaultPrice : null,
@@ -137,11 +136,24 @@ export default function BuyMusicAdmin() {
     }
   };
 
-  const uploadTrackAudio = async (gid, tid, file) => {
+  const uploadTrackAudio = async (gid, tid, file, onProgress) => {
     if (!file) return;
     try {
       const r = ref(storage, `buy/tracks/${gid}_${tid}_${Date.now()}_${file.name}`);
-      await uploadBytes(r, file);
+      try {
+        await new Promise((resolve, reject) => {
+          const task = uploadBytesResumable(r, file);
+          let last = 0;
+          task.on('state_changed', (snap) => {
+            const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+            if (pct !== last) { last = pct; onProgress && onProgress(pct); }
+          }, (err) => reject(err), () => resolve());
+        });
+      } catch (e) {
+        console.warn('[BuyMusicAdmin] resumable audio fallito, uso simple', e?.message || e);
+        await uploadBytes(r, file);
+        onProgress && onProgress(100);
+      }
       const url = await getDownloadURL(r);
       await setDoc(doc(db, 'buyGenres', gid, 'tracks', tid), { audioUrl: url }, { merge: true });
     } catch (e) {
@@ -150,12 +162,25 @@ export default function BuyMusicAdmin() {
     }
   };
 
-  const uploadTrackZip = async (gid, tid, file, setLocalTracks) => {
+  const uploadTrackZip = async (gid, tid, file, setLocalTracks, onProgress) => {
     if (!file) return;
     try {
   const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
       const r = ref(storage, `buy/zips/${gid}_${tid}_${Date.now()}_${safeName}`);
-      await uploadBytes(r, file);
+      try {
+        await new Promise((resolve, reject) => {
+          const task = uploadBytesResumable(r, file);
+          let last = 0;
+          task.on('state_changed', (snap) => {
+            const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+            if (pct !== last) { last = pct; onProgress && onProgress(pct); }
+          }, (err) => reject(err), () => resolve());
+        });
+      } catch (e) {
+        console.warn('[BuyMusicAdmin] resumable zip fallito, uso simple', e?.message || e);
+        await uploadBytes(r, file);
+        onProgress && onProgress(100);
+      }
       const url = await getDownloadURL(r);
       await setDoc(doc(db, 'buyGenres', gid, 'tracks', tid), { downloadLink: url }, { merge: true });
       setLocalTracks(list => list.map(x => x.id === tid ? { ...x, downloadLink: url } : x));
@@ -182,7 +207,6 @@ export default function BuyMusicAdmin() {
         order: Number(t.order) || 0,
         audioUrl: t.audioUrl || '',
         paymentLinkUrl: t.paymentLinkUrl || '',
-        paypalLinkUrl: t.paypalLinkUrl || '',
         downloadLink: t.downloadLink || '',
         sold: !!t.sold,
         price: priceVal
@@ -267,6 +291,9 @@ const miniBtn = { background:'#222', color:'#ffd700', border:'1px solid #555', b
 function GenreTracks({ gid, onUploadAudio, onUploadZip, onSaveTrack }) {
   const [tracks, setTracks] = useState([]);
   const [zipUploading, setZipUploading] = useState({});
+  const [zipPct, setZipPct] = useState({});
+  const [audioUploading, setAudioUploading] = useState({});
+  const [audioPct, setAudioPct] = useState({});
   useEffect(() => {
     // Legge tutti i brani senza orderBy per includere anche quelli storici senza campi ordine
     const unsub = onSnapshot(collection(db, 'buyGenres', gid, 'tracks'), (snap) => {
@@ -288,17 +315,34 @@ function GenreTracks({ gid, onUploadAudio, onUploadZip, onSaveTrack }) {
 
   return (
     <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
-      {tracks.map((t) => (
-        <div key={t.id} style={{ background: '#111', border: '1px solid #333', borderRadius: 10, padding: 10, display: 'grid', gridTemplateColumns: '2fr 90px 1fr 1.1fr 1.1fr 1fr 160px 120px', gap: 8, alignItems: 'center' }}>
+    {tracks.map((t) => (
+  <div key={t.id} style={{ background: '#111', border: '1px solid #333', borderRadius: 10, padding: 10, display: 'grid', gridTemplateColumns: '2fr 90px 1fr 1.1fr 1fr 220px 120px', gap: 8, alignItems: 'center' }}>
           <input type="text" value={t.title || ''} onChange={e => setTracks(list => list.map(x => x.id === t.id ? { ...x, title: e.target.value } : x))} placeholder="Titolo" style={{ padding: 10, borderRadius: 8, border: '1px solid #444', background: '#111', color: '#fff' }} />
           <input type="number" value={t.order ?? 0} onChange={e => setTracks(list => list.map(x => x.id === t.id ? { ...x, order: e.target.value } : x))} placeholder="Ord." style={{ padding: 10, borderRadius: 8, border: '1px solid #444', background: '#111', color: '#fff', width: 90 }} />
           <div>
-            <input id={`audio_${gid}_${t.id}`} type="file" accept="audio/*" style={{ display: 'none' }} onChange={e => onUploadAudio(gid, t.id, e.target.files && e.target.files[0])} />
-            <button className="dash-small-btn dash-small-btn--primary" onClick={() => document.getElementById(`audio_${gid}_${t.id}`).click()}>Audio</button>
+            <input id={`audio_${gid}_${t.id}`} type="file" accept="audio/*" style={{ display: 'none' }} onChange={async e => {
+              const f = e.target.files && e.target.files[0];
+              if (f) {
+                setAudioUploading(p => ({ ...p, [t.id]: true }));
+                setAudioPct(p => ({ ...p, [t.id]: 0 }));
+                await onUploadAudio(gid, t.id, f, (pct) => setAudioPct(p => ({ ...p, [t.id]: pct })));
+                setAudioUploading(p => ({ ...p, [t.id]: false }));
+              }
+              e.target.value='';
+            }} />
+            <button className="dash-small-btn dash-small-btn--primary" onClick={() => document.getElementById(`audio_${gid}_${t.id}`).click()}>
+              {audioUploading[t.id] ? `Audio… ${audioPct[t.id] ?? 0}%` : 'Audio'}
+            </button>
             {t.audioUrl ? <a href={t.audioUrl} target="_blank" rel="noreferrer" style={{ color: '#ffd700', marginLeft: 6 }}>Apri</a> : <span style={{ color: '#888', marginLeft: 6 }}>manca</span>}
           </div>
-          <input type="url" value={t.paymentLinkUrl || ''} onChange={e => setTracks(list => list.map(x => x.id === t.id ? { ...x, paymentLinkUrl: e.target.value } : x))} placeholder="Stripe Payment Link (URL)" style={{ padding: 10, borderRadius: 8, border: '1px solid #444', background: '#111', color: '#fff' }} />
-          <input type="url" value={t.paypalLinkUrl || ''} onChange={e => setTracks(list => list.map(x => x.id === t.id ? { ...x, paypalLinkUrl: e.target.value } : x))} placeholder="PayPal Link (URL)" style={{ padding: 10, borderRadius: 8, border: '1px solid #444', background: '#111', color: '#fff' }} />
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            <input type="url" value={t.paymentLinkUrl || ''} onChange={e => setTracks(list => list.map(x => x.id === t.id ? { ...x, paymentLinkUrl: e.target.value } : x))} placeholder="Stripe Payment Link (URL)" style={{ padding: 10, borderRadius: 8, border: '1px solid #444', background: '#111', color: '#fff' }} />
+            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+              <input type="text" readOnly value={`${window.location.origin}/download-confirm?gid=${gid}&tid=${t.id}`} style={{ flex:1, padding:8, borderRadius:8, border:'1px solid #333', background:'#0b0b0b', color:'#ccc' }} title="Imposta questo URL come Success URL in Stripe Payment Link" />
+              <button className="dash-small-btn" type="button" onClick={() => { const v = `${window.location.origin}/download-confirm?gid=${gid}&tid=${t.id}`; navigator.clipboard.writeText(v); alert('Success URL copiato. Incollalo nel campo success_url del Payment Link su Stripe.'); }}>Copia Success URL</button>
+            </div>
+            <div style={{ fontSize:11, color:'#999' }}>Suggerimento: in Stripe → Payment Links, imposta il “Success URL” su quello sopra per reindirizzare automaticamente alla pagina di download dopo il pagamento.</div>
+          </div>
           <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
             <input type="url" value={t.downloadLink || ''} onChange={e => setTracks(list => list.map(x => x.id === t.id ? { ...x, downloadLink: e.target.value } : x))} placeholder="Link download post-pagamento (opzionale)" style={{ padding: 10, borderRadius: 8, border: '1px solid #444', background: '#111', color: '#fff' }} />
             <div style={{ display:'flex', alignItems:'center', gap:6 }}>
@@ -306,12 +350,15 @@ function GenreTracks({ gid, onUploadAudio, onUploadZip, onSaveTrack }) {
                 const f = e.target.files && e.target.files[0];
                 if (f) {
                   setZipUploading(p => ({ ...p, [t.id]: true }));
-                  await onUploadZip(gid, t.id, f, setTracks);
+                  setZipPct(p => ({ ...p, [t.id]: 0 }));
+                  await onUploadZip(gid, t.id, f, setTracks, (pct) => setZipPct(p => ({ ...p, [t.id]: pct })));
                   setZipUploading(p => ({ ...p, [t.id]: false }));
                 }
                 e.target.value='';
               }} />
-              <button className="dash-small-btn" style={{ background: zipUploading[t.id] ? '#444' : '#222', color:'#ffd700' }} disabled={zipUploading[t.id]} onClick={() => document.getElementById(`zip_${gid}_${t.id}`).click()}>{zipUploading[t.id] ? 'Upload…' : 'ZIP'}</button>
+              <button className="dash-small-btn" style={{ background: zipUploading[t.id] ? '#444' : '#222', color:'#ffd700' }} disabled={zipUploading[t.id]} onClick={() => document.getElementById(`zip_${gid}_${t.id}`).click()}>
+                {zipUploading[t.id] ? `Upload… ${zipPct[t.id] ?? 0}%` : 'ZIP'}
+              </button>
               {t.downloadLink && <a href={t.downloadLink} target="_blank" rel="noreferrer" style={{ color:'#ffd700', fontSize:12 }}>Apri ZIP</a>}
             </div>
           </div>
@@ -343,17 +390,6 @@ function GenreTracks({ gid, onUploadAudio, onUploadZip, onSaveTrack }) {
               title={((tracks.find(x => x.id === t.id) || {}).paymentLinkUrl) ? 'Apri Payment Link in nuova scheda' : 'Imposta prima il Payment Link'}
             >
               Test Payment Link
-            </button>
-            <button
-              className="dash-small-btn"
-              onClick={() => {
-                const link = (tracks.find(x => x.id === t.id) || {}).paypalLinkUrl;
-                if (link) window.open(link, '_blank', 'noopener,noreferrer');
-              }}
-              disabled={!((tracks.find(x => x.id === t.id) || {}).paypalLinkUrl)}
-              title={((tracks.find(x => x.id === t.id) || {}).paypalLinkUrl) ? 'Apri PayPal in nuova scheda' : 'Imposta prima il link PayPal'}
-            >
-              Test PayPal
             </button>
             <button className="dash-small-btn dash-small-btn--primary" onClick={() => onSaveTrack(gid, tracks.find(x => x.id === t.id))}>Salva brano</button>
           </div>

@@ -1,0 +1,23 @@
+{
+  "platforms": {
+    "ios": {
+      "icon": {
+        "sources": [
+          {
+            "src": "public/logo512.png"
+          }
+        ]
+      },
+      "splash": {
+        "sources": [
+          {
+            "src": "public/logo512.png"
+          }
+        ],
+        "padding": 0.15,
+        "backgroundColor": "#000000",
+        "darkBackgroundColor": "#000000"
+      }
+    }
+  }
+}

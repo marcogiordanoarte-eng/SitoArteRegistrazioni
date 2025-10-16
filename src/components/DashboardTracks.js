@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { db, storage } from "./firebase";
 import { collection, doc, onSnapshot, setDoc, addDoc, serverTimestamp, getDocs, writeBatch, deleteDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 export default function DashboardTracks() {
   const [tracks, setTracks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState({});
   const [uploadingAudio, setUploadingAudio] = useState({});
+  const [audioPct, setAudioPct] = useState({});
   const [uploadingZip, setUploadingZip] = useState({});
+  const [zipPct, setZipPct] = useState({});
   const [uploadingPreview, setUploadingPreview] = useState({});
+  const [previewPct, setPreviewPct] = useState({});
   const [creating, setCreating] = useState(false);
   const [dragFull, setDragFull] = useState({});
   const [dragPreview, setDragPreview] = useState({});
@@ -46,7 +49,6 @@ export default function DashboardTracks() {
       await setDoc(doc(db, 'musicaTracks', track.id), {
         title: d.title !== undefined ? d.title : track.title,
         paymentLinkUrl: (d.paymentLinkUrl ?? track.paymentLinkUrl ?? '').trim(),
-        paypalLinkUrl: (d.paypalLinkUrl ?? track.paypalLinkUrl ?? '').trim(),
         downloadLink: (d.downloadLink ?? track.downloadLink ?? '').trim(),
         price: priceVal,
         sold: d.sold !== undefined ? !!d.sold : !!track.sold
@@ -64,7 +66,20 @@ export default function DashboardTracks() {
       setUploadingAudio(p => ({ ...p, [track.id]: true }));
   const safe = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
       const r = ref(storage, `musica/audio/${track.id}_${Date.now()}_${safe}`);
-      await uploadBytes(r, file);
+      try {
+        await new Promise((resolve, reject) => {
+          const task = uploadBytesResumable(r, file);
+          let last=0;
+          task.on('state_changed', (snap) => {
+            const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+            if (pct !== last) { last=pct; setAudioPct(p => ({ ...p, [track.id]: pct })); }
+          }, (err) => reject(err), () => resolve());
+        });
+      } catch (e) {
+        console.warn('[DashboardTracks] resumable audio fallito, uso simple', e?.message || e);
+        await uploadBytes(r, file);
+        setAudioPct(p => ({ ...p, [track.id]: 100 }));
+      }
       const url = await getDownloadURL(r);
       await setDoc(doc(db, 'musicaTracks', track.id), { audioUrl: url }, { merge: true });
     } catch (e) {
@@ -81,7 +96,20 @@ export default function DashboardTracks() {
       setUploadingPreview(p => ({ ...p, [track.id]: true }));
   const safe = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
       const r = ref(storage, `musica/previews/${track.id}_${Date.now()}_${safe}`);
-      await uploadBytes(r, file);
+      try {
+        await new Promise((resolve, reject) => {
+          const task = uploadBytesResumable(r, file);
+          let last=0;
+          task.on('state_changed', (snap) => {
+            const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+            if (pct !== last) { last=pct; setPreviewPct(p => ({ ...p, [track.id]: pct })); }
+          }, (err) => reject(err), () => resolve());
+        });
+      } catch (e) {
+        console.warn('[DashboardTracks] resumable preview fallito, uso simple', e?.message || e);
+        await uploadBytes(r, file);
+        setPreviewPct(p => ({ ...p, [track.id]: 100 }));
+      }
       const url = await getDownloadURL(r);
       await setDoc(doc(db, 'musicaTracks', track.id), { previewAudioUrl: url }, { merge: true });
     } catch (e) {
@@ -100,7 +128,6 @@ export default function DashboardTracks() {
       await addDoc(collection(db, 'musicaTracks'), {
         title: title.trim(),
         paymentLinkUrl: '',
-        paypalLinkUrl: '',
         downloadLink: '',
         audioUrl: '', // full legacy
         fullAudioUrl: '',
@@ -279,7 +306,20 @@ export default function DashboardTracks() {
       setUploadingZip(p => ({ ...p, [track.id]: true }));
   const safe = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
       const r = ref(storage, `musica/zips/${track.id}_${Date.now()}_${safe}`);
-      await uploadBytes(r, file);
+      try {
+        await new Promise((resolve, reject) => {
+          const task = uploadBytesResumable(r, file);
+          let last=0;
+          task.on('state_changed', (snap) => {
+            const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+            if (pct !== last) { last=pct; setZipPct(p => ({ ...p, [track.id]: pct })); }
+          }, (err) => reject(err), () => resolve());
+        });
+      } catch (e) {
+        console.warn('[DashboardTracks] resumable zip fallito, uso simple', e?.message || e);
+        await uploadBytes(r, file);
+        setZipPct(p => ({ ...p, [track.id]: 100 }));
+      }
       const url = await getDownloadURL(r);
       setEditing(prev => ({ ...prev, [track.id]: { ...(prev[track.id]||{}), downloadLink: url } }));
       await setDoc(doc(db, 'musicaTracks', track.id), { downloadLink: url }, { merge: true });
@@ -323,7 +363,7 @@ export default function DashboardTracks() {
                     style={{ border: dragFull[track.id] ? '2px dashed #ffd700' : '2px dashed #333', borderRadius:8, padding:4, display:'flex', flexDirection:'column', alignItems:'stretch', gap:4 }}
                   >
                     <button type="button" onClick={() => document.getElementById(`audio_full_${track.id}`).click()} style={{ background: uploadingAudio[track.id]?'#444':'#222', color:'#ffd700', border:'1px solid #555', borderRadius:6, padding:'6px 8px', cursor: uploadingAudio[track.id]?'default':'pointer', fontWeight:600, fontSize:12 }}>
-                      {uploadingAudio[track.id] ? 'Full…' : 'Full'}
+                      {uploadingAudio[track.id] ? `Full… ${audioPct[track.id] ?? 0}%` : 'Full'}
                     </button>
                     <span style={{ textAlign:'center', fontSize:10, color:'#888' }}>Drag & Drop</span>
                   </div>
@@ -338,7 +378,7 @@ export default function DashboardTracks() {
                     style={{ border: dragPreview[track.id] ? '2px dashed #ffd700' : '2px dashed #333', borderRadius:8, padding:4, display:'flex', flexDirection:'column', alignItems:'stretch', gap:4 }}
                   >
                     <button type="button" onClick={() => document.getElementById(`audio_prev_${track.id}`).click()} style={{ background: uploadingPreview[track.id]?'#444':'#222', color:'#ffd700', border:'1px solid #555', borderRadius:6, padding:'6px 8px', cursor: uploadingPreview[track.id]?'default':'pointer', fontWeight:600, fontSize:12 }}>
-                      {uploadingPreview[track.id] ? 'Prev…' : 'Preview'}
+                      {uploadingPreview[track.id] ? `Prev… ${previewPct[track.id] ?? 0}%` : 'Preview'}
                     </button>
                     <span style={{ textAlign:'center', fontSize:10, color:'#888' }}>Drag & Drop</span>
                   </div>
@@ -346,11 +386,11 @@ export default function DashboardTracks() {
                 </div>
                 <input type="text" value={edit.price ?? (track.price ?? '')} onChange={e => changeField(track,'price', e.target.value)} placeholder="Prezzo" style={{ padding:8, borderRadius:8, border:'1px solid #444', background:'#111', color:'#fff' }} />
                 <input type="url" value={edit.paymentLinkUrl ?? (track.paymentLinkUrl || '')} onChange={e => changeField(track,'paymentLinkUrl', e.target.value)} placeholder="Stripe Link" style={{ padding:8, borderRadius:8, border:'1px solid #444', background:'#111', color:'#fff' }} />
-                <input type="url" value={edit.paypalLinkUrl ?? (track.paypalLinkUrl || '')} onChange={e => changeField(track,'paypalLinkUrl', e.target.value)} placeholder="PayPal Link" style={{ padding:8, borderRadius:8, border:'1px solid #444', background:'#111', color:'#fff' }} />
+                {/* Campo PayPal rimosso */}
                 <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
                   <input type="url" value={edit.downloadLink ?? (track.downloadLink || '')} onChange={e => changeField(track,'downloadLink', e.target.value)} placeholder="Download ZIP" style={{ padding:8, borderRadius:8, border:'1px solid #444', background:'#111', color:'#fff' }} />
                   <input id={`zip_${track.id}`} type="file" accept=".zip,application/zip" style={{ display:'none' }} onChange={e => { const f=e.target.files&&e.target.files[0]; if (f) uploadZip(track,f); e.target.value=''; }} />
-                  <button onClick={() => document.getElementById(`zip_${track.id}`).click()} style={{ background: uploadingZip[track.id]?'#444':'#222', color:'#ffd700', border:'1px solid #555', borderRadius:8, padding:'6px 10px', cursor: uploadingZip[track.id]?'default':'pointer', fontWeight:600 }}>{uploadingZip[track.id]?'ZIP…':'ZIP'}</button>
+                  <button onClick={() => document.getElementById(`zip_${track.id}`).click()} style={{ background: uploadingZip[track.id]?'#444':'#222', color:'#ffd700', border:'1px solid #555', borderRadius:8, padding:'6px 10px', cursor: uploadingZip[track.id]?'default':'pointer', fontWeight:600 }}>{uploadingZip[track.id]?`ZIP… ${zipPct[track.id] ?? 0}%`:'ZIP'}</button>
                 </div>
                 <label style={{ display:'flex', alignItems:'center', gap:6, color:'#ddd', fontSize:12 }}>
                   <input type="checkbox" checked={!!(edit.sold ?? track.sold)} onChange={e => changeField(track,'sold', e.target.checked)} />

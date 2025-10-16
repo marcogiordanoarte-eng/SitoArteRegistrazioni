@@ -15,9 +15,8 @@ const artistExample = {
       linkSpotify: "https://open.spotify.com/album/5tglExKefh0tAMNPHElVnx",
       linkYouTube: "https://youtu.be/On5PFc0DsuQ?si=mv5JZv5VL0TeqXFU",
       linkAppleMusic: "http://itunes.apple.com/album/id/1810964427",
-      prezzo: "9.99",
-  linkPaypal: "https://www.paypal.com/ncp/payment/7HUVXZVRVRF6S",
-      linkStripe: "https://buy.stripe.com/test_urlo"
+    prezzo: "9.99",
+    linkStripe: "https://buy.stripe.com/test_urlo"
     },
     {
       image: "url_immagine_2",
@@ -29,7 +28,6 @@ const artistExample = {
       prezzo: "7.99"
     }
   ],
-  paypalLink: "https://www.paypal.com/ncp/payment/7HUVXZVRVRF6S",
   stripeLink: "https://..."
 };
 

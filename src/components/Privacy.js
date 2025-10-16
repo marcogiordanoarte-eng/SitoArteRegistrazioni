@@ -37,7 +37,7 @@ export default function Privacy() {
           <div className="bio-box" style={{ color: '#fff' }}>
             <p>Questa informativa illustra come trattiamo i dati personali degli utenti che acquistano o interagiscono con il sito di Arte Registrazioni.</p>
             <p><strong>Titolare</strong>: Arte Registrazioni — Partita IVA 12531290018 — contatti sulla pagina <Link to="/contatti">Contatti</Link>.</p>
-            <p><strong>Dati trattati</strong>: dati di contatto forniti dall’utente (es. email), dati tecnici anonimi di navigazione, ed eventuali dati di pagamento gestiti da provider terzi (Stripe, PayPal) su propri sistemi.</p>
+            <p><strong>Dati trattati</strong>: dati di contatto forniti dall’utente (es. email), dati tecnici anonimi di navigazione, ed eventuali dati di pagamento gestiti da provider terzi (Stripe) su propri sistemi.</p>
             <p><strong>Finalità</strong>: evasione degli ordini, assistenza clienti, adempimenti contabili e di legge, sicurezza e prevenzione abusi.</p>
             <p><strong>Base giuridica</strong>: esecuzione di un contratto e adempimenti legali; legittimo interesse per sicurezza/frode; consenso ove richiesto.</p>
             <p><strong>Conservazione</strong>: per il tempo necessario all’erogazione del servizio e adempimenti di legge.</p>

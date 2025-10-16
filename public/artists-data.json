@@ -1,0 +1,43 @@
+[
+  {
+    "id": "artista1",
+    "name": "Marco Giordano",
+    "bio": "È il fondatore di Arte Registrazioni. Musicista e compositore, suona il sax tenore e il pianoforte. Ha suonato in diverse occasioni collaborando con molti artisti. La passione per il jazz si riflette nelle sue opere creando composizioni dinamiche e vibranti. Classe 1981, non lascia mai il suo sax con il quale crea uno stile unico che unisce al classico e diventa tutto suo.",
+    "photo": "Artisti/artista1.jpg",
+    "releases": [
+      { "title": "Urlo", "genre": "Jazz", "cover": "coverArtista1/1.jpg" },
+      { "title": "No Wars", "genre": "Jazz", "cover": "coverArtista1/2.jpg" },
+      { "title": "La Gatta Sul Tetto", "genre": "Jazz", "cover": "coverArtista1/3.jpg" },
+      { "title": "Peace", "genre": "Jazz", "cover": "coverArtista1/4.jpg" },
+      { "title": "I Tuoi Passi", "genre": "Jazz", "cover": "coverArtista1/5.jpg" },
+      { "title": "Oltre", "genre": "Jazz", "cover": "coverArtista1/6.jpg" },
+      { "title": "Eudemonia My Colors Jazz", "genre": "Jazz", "cover": "coverArtista1/7.jpg" },
+      { "title": "My Free Jazz", "genre": "Jazz", "cover": "coverArtista1/8.jpg" },
+      { "title": "Passi", "genre": "Jazz", "cover": "coverArtista1/9.jpg" },
+      { "title": "Raggi Di Sole", "genre": "Jazz", "cover": "coverArtista1/10.jpg" },
+      { "title": "Sensi", "genre": "Jazz", "cover": "coverArtista1/11.jpg" },
+      { "title": "Explosion", "genre": "Jazz", "cover": "coverArtista1/12.jpg" },
+      { "title": "Io Volerò", "genre": "Jazz", "cover": "coverArtista1/13.jpg" }
+    ]
+  },
+  {
+    "id": "artista2",
+    "name": "Art Explorers Jazz Quartet",
+    "bio": "Quartetto jazz sperimentale con Gabriele Tommaso (piano), Michelangelo Tommaso (basso), Davide Fiale (batteria) e Marco Giordano (sax tenore). Composizioni frutto di ricerca sonora e improvvisazione.",
+    "photo": "fotoartista2/foto1.png",
+    "releases": [
+      { "title": "Art Explorers Jazz Quartet", "genre": "Jazz", "cover": "coverArtista2/1.jpg" },
+      { "title": "That's Our World", "genre": "Jazz", "cover": "coverArtista2/2.jpg" }
+    ]
+  },
+  {
+    "id": "artista3",
+    "name": "Beppe Martini",
+    "bio": "Chitarrista che ha suonato con Giorgio Panariello e Zucchero Fornaciari (tour Oro Incenso e Birra). Dal 1990 si dedica a sonorità ambient e club. Dal 2024 incide per Arte Registrazioni.",
+    "photo": "fotoartista3/foto1.jpg",
+    "releases": [
+      { "title": "Respirando un suono", "genre": "Ambient", "cover": "coverArtista3/1.jpg" },
+      { "title": "Seventeen", "genre": "Ambient - Jazz", "cover": "coverArtista3/2.jpg" }
+    ]
+  }
+]

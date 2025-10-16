@@ -107,7 +107,7 @@ export default function Musica() {
           price: priceNum,
           paymentLinkUrl: paymentLink || null,
           previewAudioUrl: t.previewAudioUrl || '',
-          paypalLinkUrl: t.paypalLinkUrl || '',
+          // PayPal rimosso
           downloadLink: t.downloadLink || null,
           sold: !!t.sold
         };
@@ -259,16 +259,8 @@ export default function Musica() {
                           <FaPlayCircle size={isMobile ? 34 : 42} color="#ffd700" style={{ filter: previewId === track.id ? 'drop-shadow(0 0 8px #ffd700)' : 'none' }} />
                         </button>
                       )}
-                      {/* Pulsante acquisto / download (replica logica ArtistDetail: Stripe -> PayPal -> downloadLink -> disabled) */}
+                      {/* Pulsante acquisto / download: Stripe -> downloadLink -> disabled */}
                       {(() => {
-                        const approx = (a,b,eps=0.02)=>Math.abs((Number(a)||0)-(Number(b)||0))<=eps;
-                        const price = Number(track.price)||0;
-                        const hostedSingle = '5CGE5SB2DM2G2';
-                        const hostedAlbum = 'P7FKWUEHQGCFE';
-                        const hostedPack = '49B6QFGV44SP4';
-                        // Decide hosted button id (single default 1.99, album 9.99, pack 100)
-                        let hostedId = hostedSingle;
-                        if (approx(price,9.99)) hostedId = hostedAlbum; else if (approx(price,100)) hostedId = hostedPack;
                         const origin = (typeof window !== 'undefined') ? window.location.origin : '';
                         if (track.sold && track.downloadLink) {
                           return (
@@ -284,14 +276,6 @@ export default function Musica() {
                             </a>
                           );
                         }
-                        // PayPal fallback: usa link diretto se definito paypalLinkUrl altrimenti hosted button form
-                        if (track.paypalLinkUrl) {
-                          return (
-                            <a href={track.paypalLinkUrl} target="_blank" rel="noopener noreferrer" className="icon-cell icon-cell--download pulse-on-hover" aria-label="PayPal & Download" title="PayPal & Download" style={{ textDecoration:'none' }}>
-                              <img src="/icons/download5.png" alt="PayPal & Download" />
-                            </a>
-                          );
-                        }
                         if (track.downloadLink) {
                           return (
                             <a href={track.downloadLink} className="icon-cell icon-cell--download pulse-on-hover" aria-label="Download" title="Download" style={{ textDecoration:'none' }}>
@@ -299,19 +283,10 @@ export default function Musica() {
                             </a>
                           );
                         }
-                        // Hosted button PayPal (form) fallback
                         return (
-                          <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top" className="icon-cell icon-cell--download pulse-on-hover" aria-label="Buy" title="Buy" style={{ display:'inline-flex' }}>
-                            <input type="hidden" name="cmd" value="_s-xclick" />
-                            <input type="hidden" name="hosted_button_id" value={hostedId} />
-                            <input type="hidden" name="currency_code" value="EUR" />
-                            <input type="hidden" name="custom" value={`musica:${track.id}`} />
-                            <input type="hidden" name="return" value={`${origin}/download-confirm?cm=${encodeURIComponent(`musica:${track.id}`)}`} />
-                            <input type="hidden" name="cancel_return" value={`${origin}/musica`} />
-                            <button type="submit" style={{ background:'transparent', border:'none', padding:0, margin:0, width:'100%', height:'100%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                              <img src="/icons/download5.png" alt="Buy" />
-                            </button>
-                          </form>
+                          <button type="button" className="icon-cell icon-cell--download" disabled title="Non disponibile" style={{ opacity: 0.4 }}>
+                            <img src="/icons/download5.png" alt="Non disponibile" />
+                          </button>
                         );
                       })()}
                     </div>
