@@ -222,12 +222,11 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
           setAlbumForm(prev => ({ ...prev, downloadLink: urlSigned }));
           return;
         } catch (eSigned) {
-          console.warn('[ZIP] Signed POST non disponibile/fallita, passo a resumable SDK', eSigned && eSigned.message ? eSigned.message : eSigned);
-          if (useSignedPost) {
-            // In modalità Signed POST forzata non tentiamo SDK per evitare CORS e confusione
-            alert('Upload ZIP tramite Signed POST fallito: ' + (eSigned?.message || eSigned));
-            throw eSigned;
-          }
+          console.warn('[ZIP] Signed POST fallita (stop senza fallback per ZIP):', eSigned && eSigned.message ? eSigned.message : eSigned);
+          // Evitiamo il fallback SDK per gli ZIP, perché spesso è qui che nascono i 403 (CORS/App Check).
+          // Mostriamo l'errore reale del Signed POST così possiamo correggere il problema vero.
+          alert('Upload ZIP tramite Signed POST fallito: ' + (eSigned?.message || eSigned));
+          throw eSigned;
         }
       }
       // 1) Resumable per mostrare progresso, con fallback a Signed POST e poi simple
@@ -505,7 +504,7 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
     const res = await callable({ path: storagePath, contentType: contentType || 'application/octet-stream' });
     const { url, fields } = (res && res.data) || {};
     if (!url || !fields) throw new Error('Policy upload mancante');
-    const form = new FormData();
+  const form = new FormData();
     Object.entries(fields).forEach(([k, v]) => form.append(k, v));
     // La policy contiene una condizione su $Content-Type (starts-with), quindi il campo deve essere presente nel form
     // Alcuni browser impostano automaticamente il Content-Type della parte 'file' ma GCS richiede anche il campo esplicito.
@@ -514,7 +513,12 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
     if (!hasCT) {
       form.append('Content-Type', contentType || 'application/octet-stream');
     }
-    form.append('file', data);
+  // Aggiungi un token di download Firebase in metadata, così getDownloadURL funziona subito
+  const token = (self.crypto && self.crypto.randomUUID) ? self.crypto.randomUUID() : (Math.random().toString(36).slice(2) + Date.now());
+  form.append('x-goog-meta-firebaseStorageDownloadTokens', token);
+  // Imposta status desiderato (201 o 204); 201 permette XML response
+  form.append('success_action_status', '201');
+  form.append('file', data);
     const resp = await fetch(url, { method: 'POST', body: form });
     if (!(resp.status === 204 || resp.status === 201 || resp.ok)) {
       const txt = await resp.text().catch(() => '');

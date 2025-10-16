@@ -8,7 +8,19 @@ import { PassThrough } from 'stream';
 import { spawn } from 'child_process';
 import crypto from 'crypto';
 
-admin.initializeApp();
+// Determina dinamicamente il bucket di default.
+// Nota: per i progetti Firebase nuovi, lo storageBucket è "<project>.firebasestorage.app".
+const PROJECT_ID = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'arteregistrazioni-2025';
+let DEFAULT_BUCKET = `${PROJECT_ID}.appspot.com`;
+try {
+  if (process.env.FIREBASE_CONFIG) {
+    const cfg = JSON.parse(process.env.FIREBASE_CONFIG);
+    if (cfg && cfg.storageBucket) {
+      DEFAULT_BUCKET = cfg.storageBucket; // es. arteregistrazioni-2025.firebasestorage.app
+    }
+  }
+} catch {}
+admin.initializeApp({ storageBucket: DEFAULT_BUCKET });
 const storage = admin.storage();
 const firestore = admin.firestore();
 
@@ -214,15 +226,30 @@ export const getUploadPolicy = functions.https.onCall(async (data, context) => {
   const { path, contentType } = data || {};
   if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Auth richiesta');
   if (!path) throw new functions.https.HttpsError('invalid-argument', 'path richiesto');
-  const bucket = storage.bucket();
-  const file = bucket.file(path);
+  const bucketName = DEFAULT_BUCKET;
+  const bucket = storage.bucket(bucketName);
+  const safePath = String(path).replace(/^\/+/, '');
+  const file = bucket.file(safePath);
+  functions.logger.info('getUploadPolicy request', { bucket: bucket.name, path: safePath, contentType: contentType || 'application/octet-stream' });
   const expires = Date.now() + 10*60*1000;
   try {
-    const [policy] = await file.generateSignedPostPolicyV4({ expires, fields: { 'Content-Type': contentType || 'application/octet-stream' } });
+    // Consenti:
+    // - qualsiasi Content-Type (evita mismatch tra boundary/file.type)
+    // - impostazione del token di download Firebase via metadata (x-goog-meta-firebaseStorageDownloadTokens)
+    // - success_action_status opzionale (201/204)
+    const [policy] = await file.generateSignedPostPolicyV4({
+      expires,
+      conditions: [
+        ["starts-with", "$Content-Type", ""],
+        ["starts-with", "$x-goog-meta-firebaseStorageDownloadTokens", ""],
+        ["starts-with", "$success_action_status", ""],
+      ],
+    });
     return { url: policy.url, fields: policy.fields };
   } catch (e) {
     functions.logger.error('getUploadPolicy error', e);
-    throw new functions.https.HttpsError('internal', 'Errore generazione policy');
+    const msg = (e && e.message) ? e.message : String(e);
+    throw new functions.https.HttpsError('internal', `Errore generazione policy: ${msg}`);
   }
 });
 
