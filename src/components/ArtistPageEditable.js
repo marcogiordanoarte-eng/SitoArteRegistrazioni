@@ -28,7 +28,7 @@ function guessAudioExt(file) {
   return 'mp3';
 }
 
-function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
+function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, hideStripePaymentLink = false, restrictToBioAndPhoto = false }) {
   const useSignedPost = (process.env.REACT_APP_USE_SIGNED_POST || 'false') === 'true';
   // Default a true per bypassare preflight problematici; si può disattivare mettendo REACT_APP_UPLOAD_SIMPLE=false
   const forceSimpleUpload = (process.env.REACT_APP_UPLOAD_SIMPLE || 'true') === 'true';
@@ -163,6 +163,11 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
   // Selettore ZIP con upload diretto (usa File crudo, non dataURL)
   function selectAlbumZip() {
     if (zipUploading) return;
+    // Richiede autenticazione: senza login, la policy firmata non può essere generata
+    if (!(auth && auth.currentUser)) {
+      alert('Per caricare lo ZIP devi prima effettuare il login. Apri la dashboard di amministrazione e accedi con il tuo account.');
+      return;
+    }
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'application/zip,.zip';
@@ -183,6 +188,11 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
         alert(`ZIP troppo grande: ${(file.size/1024/1024).toFixed(1)}MB. Limite ~${(MAX_ZIP/1024/1024)}MB.`);
         return;
       }
+  // Richiede autenticazione: evitiamo di ricadere su SDK (che causerebbe CORS e verrà bloccato dalle regole)
+  if (!(auth && auth.currentUser)) {
+    alert('Accesso richiesto per caricare lo ZIP. Effettua il login e riprova.');
+    return;
+  }
   setZipUploading(true);
   setZipUploadPct(0);
       const artistSlug = slugify(name);
@@ -190,15 +200,75 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
   const storagePath = `album-zips/${artistSlug}/${albumSlug}_${Date.now()}.zip`;
   const storageRef = ref(storage, storagePath);
       const metadata = { contentType: file.type || 'application/zip' };
-  await uploadWithFallback(storageRef, storagePath, file, metadata, (pct) => setZipUploadPct(pct));
+      // 0) Prova prima Signed POST (niente preflight CORS) se possibile
+      if (auth && auth.currentUser) {
+        try {
+          if (process.env.NODE_ENV !== 'production') console.info('[ZIP] Uso Signed POST (policy V4) per', storagePath);
+          await uploadWithSignedPost(storagePath, file, metadata.contentType, (pct) => setZipUploadPct(pct || 100));
+          // getDownloadURL può dare 404 per lieve latenza di consistenza: ritenta qualche volta
+          let urlSigned = null;
+          for (let i = 0; i < 5; i++) {
+            try {
+              urlSigned = await getDownloadURL(storageRef);
+              break;
+            } catch (e) {
+              if (String(e?.message || e).includes('404') && i < 4) {
+                await new Promise(r => setTimeout(r, 350 * (i + 1)));
+                continue;
+              }
+              throw e;
+            }
+          }
+          setAlbumForm(prev => ({ ...prev, downloadLink: urlSigned }));
+          return;
+        } catch (eSigned) {
+          console.warn('[ZIP] Signed POST non disponibile/fallita, passo a resumable SDK', eSigned && eSigned.message ? eSigned.message : eSigned);
+          if (useSignedPost) {
+            // In modalità Signed POST forzata non tentiamo SDK per evitare CORS e confusione
+            alert('Upload ZIP tramite Signed POST fallito: ' + (eSigned?.message || eSigned));
+            throw eSigned;
+          }
+        }
+      }
+      // 1) Resumable per mostrare progresso, con fallback a Signed POST e poi simple
+      try {
+        if (process.env.NODE_ENV !== 'production') console.info('[ZIP] Tentativo upload resumable SDK (potrebbe richiedere CORS)');
+        await new Promise((resolve, reject) => {
+          const task = uploadBytesResumable(storageRef, file, metadata);
+          let lastPct = 0;
+          task.on('state_changed', (snap) => {
+            const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+            if (pct !== lastPct) {
+              lastPct = pct;
+              setZipUploadPct(pct);
+            }
+          }, (err) => {
+            reject(err);
+          }, () => resolve());
+        });
+      } catch (e) {
+        console.warn('[ZIP] resumable fallito, provo Signed POST:', e && e.message ? e.message : e);
+        // 1° fallback: Signed POST (no preflight CORS)
+        try {
+          if (process.env.NODE_ENV !== 'production') console.info('[ZIP] Fallback Signed POST dopo errore resumable');
+          await uploadWithSignedPost(storagePath, file, metadata.contentType, () => {});
+          setZipUploadPct(100);
+        } catch (e2) {
+          console.warn('[ZIP] Signed POST fallita, provo simple raw SDK', e2 && e2.message ? e2.message : e2);
+          // 2° fallback: simple SDK (potrebbe richiedere CORS sul bucket)
+          await uploadBytes(storageRef, file);
+          setZipUploadPct(100);
+        }
+      }
       const url = await getDownloadURL(storageRef);
       setAlbumForm(prev => ({ ...prev, downloadLink: url }));
     } catch (err) {
       console.error('Errore upload ZIP', err);
-      alert('Errore upload ZIP: ' + (err && err.message ? err.message : err));
+      const msg = (err && err.message ? err.message : String(err));
+      const extra = msg.includes('storage/unauthorized') ? '\n\nSuggerimenti:\n- Verifica di essere autenticato nella dashboard.\n- Controlla che il bucket in src/components/firebase.js sia "<project>.appspot.com".\n- Aggiorna le regole di Storage per consentire write agli utenti autenticati su album-zips/*.' : '';
+      alert('Errore upload ZIP: ' + msg + extra);
     } finally {
       setZipUploading(false);
-      setZipUploadPct(0);
     }
   }
 
@@ -437,6 +507,13 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
     if (!url || !fields) throw new Error('Policy upload mancante');
     const form = new FormData();
     Object.entries(fields).forEach(([k, v]) => form.append(k, v));
+    // La policy contiene una condizione su $Content-Type (starts-with), quindi il campo deve essere presente nel form
+    // Alcuni browser impostano automaticamente il Content-Type della parte 'file' ma GCS richiede anche il campo esplicito.
+    // Se non già presente tra i campi firmati, aggiungiamolo noi.
+    const hasCT = Object.keys(fields).some(k => k.toLowerCase() === 'content-type');
+    if (!hasCT) {
+      form.append('Content-Type', contentType || 'application/octet-stream');
+    }
     form.append('file', data);
     const resp = await fetch(url, { method: 'POST', body: form });
     if (!(resp.status === 204 || resp.status === 201 || resp.ok)) {
@@ -548,12 +625,35 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
     setErrorSave(null);
     updateProgress({ done: 0, total: 0, phase: 'Preparazione' });
     try {
-      // Determina se l'album in compilazione contiene dati significativi
+      // In modalità ristretta, salviamo solo bio e foto
+      if (restrictToBioAndPhoto) {
+        updateProgress({ phase: 'Upload foto' });
+        let processedPhoto = photo;
+        if (photo && isDataUrl(photo)) {
+          try {
+            processedPhoto = await ensureUploaded(photo, 'artist-photo', {
+              onProgress: (pct) => {
+                // opzionale: progresso
+              }
+            });
+          } catch (e) {
+            console.error('Errore upload foto (restricted)', e);
+            throw e;
+          }
+        }
+        const payload = { bio, photo: processedPhoto };
+        const maybePromise = artist.id ? onSave({ ...payload, id: artist.id }) : onSave(payload);
+        if (maybePromise && typeof maybePromise.then === 'function') await maybePromise;
+        updateProgress({ phase: 'Completato' });
+        return;
+      }
+
+      // Determina se l'album in compilazione contiene dati significativi (modalità completa)
       const hasAlbumDraft = () => {
         const a = albumForm || {};
         const hasCover = !!a.cover;
         const hasMeta = (a.title && a.title.trim()) || (a.year && String(a.year).trim()) || (a.genre && a.genre.trim());
-        const hasLinks = (a.downloadLink && a.downloadLink.trim()) || (a.paymentLinkUrl && a.paymentLinkUrl.trim()) || (a.paypalHostedButtonId && a.paypalHostedButtonId.trim()) || (a.videoUrl && a.videoUrl.trim());
+  const hasLinks = (a.downloadLink && a.downloadLink.trim()) || (a.paymentLinkUrl && a.paymentLinkUrl.trim()) || (a.videoUrl && a.videoUrl.trim());
         const hasButtons = Array.isArray(a.buttons) && a.buttons.some(b => b && b.link && String(b.link).trim());
         const hasTracks = Array.isArray(a.tracks) && a.tracks.length > 0;
         return !!(hasCover || hasMeta || hasLinks || hasButtons || hasTracks);
@@ -575,7 +675,7 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
   console.log('[saveAll] Tot elementi da processare:', items.length);
       updateProgress({ total: items.length, done: 0, phase: 'Upload' });
 
-      // Inizializza progressi per item
+  // Inizializza progressi per item
       const initMap = {};
       const order = items.map(it => ({ key: it.type, label: it.type }));
       for (const it of items) initMap[it.type] = 0;
@@ -613,7 +713,7 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
         updateProgress({ done });
       }
 
-      // Conversione link audio (gs:// -> https) nei bottoni album e gestione video
+  // Conversione link audio (gs:// -> https) nei bottoni album e gestione video
       updateProgress({ phase: 'Conversione link media' });
   const processedAlbumsWithButtons = [];
   for (const alb of processedAlbums) {
@@ -713,7 +813,7 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
         processedAlbumsWithButtons.push({ ...alb, buttons: newButtons, videoUrl: newVideoUrl, downloadLink: newDownloadLink, tracks: convertedTracks });
       }
 
-      updateProgress({ phase: 'Scrittura Firestore' });
+    updateProgress({ phase: 'Scrittura Firestore' });
   const payload = { nome: name, bio, photo: processedPhoto, steps: processedSteps, albums: processedAlbumsWithButtons };
       console.log('[saveAll] Payload finale pronto, invio onSave', payload);
       const maybePromise = artist.id ? onSave({ ...payload, id: artist.id }) : onSave(payload);
@@ -760,56 +860,77 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
           </button>
         )}
       </div>
-      <input
-        type="text"
-        value={name}
-        onChange={e => setName(e.target.value)}
-        placeholder="Nome Artista"
-        style={{
-          fontSize: "2.6em",
+      {restrictToBioAndPhoto && (
+        <div style={{ color:'#bbb', textAlign:'center', marginTop:-12, marginBottom:16, fontSize:12 }}>
+          In questa dashboard puoi modificare solo Foto profilo e Biografia. Per tutto il resto contatta l’amministratore.
+        </div>
+      )}
+      {restrictToBioAndPhoto ? (
+        <h2 style={{
+          fontSize: "2.2em",
           textAlign: "center",
           color: "#ffd700",
           fontWeight: "bold",
-          marginBottom: 28,
-          border: "none",
-          background: "transparent",
+          marginBottom: 18,
           width: "100%",
           maxWidth: 600
-        }}
-      />
+        }}>{artist.nome || artist.name || name || 'Artista'}</h2>
+      ) : (
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder="Nome Artista"
+          style={{
+            fontSize: "2.6em",
+            textAlign: "center",
+            color: "#ffd700",
+            fontWeight: "bold",
+            marginBottom: 28,
+            border: "none",
+            background: "transparent",
+            width: "100%",
+            maxWidth: 600
+          }}
+        />
+      )}
 
-      {/* Steps images upload */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 24 }}>
-        {steps.map((img, idx) => (
-          <div
-            key={idx}
-            onDrop={handleStepImageDrop(idx)}
-            onDragOver={e => e.preventDefault()}
-            style={{
-              border: "2px dashed #ffd700",
-              borderRadius: 12,
-              width: 120,
-              height: 120,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "#222",
-              position: "relative"
-            }}
-          >
-            {img ? (
-              <img src={img} alt={`Step ${idx + 1}`} style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 10, boxShadow: "0 0 8px #ffd700" }} />
-            ) : (
-              <span style={{ color: "#ffd700", textAlign: "center", fontSize: "0.95em" }}>Trascina qui immagine {idx + 1}</span>
-            )}
+      {/* Steps images upload (hidden if hideSteps) */}
+      {!hideSteps && !restrictToBioAndPhoto && (
+        <>
+          <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 24 }}>
+            {steps.map((img, idx) => (
+              <div
+                key={idx}
+                onDrop={handleStepImageDrop(idx)}
+                onDragOver={e => e.preventDefault()}
+                style={{
+                  border: "2px dashed #ffd700",
+                  borderRadius: 12,
+                  width: 120,
+                  height: 120,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "#222",
+                  position: "relative"
+                }}
+              >
+                {img ? (
+                  <img src={img} alt={`Step ${idx + 1}`} style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 10, boxShadow: "0 0 8px #ffd700" }} />
+                ) : (
+                  <span style={{ color: "#ffd700", textAlign: "center", fontSize: "0.95em" }}>Trascina qui immagine {idx + 1}</span>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: -12, marginBottom: 24 }}>
-        {steps.map((_, idx) => (
-          <button key={`pick_${idx}`} onClick={() => selectStep(idx)} style={{ background: '#222', color: '#ffd700', border: '1px solid #ffd700', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Seleziona {idx + 1}</button>
-        ))}
-      </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: -12, marginBottom: 24 }}>
+            {steps.map((_, idx) => (
+              <button key={`pick_${idx}`} onClick={() => selectStep(idx)} style={{ background: '#222', color: '#ffd700', border: '1px solid #ffd700', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Seleziona {idx + 1}</button>
+            ))}
+          </div>
+        </>
+      )}
       <textarea
         value={bio}
         onChange={e => setBio(e.target.value)}
@@ -866,8 +987,9 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
         <button onClick={selectPhoto} style={{ marginTop: 8, background: '#222', color: '#ffd700', border: '1px solid #ffd700', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Seleziona foto</button>
       </div>
 
-      {/* Album/cover/disco management */}
-      <div style={{ width: "100%", maxWidth: 700, margin: "0 auto 32px auto" }}>
+  {/* Album/cover/disco management (nascosto in modalità ristretta) */}
+  {!restrictToBioAndPhoto && (
+  <div style={{ width: "100%", maxWidth: 700, margin: "0 auto 32px auto" }}>
         <h3 style={{ color: "#ffd700", textAlign: "center", marginBottom: 16 }}>Dischi / Cover</h3>
         {albums.length > 0 && (
           <ul style={{ listStyle: "none", padding: 0 }}>
@@ -889,26 +1011,13 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
                           <span key={k} style={{ display: "inline-flex", alignItems: 'center' }}>
                             {btn.name === "Buy & Download"
                               ? (
-                                btn.link
-                                  ? (
-                                    <a href={btn.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#222', color: '#ffd700', border: '1px solid #555', borderRadius: 6, padding: '4px 8px', fontSize: 12, textDecoration: 'none' }}>
-                                      <Icon name="Download" size={14} />
-                                      <span>Download</span>
-                                    </a>
-                                  )
-                                  : (
-                                    <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top" style={{ display: "inline-block" }}>
-                                      <input type="hidden" name="cmd" value="_s-xclick" />
-                                      <input type="hidden" name="hosted_button_id" value="5CGE5SB2DM2G2" />
-                                      <input type="hidden" name="currency_code" value="EUR" />
-                                      <button type="submit" title="Paga con PayPal" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#ffd700', color: '#222', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontWeight: 600, fontSize: 12 }}>
-                                        <Icon name="Download" size={14} />
-                                        Download
-                                      </button>
-                                    </form>
-                                  )
-                              )
-                              : (
+                                btn.link ? (
+                                  <a href={btn.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#222', color: '#ffd700', border: '1px solid #555', borderRadius: 6, padding: '4px 8px', fontSize: 12, textDecoration: 'none' }}>
+                                    <Icon name="Download" size={14} />
+                                    <span>Download</span>
+                                  </a>
+                                ) : null
+                              ) : (
                                 btn.link ? (
                                   <a href={btn.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#222', color: '#ffd700', border: '1px solid #555', borderRadius: 6, padding: '4px 8px', fontSize: 12, textDecoration: 'none' }}>
                                     <Icon name={btn.name} size={14} />
@@ -979,20 +1088,42 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
               </div>
             )}
             {/* Pagamenti: Stripe Payment Link (consigliato) oppure PayPal Hosted Button ID (fallback) */}
-            <input
-              type="text"
-              value={albumForm.paymentLinkUrl || ''}
-              onChange={e => handleAlbumField('paymentLinkUrl', e.target.value)}
-              placeholder="Stripe Payment Link URL"
-              style={{ width: 280, fontSize: '1.0em', background: '#111', color: '#ffd700', border: '1px solid #ffd700', borderRadius: 6, textAlign: 'center', marginBottom: 6 }}
-            />
-            <input
-              type="text"
-              value={albumForm.paypalHostedButtonId || ''}
-              onChange={e => handleAlbumField('paypalHostedButtonId', e.target.value)}
-              placeholder="PayPal Hosted Button ID (opzionale)"
-              style={{ width: 280, fontSize: '1.0em', background: '#111', color: '#ffd700', border: '1px solid #ffd700', borderRadius: 6, textAlign: 'center', marginBottom: 8 }}
-            />
+            {!hideStripePaymentLink && (
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+                <input
+                  type="text"
+                  value={albumForm.paymentLinkUrl || ''}
+                  onChange={e => handleAlbumField('paymentLinkUrl', e.target.value)}
+                  placeholder="Stripe Payment Link URL"
+                  style={{ width: 280, fontSize: '1.0em', background: '#111', color: '#ffd700', border: '1px solid #ffd700', borderRadius: 6, textAlign: 'center' }}
+                />
+                <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap', justifyContent:'center', width:'100%' }}>
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${window.location.origin}/download-confirm?cm=${encodeURIComponent((artist && artist.id) || '')}:${editingIdx !== null ? editingIdx : (albums.length)}`}
+                    title="Imposta questo URL come Success URL in Stripe Payment Link"
+                    style={{ flex:'1 1 auto', minWidth:260, maxWidth:360, padding:8, borderRadius:8, border:'1px solid #333', background:'#0b0b0b', color:'#ccc', textAlign:'center' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = `${window.location.origin}/download-confirm?cm=${encodeURIComponent((artist && artist.id) || '')}:${editingIdx !== null ? editingIdx : (albums.length)}`;
+                      navigator.clipboard.writeText(url);
+                      alert('Success URL copiato. Incollalo nel campo success_url del Payment Link su Stripe.');
+                    }}
+                    style={{ background:'#222', color:'#ffd700', border:'1px solid #555', borderRadius:8, padding:'6px 10px', cursor:'pointer' }}
+                  >
+                    Copia Success URL
+                  </button>
+                </div>
+                <div style={{ fontSize:11, color:'#999', textAlign:'center', maxWidth:420 }}>
+                  Suggerimento: in Stripe → Payment Links, imposta il “Success URL” con quello sopra.
+                  Dopo il pagamento, l’utente verrà reindirizzato alla pagina di download del tuo disco/singolo.
+                </div>
+              </div>
+            )}
+            {/* Campo PayPal rimosso: usiamo solo Stripe Payment Link */}
             {/* Video URL del brano/album (monitor) */}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
               <input
@@ -1083,7 +1214,8 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel }) {
             </div>
           </div>
         </div>
-      </div>
+  </div>
+  )}
 
       <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 32 }}>
         {onCancel && (
