@@ -437,6 +437,17 @@ export default function ArtistDetail() {
           </div>
         </div>
       )}
+      {/* Steps gallery moved to bottom of ArtistDetail (one-click to open fullscreen) */}
+      {artist.steps && artist.steps.length > 0 && (
+        <div style={{ width: '100%', maxWidth: 980, marginTop: 40, marginBottom: 30, display:'flex', flexDirection:'column', alignItems:'center' }}>
+          <h3 className="dash-section-title">Galleria</h3>
+          <div style={{ display:'flex', gap:12, flexWrap:'wrap', justifyContent:'center' }}>
+            {artist.steps.map((s, i) => (
+              <img key={i} src={s} alt={`step-${i}`} style={{ width:160, height:200, objectFit:'cover', borderRadius:10, cursor:'pointer', boxShadow:'0 6px 16px rgba(0,0,0,0.45)' }} onClick={() => setShowIntroForIdx(i)} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen portrait overlay */}
       {showPortraitFs && portraitSrc && (

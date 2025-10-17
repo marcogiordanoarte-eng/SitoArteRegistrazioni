@@ -105,7 +105,7 @@ export default function Artisti() {
                 src={artist.steps && artist.steps[0] ? artist.steps[0] : artist.photo || "/logo.png"}
                 alt={artist.nome}
                 tabIndex={0}
-                onClick={() => openFullscreen(artist, 0)}
+                onClick={() => navigate(`/artista/${artist.id}`)}
                 style={{ cursor: "pointer", width: 220, height: 275, objectFit: "cover", borderRadius: 12, boxShadow: "0 0 12px #ffd700" }}
               />
             </div>
