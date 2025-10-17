@@ -18,7 +18,8 @@ service firebase.storage {
           'album-zips',
           'buy',
           'musica',
-          'site'
+          'site',
+          'calend-arte'
         ]
       );
     }

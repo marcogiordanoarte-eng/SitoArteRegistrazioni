@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { db } from './firebase';
+import { db, storage } from './firebase';
 import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth } from './AuthContext';
 import { ADMIN_UIDS } from './config';
 
@@ -61,13 +62,83 @@ export default function CalendArte() {
     return () => { cancelled = true; };
   }, [monthDates]);
 
-  const saveNote = async (key, day, value) => {
-    setNotes(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [day]: value } }));
+  function normalizeDayData(raw) {
+    if (!raw) return { text: '', attachments: [], history: [] };
+    if (typeof raw === 'string') return { text: raw, attachments: [], history: [] };
+    const text = typeof raw.text === 'string' ? raw.text : '';
+    const attachments = Array.isArray(raw.attachments) ? raw.attachments : [];
+    const history = Array.isArray(raw.history) ? raw.history : [];
+    return { text, attachments, history };
+  }
+
+  async function persistDay(key, day, nextDayObj, prevDayObj) {
+    // push previous state into history (bounded to last 10 entries)
+    const ts = Date.now();
+    const prevEntry = prevDayObj ? { text: prevDayObj.text || '', attachments: prevDayObj.attachments || [], ts } : null;
+    const history = [...(nextDayObj.history || [])];
+    if (prevEntry) history.unshift(prevEntry);
+    while (history.length > 10) history.pop();
+    const toSave = { ...nextDayObj, history };
+    setNotes(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [day]: toSave } }));
     try {
       const ref = doc(collection(db, 'calendArte'), key);
-      await setDoc(ref, { days: { ...(notes[key] || {}), [day]: value } }, { merge: true });
+      await setDoc(ref, { days: { ...(notes[key] || {}), [day]: toSave } }, { merge: true });
     } catch (e) {
       console.warn('Errore salvataggio nota', e);
+    }
+  }
+
+  const saveNote = async (key, day, newText) => {
+    const current = normalizeDayData((notes[key] || {})[day]);
+    const next = { ...current, text: newText };
+    await persistDay(key, day, next, current);
+  };
+
+  const addLink = async (key, day) => {
+    const url = window.prompt('Inserisci URL (http/https):');
+    if (!url) return;
+    const title = window.prompt('Titolo (opzionale):') || '';
+    const current = normalizeDayData((notes[key] || {})[day]);
+    const next = { ...current, attachments: [...current.attachments, { type: 'link', url, title, ts: Date.now() }] };
+    await persistDay(key, day, next, current);
+  };
+
+  const addImage = async (key, day, file) => {
+    if (!file) return;
+    try {
+      const monthPath = key; // YYYY-MM
+      const dayPath = day; // DD
+      const filename = `${Date.now()}-${(file.name || 'img').replace(/[^a-zA-Z0-9_.-]+/g, '_')}`;
+      const path = `calend-arte/${monthPath}/${dayPath}/${filename}`;
+      const sref = storageRef(storage, path);
+      await uploadBytes(sref, file, { contentType: file.type || 'application/octet-stream' });
+      const url = await getDownloadURL(sref);
+      const current = normalizeDayData((notes[key] || {})[day]);
+      const next = { ...current, attachments: [...current.attachments, { type: 'image', url, name: file.name || filename, ts: Date.now() }] };
+      await persistDay(key, day, next, current);
+    } catch (e) {
+      console.warn('Errore upload immagine', e);
+      alert('Upload immagine non riuscito.');
+    }
+  };
+
+  const removeAttachment = async (key, day, idx) => {
+    const current = normalizeDayData((notes[key] || {})[day]);
+    const next = { ...current, attachments: current.attachments.filter((_, i) => i !== idx) };
+    await persistDay(key, day, next, current);
+  };
+
+  const undoLast = async (key, day) => {
+    const current = normalizeDayData((notes[key] || {})[day]);
+    const [last, ...restHistory] = current.history || [];
+    if (!last) return;
+    const next = { text: last.text || '', attachments: last.attachments || [], history: restHistory };
+    setNotes(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [day]: next } }));
+    try {
+      const ref = doc(collection(db, 'calendArte'), key);
+      await setDoc(ref, { days: { ...(notes[key] || {}), [day]: next } }, { merge: true });
+    } catch (e) {
+      console.warn('Errore annulla ultima modifica', e);
     }
   };
 
@@ -105,9 +176,10 @@ export default function CalendArte() {
                 {grid.cells.map((cell, idx) => {
                   if (!cell) return <div key={idx} style={{ padding: 10 }} />;
                   const day = String(cell.d).padStart(2, '0');
-                  const text = monthNotes[day] || '';
+                  const dayObj = normalizeDayData(monthNotes[day]);
+                  const text = dayObj.text || '';
                   return (
-                    <div key={idx} style={{ border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, padding: 8, minHeight: 96, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)' }}>
+                    <div key={idx} style={{ border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, padding: 8, minHeight: 120, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)', gap: 6 }}>
                       <div style={{ fontWeight: 600, color: '#ffd700', marginBottom: 6 }}>{cell.d}</div>
                       {isAdmin ? (
                         <textarea
@@ -119,6 +191,41 @@ export default function CalendArte() {
                       ) : (
                         <div style={{ whiteSpace: 'pre-wrap', color: '#9fe8c4' }}>{text}</div>
                       )}
+                      {/* Attachments */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {(dayObj.attachments || []).length > 0 && (
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {dayObj.attachments.map((att, i) => (
+                              <div key={i} style={{ border: '1px solid rgba(255,215,0,0.2)', borderRadius: 6, padding: 6, background: 'rgba(0,0,0,0.25)' }}>
+                                {att.type === 'image' ? (
+                                  <a href={att.url} target="_blank" rel="noreferrer" title={att.name || 'Immagine'}>
+                                    <img src={att.url} alt={att.name || 'img'} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4 }} />
+                                  </a>
+                                ) : (
+                                  <a href={att.url} target="_blank" rel="noreferrer" style={{ color: '#9fe8c4', textDecoration: 'underline' }}>
+                                    {att.title || att.url}
+                                  </a>
+                                )}
+                                {isAdmin && (
+                                  <div>
+                                    <button className="dash-small-btn" onClick={() => removeAttachment(key, day, i)} style={{ marginTop: 4 }}>Rimuovi</button>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {isAdmin && (
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            <label className="dash-small-btn" style={{ cursor: 'pointer' }}>
+                              Aggiungi immagine
+                              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) { addImage(key, day, f); e.target.value = ''; } }} />
+                            </label>
+                            <button className="dash-small-btn" onClick={() => addLink(key, day)}>Aggiungi link</button>
+                            <button className="dash-small-btn" disabled={!(dayObj.history && dayObj.history.length)} onClick={() => undoLast(key, day)}>Annulla ultima</button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
