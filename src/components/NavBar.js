@@ -49,6 +49,16 @@ export default function NavBar() {
         </Link>
       </div>
 
+      {/* Riga 3.5: Mini-gioco Pentagramma (medio) */}
+      <div className="nav-row nav-row--single">
+        <Link
+          to="/pentagramma"
+          className={`glow-btn glow-btn--md${isActive("/pentagramma") ? " glow-btn--active" : ""}`}
+        >
+          Pentagramma 🎵
+        </Link>
+      </div>
+
       {/* Riga 4: Buy Music singolo (grande) */}
       <div className="nav-row nav-row--single">
         <Link
