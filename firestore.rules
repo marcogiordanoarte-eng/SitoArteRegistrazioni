@@ -28,6 +28,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // CalendArte: note giorno-per-giorno visibili pubblicamente, modificabili solo admin
+    match /calendArte/{monthId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Buy Music: generi e tracce
     match /buyGenres/{genreId} {
       // Le liste generi devono essere pubbliche sul sito
