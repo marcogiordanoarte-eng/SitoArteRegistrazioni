@@ -112,9 +112,9 @@ export default function CalendArte() {
       const path = `calend-arte/${monthPath}/${dayPath}/${filename}`;
       const sref = storageRef(storage, path);
       await uploadBytes(sref, file, { contentType: file.type || 'application/octet-stream' });
-      const url = await getDownloadURL(sref);
+  const url = await getDownloadURL(sref);
       const current = normalizeDayData((notes[key] || {})[day]);
-      const next = { ...current, attachments: [...current.attachments, { type: 'image', url, name: file.name || filename, ts: Date.now() }] };
+  const next = { ...current, attachments: [...current.attachments, { type: 'image', url, path, name: file.name || filename, ts: Date.now() }] };
       await persistDay(key, day, next, current);
     } catch (e) {
       console.warn('Errore upload immagine', e);
