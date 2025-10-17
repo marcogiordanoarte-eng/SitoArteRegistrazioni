@@ -1,4 +1,5 @@
 node_modules/
+# build/ è normalmente ignorata. Se vuoi versionare una build di produzione, rimuovi questa riga o usa 'git add -f build/'.
 build/
 dist/
 .DS_Store
@@ -33,3 +34,6 @@ tracce_iA_Voce_Audio_mono/
 Audio_iA-Sounds/
 voices/
 tortoise 
+
+# Per forzare il commit della build una tantum:
+# git add -f build/

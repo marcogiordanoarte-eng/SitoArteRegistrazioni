@@ -261,7 +261,6 @@ export default function Musica() {
                       )}
                       {/* Pulsante acquisto / download: Stripe -> downloadLink -> disabled */}
                       {(() => {
-                        const origin = (typeof window !== 'undefined') ? window.location.origin : '';
                         if (track.sold && track.downloadLink) {
                           return (
                             <a href={track.downloadLink} download className="icon-cell icon-cell--download pulse-on-hover" aria-label="Download acquistato" title="Download acquistato" style={{ textDecoration:'none' }}>

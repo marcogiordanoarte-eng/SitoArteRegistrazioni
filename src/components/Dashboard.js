@@ -22,6 +22,7 @@ import CountdownAdmin from './CountdownAdmin';
 import DashboardVideoManager from './DashboardVideoManager';
 import DashboardLogoVideoManager from './DashboardLogoVideoManager';
 import ArtistTracksManager from './ArtistTracksManager';
+import DashboardGameMusic from './DashboardGameMusic';
 import { auth, resetPassword } from './firebase';
 import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 
@@ -505,6 +506,12 @@ function Dashboard() {
         </button>
         <button
           className="dash-btn dash-btn--ghost"
+          onClick={() => setView('gameMusic')}
+        >
+          Musica Game
+        </button>
+        <button
+          className="dash-btn dash-btn--ghost"
           onClick={() => setView("podcast")}
         >
           Podcast
@@ -695,6 +702,14 @@ function Dashboard() {
             uploading={podUploading}
             setUploading={setPodUploading}
           />
+        </div>
+      )}
+
+      {view === 'gameMusic' && (
+        <div className="dash-editor dash-container">
+          <h3 className="dash-section-title">Musica Game</h3>
+          <p>Configura musica e suoni del gioco Pentagramma Runner. Questi valori hanno priorità rispetto ai file statici in <code>public/</code> e ai parametri URL.</p>
+          <DashboardGameMusic />
         </div>
       )}
 

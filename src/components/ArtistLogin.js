@@ -12,7 +12,6 @@ function useQuery() {
 
 export default function ArtistLogin() {
   const { login, logout, user, resetPassword } = useAuth();
-  const [resetRequested, setResetRequested] = useState(false);
   const [resetMsg, setResetMsg] = useState('');
   const navigate = useNavigate();
   const query = useQuery();
@@ -24,6 +23,7 @@ export default function ArtistLogin() {
   const [debugInfo, setDebugInfo] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const expectedAid = query.get('aid') || '';
+  const [showPass, setShowPass] = useState(false);
 
   useEffect(() => {
     // If already logged, we still require code match to continue
@@ -60,8 +60,10 @@ export default function ArtistLogin() {
         await logout();
         throw new Error('Email non associata a questo artista.');
       }
+      // Confronto codice case-insensitive per evitare problemi di auto-capitalizzazione su iOS
       const validCode = (data.loginCode || '').toString().trim();
-      if (!code.trim() || !validCode || code.trim() !== validCode) {
+      const userCode = (code || '').toString().trim();
+      if (!userCode || !validCode || userCode.toUpperCase() !== validCode.toUpperCase()) {
         await logout();
         throw new Error('Codice univoco non valido.');
       }
@@ -87,11 +89,61 @@ export default function ArtistLogin() {
         <h2 className="login-title">Dashboard Artista</h2>
         <div className="login-hint" style={{marginBottom:12, color:'#bbb'}}>Inserisci email, password e il codice ricevuto</div>
         <label className="login-label">Email</label>
-        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="login-input" />
-        <label className="login-label">Password</label>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)} required className="login-input" />
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+          className="login-input"
+          autoComplete="username"
+          inputMode="email"
+        />
+        <label className="login-label login-password-label">Password</label>
+        <div className="login-password-wrapper">
+          <input
+            type={showPass ? 'text' : 'password'}
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+            className="login-input login-password-input"
+            autoComplete="current-password"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPass(s => !s)}
+            aria-label={showPass ? 'Nascondi password' : 'Mostra password'}
+            className="login-eye-btn"
+            data-active={showPass ? 'true' : 'false'}
+          >
+            {showPass ? (
+              // Icona occhio barrato
+              <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+                <path d="M3 3l18 18" strokeLinecap="round"/>
+                <path d="M10.58 10.58A3 3 0 0 0 12 15a3 3 0 0 0 2.42-4.42M9.88 5.54A9.77 9.77 0 0 1 12 5c5.52 0 9 5.5 9 7-.24.9-1.03 2.24-2.34 3.55M6.35 6.35C4.32 7.64 3.24 9.46 3 12c0 1.5 3.48 7 9 7 1.38 0 2.66-.26 3.82-.76" strokeLinecap="round"/>
+              </svg>
+            ) : (
+              // Icona occhio aperto
+              <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+                <path d="M1 12s3.5-7 11-7 11 7 11 7-3.5 7-11 7S1 12 1 12Z" />
+                <circle cx="12" cy="12" r="3.2" />
+              </svg>
+            )}
+          </button>
+        </div>
         <label className="login-label">Codice univoco</label>
-        <input type="text" value={code} onChange={e => setCode(e.target.value)} required className="login-input" placeholder="Es. AR-7F29-KQ" />
+        <input
+          type="text"
+          value={code}
+          onChange={e => setCode(e.target.value)}
+          required
+          className="login-input"
+          placeholder="Es. AR-7F29-KQ"
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          autoComplete="off"
+          inputMode="latin-prose"
+        />
         {error && <div className="login-error" style={{marginTop:10}}>{error}</div>}
         {resetMsg && <div style={{marginTop:10, color:'#6fda8b', fontSize:13}}>{resetMsg}</div>}
         <button type="submit" disabled={submitting} className="login-submit" style={{marginTop:14}}>

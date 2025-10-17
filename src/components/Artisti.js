@@ -8,7 +8,6 @@ import LogoPrompt from './LogoPrompt';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import "./Artisti.css";
 import { db } from "./firebase";
-import Icon from "./Icon";
 import NavBar from './NavBar';
 
 export default function Artisti() {
@@ -17,10 +16,9 @@ export default function Artisti() {
   const [logoVideoUrl, setLogoVideoUrl] = useState('');
   const [overlaySource, setOverlaySource] = useState(null); // 'studio' | 'logo'
   const navigate = useNavigate();
-  const [currentArtista, setCurrentArtista] = useState(null);
+  // Rimosso fullscreen viewer legacy: si naviga direttamente alla scheda artista
   const [artists, setArtists] = useState([]);
-  const [fullscreenOpen, setFullscreenOpen] = useState(false);
-  const [fullscreenIdx, setFullscreenIdx] = useState(0);
+  // Rimozione fullscreen overlay legacy
   const [logoDismissed, setLogoDismissed] = useState(() => {
     try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
   });
@@ -47,26 +45,8 @@ export default function Artisti() {
     return () => { unsub(); unsubStudio(); };
   }, []);
 
-  // Modal secondario non più usato; usiamo fullscreen diretto
-  const openFullscreen = (artist, startIdx = 0) => {
-    setCurrentArtista(artist);
-    setFullscreenIdx(startIdx);
-    setFullscreenOpen(true);
-  };
-  const closeFullscreen = () => setFullscreenOpen(false);
-  const nextFs = () => {
-    setFullscreenIdx(i => {
-      const total = Math.min(3, currentArtista?.steps?.length || 0);
-      const next = i + 1;
-      if (next >= total) {
-        setFullscreenOpen(false);
-        if (currentArtista?.id) navigate(`/artista/${currentArtista.id}`);
-        return i;
-      }
-      return next;
-    });
-  };
-  const prevFs = () => setFullscreenIdx(i => Math.max(0, i - 1));
+  // Modal secondario rimosso; usiamo navigazione diretta su ArtistDetail
+  // Funzioni fullscreen legacy rimosse
 
   // Deprecated modal handlers removed; fullscreen overlay is the current UX
 
@@ -114,33 +94,7 @@ export default function Artisti() {
   </section>
   {/* Menu spostato in fondo */}
   <NavBar />
-  {/* Fullscreen viewer con mano luminosa e senza testo/frecce */}
-      {fullscreenOpen && currentArtista && (
-        <div className="fullscreen-backdrop" onClick={closeFullscreen}>
-          <img
-            src={currentArtista.steps && currentArtista.steps[fullscreenIdx] ? currentArtista.steps[fullscreenIdx] : currentArtista.photo || "/logo.png"}
-            alt=""
-            className="fullscreen-img"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (currentArtista.steps && currentArtista.steps.length > 1) {
-                nextFs();
-              }
-            }}
-            style={{ cursor: currentArtista.steps && currentArtista.steps.length > 1 ? 'pointer' : 'default' }}
-          />
-          {currentArtista.steps && currentArtista.steps.length > 1 && (
-            <>
-              <button className="hand-button hand-left" aria-label="precedente" onClick={(e) => { e.stopPropagation(); prevFs(); }}>
-                <Icon name="Hand" size={28} color="#00FFFF" />
-              </button>
-              <button className="hand-button hand-right" aria-label="successiva" onClick={(e) => { e.stopPropagation(); nextFs(); }}>
-                <Icon name="Hand" size={28} color="#00FFFF" />
-              </button>
-            </>
-          )}
-        </div>
-      )}
+  {/* Fullscreen viewer legacy rimosso */}
       <div className="youtube-under-menu">
         <YouTubeButton small layout="row" />
       </div>

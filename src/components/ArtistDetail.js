@@ -171,6 +171,12 @@ export default function ArtistDetail() {
                 style={{ background:'#0b3d1f', border:'1px solid #19c97d', color:'#d5ffe8', padding:'8px 14px', borderRadius:12, cursor:'pointer', fontWeight:600, fontSize:'.8rem', letterSpacing:.5 }}
               >Buy Music →
               </button>
+              <button
+                type="button"
+                onClick={() => navigate('/pentagramma')}
+                style={{ background:'#111', border:'1px solid #ffd700', color:'#ffd700', padding:'8px 14px', borderRadius:12, cursor:'pointer', fontWeight:600, fontSize:'.8rem', letterSpacing:.5 }}
+              >Gioco →
+              </button>
             </div>
           </div>
         )}
