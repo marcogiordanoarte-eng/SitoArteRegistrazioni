@@ -134,7 +134,7 @@ export default function Countdown() {
     const left = (r ?? 0) - now;
     const { days, hours, mins, secs } = formatDHMS(left);
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '0 12px', boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '0 12px', boxSizing: 'border-box', flexDirection: 'column' }}>
         <div style={{
           display: 'flex',
           alignItems: 'baseline',
@@ -159,6 +159,26 @@ export default function Countdown() {
           <span>:</span>
           <span>{secs}</span>
         </div>
+        {/* Data esatta di uscita sotto al timer */}
+        {r && (
+          <div style={{ marginTop: 6, color:'#9fe8c4', fontSize: 12, textShadow:'0 0 6px rgba(0,255,136,0.35)', textAlign:'center' }}>
+            {new Date(r).toLocaleString('it-IT', {
+              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+              hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false
+            })}
+          </div>
+        )}
+        {/* Callout a rilascio avvenuto */}
+        {r && left <= 0 && (
+          <div style={{ marginTop: 8, display:'flex', alignItems:'center', gap: 8, color:'#ffd700', fontWeight: 700 }}>
+            <span style={{ display:'inline-flex', gap:2 }}>
+              <span style={{ animation:'blink 1.2s infinite' }}>➤</span>
+              <span style={{ animation:'blink 1.2s infinite', animationDelay:'0.2s' }}>➤</span>
+              <span style={{ animation:'blink 1.2s infinite', animationDelay:'0.4s' }}>➤</span>
+            </span>
+            <span>Fuori ora! puoi ascoltare</span>
+          </div>
+        )}
       </div>
     );
   };
@@ -246,15 +266,7 @@ export default function Countdown() {
                 <h2 className="publicsite-title" style={{ fontSize: '1.3rem', marginBottom: 8 }}>Uscite recenti</h2>
                 <div className="gallery-row">
                   {split.past.map(it => (
-                    <div key={it.id} style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
-                      <Card item={it} showTimer={true} />
-                      <div style={{ color:'#9fe8c4', fontSize:12, marginTop:6, textShadow:'0 0 6px rgba(0,255,136,0.4)' }}>
-                        {(() => {
-                          const r = toMillis(it.releaseAt);
-                          return r ? new Date(r).toLocaleString() : '';
-                        })()}
-                      </div>
-                    </div>
+                    <Card key={it.id} item={it} showTimer={true} />
                   ))}
                 </div>
               </div>

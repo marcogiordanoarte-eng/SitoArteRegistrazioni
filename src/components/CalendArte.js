@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { db, storage } from './firebase';
 import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAuth } from './AuthContext';
 import { ADMIN_UIDS } from './config';
+import { useNavigate } from 'react-router-dom';
 
 function monthKey(date) {
   const y = date.getFullYear();
@@ -32,11 +33,13 @@ function buildMonthGrid(date) {
 }
 
 export default function CalendArte() {
+  const navigate = useNavigate();
   const [start, setStart] = useState(() => new Date());
   const [months, setMonths] = useState(3);
   const [notes, setNotes] = useState({}); // { 'YYYY-MM': { 'DD': 'text' } }
   const { user } = useAuth();
   const isAdmin = !!(user && ADMIN_UIDS.includes(user.uid));
+  const [query, setQuery] = useState('');
 
   const monthDates = useMemo(() => {
     const arr = [];
@@ -124,6 +127,11 @@ export default function CalendArte() {
 
   const removeAttachment = async (key, day, idx) => {
     const current = normalizeDayData((notes[key] || {})[day]);
+    const att = current.attachments[idx];
+    // Try to delete from Storage if we have a path for images
+    if (att && att.type === 'image' && att.path) {
+      try { await deleteObject(storageRef(storage, att.path)); } catch (e) { console.warn('Delete storage failed (non-blocking):', e?.message || e); }
+    }
     const next = { ...current, attachments: current.attachments.filter((_, i) => i !== idx) };
     await persistDay(key, day, next, current);
   };
@@ -142,11 +150,46 @@ export default function CalendArte() {
     }
   };
 
+  const restoreFromHistory = async (key, day, index) => {
+    const current = normalizeDayData((notes[key] || {})[day]);
+    const hist = current.history || [];
+    if (!hist[index]) return;
+    const selected = hist[index];
+    const next = { text: selected.text || '', attachments: selected.attachments || [], history: hist.slice(index + 1) };
+    setNotes(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [day]: next } }));
+    try {
+      const ref = doc(collection(db, 'calendArte'), key);
+      await setDoc(ref, { days: { ...(notes[key] || {}), [day]: next } }, { merge: true });
+    } catch (e) {
+      console.warn('Errore ripristino da cronologia', e);
+    }
+  };
+
   return (
-    <div className="publicpage" style={{ padding: '30px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div className="publicpage" style={{ padding: '30px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', position:'relative' }}>
+      {/* Back arrow */}
+      <button
+        onClick={() => navigate(-1)}
+        aria-label="Torna indietro"
+        title="Indietro"
+        style={{ position:'fixed', top:'12px', left:'12px', zIndex:100002, background:'rgba(0,0,0,0.55)', border:'1px solid #ffd700', color:'#ffd700', borderRadius:'50%', width:46, height:46, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 12px #000' }}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      {/* Always show logo */}
+      <div className="logo-wrapper" style={{ position:'relative', marginBottom: 10 }}>
+        <div className="logo-stack">
+          <img src="/disco.png" alt="Disco" className="disco-img" />
+          <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
+        </div>
+      </div>
       <div style={{ width: '100%', maxWidth: 1080 }}>
         <h1 className="publicsite-title" style={{ marginBottom: 6 }}>CalendArte</h1>
         <p style={{ color: '#9fe8c4', marginTop: 0, marginBottom: 16 }}>Appunti e note giorno per giorno. Visibile a tutti; modificabile solo dagli amministratori.</p>
+        {/* Search notes */}
+        <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom: 10 }}>
+          <input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Cerca nelle note..." style={{ flex:1, maxWidth: 320, background:'transparent', color:'#9fe8c4', border:'1px solid rgba(159,232,196,0.3)', borderRadius:6, padding:'8px 10px' }} />
+        </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
           <button className="dash-small-btn" onClick={() => setStart(new Date(start.getFullYear(), start.getMonth() - 1, 1))}>{'←'} Mese precedente</button>
           <button className="dash-small-btn" onClick={() => setStart(new Date())}>Oggi</button>
@@ -178,9 +221,14 @@ export default function CalendArte() {
                   const day = String(cell.d).padStart(2, '0');
                   const dayObj = normalizeDayData(monthNotes[day]);
                   const text = dayObj.text || '';
+                  const isToday = (() => { const t = new Date(); return t.getFullYear()===cell.date.getFullYear() && t.getMonth()===cell.date.getMonth() && t.getDate()===cell.date.getDate(); })();
+                  if (query && !text.toLowerCase().includes(query.toLowerCase())) {
+                    // If searching and no match, hide empty cells to focus results
+                    return <div key={idx} style={{ padding: 10, opacity: 0.25, border:'1px dashed rgba(255,255,255,0.08)', borderRadius: 8 }} />;
+                  }
                   return (
-                    <div key={idx} style={{ border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, padding: 8, minHeight: 120, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)', gap: 6 }}>
-                      <div style={{ fontWeight: 600, color: '#ffd700', marginBottom: 6 }}>{cell.d}</div>
+                    <div key={idx} style={{ border: isToday ? '2px solid #ffd700' : '1px solid rgba(255,215,0,0.2)', borderRadius: 8, padding: 8, minHeight: 120, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)', gap: 6 }}>
+                      <div style={{ fontWeight: 700, color: isToday ? '#000' : '#ffd700', background: isToday ? '#ffd700' : 'transparent', display:'inline-block', padding:'2px 6px', borderRadius: 6, marginBottom: 6 }}>{cell.d}</div>
                       {isAdmin ? (
                         <textarea
                           value={text}
@@ -223,6 +271,18 @@ export default function CalendArte() {
                             </label>
                             <button className="dash-small-btn" onClick={() => addLink(key, day)}>Aggiungi link</button>
                             <button className="dash-small-btn" disabled={!(dayObj.history && dayObj.history.length)} onClick={() => undoLast(key, day)}>Annulla ultima</button>
+                            {dayObj.history && dayObj.history.length > 1 && (
+                              <details>
+                                <summary style={{ cursor:'pointer' }}>Cronologia ({dayObj.history.length})</summary>
+                                <div style={{ display:'flex', flexDirection:'column', gap:4, maxHeight:160, overflow:'auto' }}>
+                                  {dayObj.history.map((h, i) => (
+                                    <button key={i} className="dash-small-btn" onClick={() => restoreFromHistory(key, day, i)}>
+                                      Ripristina #{i+1} — {new Date(h.ts||Date.now()).toLocaleString('it-IT')}
+                                    </button>
+                                  ))}
+                                </div>
+                              </details>
+                            )}
                           </div>
                         )}
                       </div>
