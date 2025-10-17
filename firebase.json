@@ -17,6 +17,9 @@
     "source": "functions",
     "runtime": "nodejs18"
   },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "emulators": {
     "ui": {
       "enabled": true,
