@@ -30,6 +30,7 @@ export default function ArtistDetail() {
   const [videoError, setVideoError] = useState({});
   const [showIntroForIdx, setShowIntroForIdx] = useState(null); // fullscreen video index
   const [showPortraitFs, setShowPortraitFs] = useState(false); // fullscreen portrait
+  const [showStepsFsIdx, setShowStepsFsIdx] = useState(null); // fullscreen steps image index
   // Pulsanti voce reale disattivati: stati e riferimenti rimossi
 
   const audioRefs = useRef({});
@@ -443,7 +444,7 @@ export default function ArtistDetail() {
           <h3 className="dash-section-title">Galleria</h3>
           <div style={{ display:'flex', gap:12, flexWrap:'wrap', justifyContent:'center' }}>
             {artist.steps.map((s, i) => (
-              <img key={i} src={s} alt={`step-${i}`} style={{ width:160, height:200, objectFit:'cover', borderRadius:10, cursor:'pointer', boxShadow:'0 6px 16px rgba(0,0,0,0.45)' }} onClick={() => setShowIntroForIdx(i)} />
+              <img key={i} src={s} alt={`step-${i}`} style={{ width:160, height:200, objectFit:'cover', borderRadius:10, cursor:'pointer', boxShadow:'0 6px 16px rgba(0,0,0,0.45)' }} onClick={() => setShowStepsFsIdx(i)} />
             ))}
           </div>
         </div>
@@ -460,6 +461,39 @@ export default function ArtistDetail() {
           >Chiudi</button>
           <div className="portrait-fs-frame" onClick={(e) => e.stopPropagation()}>
             <img src={portraitSrc} alt={artist.nome || artist.name || 'Ritratto artista'} />
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen steps gallery overlay */}
+      {showStepsFsIdx !== null && artist.steps && artist.steps.length > 0 && (
+        <div className="portrait-fs-overlay" role="dialog" aria-modal="true" onClick={() => setShowStepsFsIdx(null)}>
+          <button
+            type="button"
+            className="portrait-fs-close"
+            aria-label="Chiudi"
+            onClick={(e) => { e.stopPropagation(); setShowStepsFsIdx(null); }}
+          >Chiudi</button>
+          <div className="portrait-fs-frame" onClick={(e) => e.stopPropagation()} style={{ position:'relative' }}>
+            <img src={artist.steps[showStepsFsIdx]} alt={`step-${showStepsFsIdx}`} />
+            {artist.steps.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  aria-label="precedente"
+                  className="monitor-fs-fab"
+                  style={{ left: 12, right: 'auto' }}
+                  onClick={() => setShowStepsFsIdx(i => (i - 1 + artist.steps.length) % artist.steps.length)}
+                >◀</button>
+                <button
+                  type="button"
+                  aria-label="successiva"
+                  className="monitor-fs-fab"
+                  style={{ right: 12, left: 'auto' }}
+                  onClick={() => setShowStepsFsIdx(i => (i + 1) % artist.steps.length)}
+                >▶</button>
+              </>
+            )}
           </div>
         </div>
       )}
