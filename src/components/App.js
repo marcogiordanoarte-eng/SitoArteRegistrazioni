@@ -23,6 +23,7 @@ import { AuthProvider, useAuth } from "./AuthContext";
 import { ADMIN_UIDS } from './config';
 import ArtistSelfDashboard from './ArtistSelfDashboard';
 import CalendArte from './CalendArte';
+import PentaPlatform from './PentaPlatform';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -167,6 +168,7 @@ export default function App() {
             <Route path="/download-confirm" element={<DownloadConfirm />} />
             <Route path="/pagamento-esempio" element={<PagamentoEsempio />} />
             <Route path="/calend-arte" element={<CalendArte />} />
+            <Route path="/pentagramma" element={<PentaPlatform />} />
           </Routes>
           {/* Nessun assistente o finestrella: UI IA rimossa */}
             {/* Nessun assistente o finestrella: UI IA rimossa */}
