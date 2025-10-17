@@ -9,10 +9,10 @@ export default function PentaPlatform() {
   const audioRef = useRef(null);
   const [running, setRunning] = useState(false);
   const [lane, setLane] = useState(5); // 0..9 (0 top)
-  const [speed, setSpeed] = useState(120); // px/sec background scroll
+  const [speed] = useState(120); // px/sec background scroll
   const [score, setScore] = useState(0);
   const stateRef = useRef({ lane: 5, t: 0, scroll: 0 });
-  const keysRef = useRef({ up: false, down: false });
+  // no key state ref needed for this simple controller
 
   useEffect(() => {
     stateRef.current.lane = lane;
@@ -21,13 +21,14 @@ export default function PentaPlatform() {
   useEffect(() => {
     const onKey = (e) => {
       if (e.repeat) return;
-      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { moveLane(-1); }
-      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { moveLane(1); }
-      if (e.key === ' ') { moveLane(-1); }
-      if (e.key === 'p' || e.key === 'P') { setRunning(r => !r); }
+      const k = e.key;
+      if (k === 'ArrowUp' || k === 'w' || k === 'W' || k === ' ') { moveLane(-1); }
+      if (k === 'ArrowDown' || k === 's' || k === 'S') { moveLane(1); }
+      if (k === 'p' || k === 'P') { setRunning(r => !r); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
