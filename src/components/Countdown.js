@@ -245,7 +245,17 @@ export default function Countdown() {
               <div style={{ width: '100%', maxWidth: 980, marginTop: 28 }}>
                 <h2 className="publicsite-title" style={{ fontSize: '1.3rem', marginBottom: 8 }}>Uscite recenti</h2>
                 <div className="gallery-row">
-                  {split.past.map(it => <Card key={it.id} item={it} showTimer={false} />)}
+                  {split.past.map(it => (
+                    <div key={it.id} style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
+                      <Card item={it} showTimer={true} />
+                      <div style={{ color:'#9fe8c4', fontSize:12, marginTop:6, textShadow:'0 0 6px rgba(0,255,136,0.4)' }}>
+                        {(() => {
+                          const r = toMillis(it.releaseAt);
+                          return r ? new Date(r).toLocaleString() : '';
+                        })()}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -260,8 +270,11 @@ export default function Countdown() {
         onClose={closeOverlay}
         attemptUnmuted
       />
-      <div style={{ marginTop: 12, display:'flex', justifyContent:'center' }}>
-  <BrandButton onClick={() => openOverlay('studio')} />
+      <div style={{ marginTop: 12, display:'flex', justifyContent:'center', gap: 10, flexWrap:'wrap' }}>
+        <BrandButton onClick={() => openOverlay('studio')} />
+        <Link to="/calend-arte" className="dash-small-btn" style={{ textDecoration:'none', border:'1px solid #ffd700', color:'#ffd700', padding:'8px 10px', borderRadius:8, background:'rgba(0,0,0,0.45)' }}>
+          CalendArte →
+        </Link>
       </div>
   <Footer showArteButton={false} />
     </div>

@@ -22,6 +22,7 @@ import ArtistLogin from './ArtistLogin';
 import { AuthProvider, useAuth } from "./AuthContext";
 import { ADMIN_UIDS } from './config';
 import ArtistSelfDashboard from './ArtistSelfDashboard';
+import CalendArte from './CalendArte';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -165,6 +166,7 @@ export default function App() {
             <Route path="/artist-dashboard" element={<AuthRoute><ArtistSelfDashboard /></AuthRoute>} />
             <Route path="/download-confirm" element={<DownloadConfirm />} />
             <Route path="/pagamento-esempio" element={<PagamentoEsempio />} />
+            <Route path="/calend-arte" element={<CalendArte />} />
           </Routes>
           {/* Nessun assistente o finestrella: UI IA rimossa */}
             {/* Nessun assistente o finestrella: UI IA rimossa */}
