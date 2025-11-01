@@ -15,26 +15,55 @@ export default function SoundsStore() {
     };
     toggle?.addEventListener('click', onClick);
 
-    // Reveal observer
+    // Reveal observer + play-on-view animations
     const reveals = wrap?.querySelectorAll('.reveal') || [];
+    const animBlocks = wrap?.querySelectorAll('[data-animate-on-view]') || [];
     let io;
     if ('IntersectionObserver' in window) {
       io = new IntersectionObserver((entries) => {
         for (const e of entries) {
           if (e.isIntersecting) {
             e.target.classList.add('is-visible');
+            if (e.target.hasAttribute('data-animate-on-view')) {
+              e.target.classList.add('is-live');
+            }
             io.unobserve(e.target);
           }
         }
       }, { rootMargin: '0px 0px -10% 0px', threshold: 0.1 });
       reveals.forEach(el => io.observe(el));
+      animBlocks.forEach(el => io.observe(el));
     } else {
       reveals.forEach(el => el.classList.add('is-visible'));
+      animBlocks.forEach(el => el.classList.add('is-live'));
     }
+
+    // Match logo width to text width (logo above, same width as writings)
+    const brandText = document.querySelector('.sounds-store .brand-text');
+    const brandLogo = document.querySelector('.sounds-store .brand-logo');
+    const applyLogoWidth = () => {
+      if (!brandText || !brandLogo) return;
+      const w = brandText.getBoundingClientRect().width;
+      if (w > 0) {
+        brandLogo.style.width = `${Math.round(w)}px`;
+      }
+    };
+    // Observe size changes
+    let ro;
+    if (window.ResizeObserver) {
+      ro = new ResizeObserver(applyLogoWidth);
+      if (brandText) ro.observe(brandText);
+    } else {
+      window.addEventListener('resize', applyLogoWidth);
+    }
+    // Initial sync after fonts load
+    window.requestAnimationFrame(applyLogoWidth);
 
     return () => {
       toggle?.removeEventListener('click', onClick);
       io?.disconnect();
+      ro?.disconnect?.();
+      window.removeEventListener?.('resize', applyLogoWidth);
     };
   }, []);
 
@@ -47,11 +76,14 @@ export default function SoundsStore() {
               className="brand-logo"
               src="/soundslogo.jpg"
               alt="Logo Sounds"
+              decoding="async"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
-            <span className="brand-sounds">Sounds</span>
-            <span className="brand-by">di</span>
-            <span className="brand-arte">Arte Registrazioni</span>
+            <span className="brand-text">
+              <span className="brand-sounds">Sounds</span>{' '}
+              <span className="brand-by">di</span>{' '}
+              <span className="brand-arte">Arte Registrazioni</span>
+            </span>
           </Link>
           <nav className="main-nav" aria-label="Menu principale">
             <button className="nav-toggle" aria-expanded="false" aria-controls="nav-list" aria-label="Apri menù">☰</button>
@@ -80,6 +112,45 @@ export default function SoundsStore() {
             <div className="cta-row reveal">
               <a className="btn btn-primary" href="#unisciti">Carica il tuo brano</a>
               <a className="btn btn-ghost" href="#come-funziona">Come funziona</a>
+            </div>
+          </div>
+        </section>
+
+        {/* SOCIAL SOUNDS: la rete privata dei musicisti */}
+        <section id="social" className="social-sounds container" aria-labelledby="social-title">
+          <div className="social-card reveal" data-animate-on-view>
+            <div className="social-head">
+              <h2 id="social-title" className="social-title">SOCIAL SOUNDS</h2>
+              <p className="social-sub">Dove i tuoi concerti prendono vita. Posta il volantino, annuncia la data, fatti trovare.</p>
+            </div>
+            <div className="social-icons" role="list" aria-label="Funzioni principali">
+              <div className="social-icon megaphone" role="listitem" aria-label="Annuncia live">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M3 11l12-6v14L3 13V11Z" stroke="#60a5fa" strokeWidth="1.6" strokeLinejoin="round"/>
+                  <path d="M8 14.5 7 20" stroke="#60a5fa" strokeWidth="1.6" strokeLinecap="round"/>
+                  <path d="M18 8c1.2.8 2 2.1 2 3.6s-.8 2.8-2 3.6" stroke="#60a5fa" strokeWidth="1.6" strokeLinecap="round"/>
+                </svg>
+                <span>Live</span>
+              </div>
+              <div className="social-icon map" role="listitem" aria-label="Eventi vicini">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M12 2C8.7 2 6 4.7 6 8c0 4.5 6 12 6 12s6-7.5 6-12c0-3.3-2.7-6-6-6Zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z" stroke="#60a5fa" strokeWidth="1.6"/>
+                </svg>
+                <span>Vicino a te</span>
+                <span className="ping" aria-hidden="true"></span>
+              </div>
+              <div className="social-icon chat" role="listitem" aria-label="RSVP e chat">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M4 6h16v9a3 3 0 0 1-3 3H9l-5 3V6Z" stroke="#60a5fa" strokeWidth="1.6" strokeLinejoin="round"/>
+                  <circle cx="9" cy="11" r="1" fill="#60a5fa"/>
+                  <circle cx="12" cy="11" r="1" fill="#60a5fa"/>
+                  <circle cx="15" cy="11" r="1" fill="#60a5fa"/>
+                </svg>
+                <span>RSVP</span>
+              </div>
+            </div>
+            <div className="social-cta">
+              <a className="btn btn-join" href="/social">Entra ora</a>
             </div>
           </div>
         </section>
