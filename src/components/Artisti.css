@@ -397,12 +397,12 @@ body {
     height: 320px;
 }
 .disco-img {
-    /* Desktop: stessa dimensione e stesso margine della tendina */
-    width: 304px;
-    height: 304px;
+    /* Desktop: aumenta leggermente il disco Arte mantenendo la stessa tendina */
+    width: 310px;
+    height: 310px;
     position: absolute;
-    top: 8px;
-    left: 8px;
+    top: 5px;
+    left: 5px;
     z-index: 1;
     box-shadow: 0 0 80px 40px #ffd700, 0 0 120px 60px #fff;
     animation: pulse-glow 1.2s infinite;
@@ -1900,8 +1900,8 @@ body > * {
     /* Overall size: two circles fit side-by-side on small phones */
     .logo-stack, .sounds-stack { width: 190px; height: 190px; }
     .disco-img, .sounds-halo { width: 190px; height: 190px; }
-    /* Mobile: stessa dimensione e stesso bordo per entrambi */
-    .disco-img { width: 178px; height: 178px; top: 6px; left: 6px; }
+    /* Mobile: aumentiamo di poco solo il disco Arte mantenendo la stessa tendina */
+    .disco-img { width: 182px; height: 182px; top: 4px; left: 4px; }
     /* Centra il logo interno Arte rispetto al disc di 178px */
     .logo-img { width: 142px; height: 142px; top: 19px; left: 19px; }
     .sounds-logo-img { width: 178px; height: 178px; top: 6px; left: 6px; }
