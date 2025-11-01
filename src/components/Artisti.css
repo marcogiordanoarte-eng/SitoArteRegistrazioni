@@ -1209,10 +1209,13 @@ body {
 /* Blue glossy variant — same look and feel as brand button (blu + lucido) */
 .glow-btn--blue {
     color: #fff !important;
-    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
-    background: linear-gradient(180deg, #2b7de9 0%, #1f66c8 100%);
+    /* testo più "illuminato" per effetto lucido simile ad "Arte Registrazioni" */
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35), 0 0 10px rgba(255, 255, 255, 0.45);
+    /* gradiente più brillante nella parte alta */
+    background: linear-gradient(180deg, #45a0ff 0%, #1d60bc 100%);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 8px 20px rgba(25, 118, 210, 0.45), 0 0 8px rgba(255, 255, 255, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    /* glow esterno un po' più bianco per lucentezza */
+    box-shadow: 0 8px 22px rgba(25, 118, 210, 0.48), 0 0 18px rgba(255, 255, 255, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 .glow-btn--blue::before {
     content: "";
@@ -1220,15 +1223,30 @@ body {
     left: 2px;
     right: 2px;
     top: 2px;
-    height: 52%;
+    height: 46%;
     border-radius: 10px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.16) 45%, rgba(255,255,255,0) 100%);
+    /* riflesso superiore più evidente */
+    background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.22) 42%, rgba(255,255,255,0) 100%);
     pointer-events: none;
     filter: blur(0.2px);
 }
+.glow-btn--blue::after {
+    /* lieve pennellata diagonale per speculare */
+    content: "";
+    position: absolute;
+    left: -20%;
+    right: -20%;
+    top: -40%;
+    height: 120%;
+    background: linear-gradient(60deg, rgba(255,255,255,0) 35%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0) 65%);
+    transform: rotate(-6deg);
+    pointer-events: none;
+}
 .glow-btn--blue:hover {
-    background: linear-gradient(180deg, #3a87f0 0%, #2671d2 100%);
-    box-shadow: 0 10px 26px rgba(30, 136, 229, 0.55), 0 0 10px rgba(255, 255, 255, 0.24), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, #58a9ff 0%, #2a6ed0 100%);
+    box-shadow: 0 12px 30px rgba(30, 136, 229, 0.6), 0 0 22px rgba(255, 255, 255, 0.34), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    /* testo leggermente più luminoso in hover */
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), 0 0 14px rgba(255, 255, 255, 0.6);
 }
 .glow-btn--blue:active {
     transform: translateY(1px);
