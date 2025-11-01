@@ -434,7 +434,8 @@ body {
     object-fit: cover;
     background: #000; /* uniform edge inside the circle */
     z-index: 2;
-    filter: drop-shadow(0 0 12px #ffd700);
+    /* Rimuovi alone aggiuntivo per avere stesso bordo percepito del disco Arte */
+    filter: none;
 }
 .navbar {
     width: 100%;
