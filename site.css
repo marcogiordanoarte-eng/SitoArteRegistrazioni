@@ -8,6 +8,7 @@ body { font-family:Arial, sans-serif; background:#000; margin:0; padding:40px; c
 .logo-stack { position:relative; width:180px; height:180px; display:flex; justify-content:center; align-items:center; margin:0 auto; }
 .disco-img { width:180px; height:180px; border-radius:50%; box-shadow:0 0 16px var(--shadow); position:absolute; inset:0; z-index:1; }
 .logo-img { width:120px; height:120px; position:absolute; top:30px; left:30px; z-index:2; filter:drop-shadow(0 0 12px var(--gold)); }
+.sounds-logo-img { width:84px; height:84px; position:absolute; top:30px; right:18px; z-index:2; border-radius:22%; object-fit:cover; filter:drop-shadow(0 0 12px var(--gold)); }
 .navbar { width:100%; display:flex; justify-content:center; margin:32px 0 24px; }
 .navbar ul { list-style:none; display:flex; gap:32px; padding:0; margin:0; }
 .navbar a { text-decoration:none; color:var(--text); font-size:1.1em; padding:8px 18px; border-radius:8px; transition:background .2s,color .2s,box-shadow .3s; box-shadow:0 0 8px var(--shadow); position:relative; }
@@ -22,5 +23,5 @@ body { font-family:Arial, sans-serif; background:#000; margin:0; padding:40px; c
 .promo-video { max-width:80vw; max-height:60vh; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.2); }
 /* Accessibility focus */
 .glow-btn:focus-visible, .navbar a:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
-@media (max-width:900px) { .logo-stack,.disco-img { width:120px; height:120px;} .logo-img { width:80px; height:80px; top:20px; left:20px;} .navbar ul { gap:16px;} .panel { padding:20px;} .promo-video { max-width:98vw; max-height:40vh;} }
-@media (max-width:600px) { .logo-wrapper { margin-top:60px;} .logo-stack,.disco-img { width:80px; height:80px;} .logo-img { width:50px; height:50px; top:15px; left:15px;} .navbar ul { gap:8px;} .panel { padding:10px;} .promo-video { max-width:98vw; max-height:30vh;} }
+@media (max-width:900px) { .logo-stack,.disco-img { width:120px; height:120px;} .logo-img { width:80px; height:80px; top:20px; left:20px;} .sounds-logo-img { width:56px; height:56px; top:18px; right:14px; } .navbar ul { gap:16px;} .panel { padding:20px;} .promo-video { max-width:98vw; max-height:40vh;} }
+@media (max-width:600px) { .logo-wrapper { margin-top:60px;} .logo-stack,.disco-img { width:80px; height:80px;} .logo-img { width:50px; height:50px; top:15px; left:15px;} .sounds-logo-img { width:38px; height:38px; top:12px; right:10px; } .navbar ul { gap:8px;} .panel { padding:10px;} .promo-video { max-width:98vw; max-height:30vh;} }
