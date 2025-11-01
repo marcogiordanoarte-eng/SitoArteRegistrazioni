@@ -25,10 +25,7 @@ export default function Footer({ align = 'center', showArteButton = false, onArt
           <h1 style={{ fontSize: "1.1em", margin: 0 }}>Arte Registrazioni</h1>
         </button>
       )}
-      {/* Pulsante grande Musica sempre visibile */}
-      <Link to="/musica" className="glow-btn" style={{ fontSize: "1.3rem", padding: "14px 38px", margin: "12px 0", background: '#ffd700', color: '#222', fontWeight: 700, borderRadius: 14, textDecoration: 'none', boxShadow: '0 0 16px #ffd700', border: 'none', cursor: 'pointer' }}>
-        🎵 Musica
-      </Link>
+      {/* Pulsante Musica rimosso su richiesta */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <img
           src="/logo.png"

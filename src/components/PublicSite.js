@@ -106,9 +106,8 @@ export default function PublicSite() {
               <img src="/disco.png" alt="Disco" className="disco-img" />
               <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
             </div>
-            <div className="sounds-stack" aria-hidden="true">
-              <div className="sounds-halo" />
-              <img src="/soundslogo.jpg" alt="Logo Sounds" className="sounds-logo-img" />
+            <div className="sounds-app" aria-hidden="true">
+              <img src="/soundslogo.jpg" alt="Logo Sounds" className="sounds-app-img" />
             </div>
           </div>
         </div>

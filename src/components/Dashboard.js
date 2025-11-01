@@ -16,7 +16,6 @@ import {
 } from "firebase/firestore";
 // NOTE: removed backfillCreatedAt / normalize order buttons (obsolete)
 import BuyMusicAdmin from './BuyMusicAdmin';
-import DashboardTracks from './DashboardTracks';
 import PodcastAdmin from './PodcastAdmin';
 import CountdownAdmin from './CountdownAdmin';
 import DashboardVideoManager from './DashboardVideoManager';
@@ -500,12 +499,6 @@ function Dashboard() {
         </button>
         <button
           className="dash-btn dash-btn--ghost"
-          onClick={() => setView("tracks")}
-        >
-          Gestione Brani Musica
-        </button>
-        <button
-          className="dash-btn dash-btn--ghost"
           onClick={() => setView('gameMusic')}
         >
           Musica Game
@@ -686,12 +679,7 @@ function Dashboard() {
         </div>
       )}
 
-      {view === 'tracks' && (
-        <div className="dash-editor dash-container">
-          <h3 className="dash-section-title">Gestione Brani Musica</h3>
-          <DashboardTracks />
-        </div>
-      )}
+      {/* Vista 'tracks' rimossa */}
 
       {view === 'podcast' && (
         <div className="dash-editor dash-container">

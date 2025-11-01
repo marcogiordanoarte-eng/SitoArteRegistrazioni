@@ -293,6 +293,14 @@ body {
     padding: 0;
     position: relative;
 }
+/* Unified sizing variables for Arte & Sounds logos */
+:root {
+    /* Desktop defaults */
+    --circle-size: 320px;          /* outer container and halo diameter */
+    --inset: 8px;                  /* margin between halo edge and visible circle */
+    --arte-hand-size: 260px;       /* inner Arte hand/logo size */
+    --arte-hand-offset: 22px;      /* centers 260 inside 304 (=320-2*8) */
+}
 /* Rimozione definitiva dell'effetto "kit-supercar" (cerchio/luci rosse rotanti) su tutto il sito */
 .kit-supercar-circle, .kit-supercar-light { display: none !important; }
 /* Admin / Dashboard responsive UI */
@@ -389,46 +397,46 @@ body {
     align-items: center;
     margin-bottom: 8px; /* tighter below logo; navbar spacing handled separately */
 }
-.logo-combo { display: flex; align-items: center; justify-content: center; gap: 26px; }
-@media (max-width: 520px) { .logo-combo { flex-direction: column; gap: 18px; } }
+.logo-combo { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 24px; }
+@media (max-width: 520px) { .logo-combo { gap: 22px; } }
 .logo-stack {
     position: relative;
-    width: 320px;
-    height: 320px;
+    width: var(--circle-size);
+    height: var(--circle-size);
 }
 .disco-img {
-    /* Desktop: aumenta leggermente il disco Arte mantenendo la stessa tendina */
-    width: 310px;
-    height: 310px;
+    /* Visible Arte disc — equalized to Sounds via shared variables */
+    width: calc(var(--circle-size) - (2 * var(--inset)));
+    height: calc(var(--circle-size) - (2 * var(--inset)));
     position: absolute;
-    top: 5px;
-    left: 5px;
+    top: var(--inset);
+    left: var(--inset);
     z-index: 1;
     box-shadow: 0 0 80px 40px #ffd700, 0 0 120px 60px #fff;
     animation: pulse-glow 1.2s infinite;
     border-radius: 50%;
 }
 .logo-img {
-    width: 260px;
-    height: 260px;
+    width: var(--arte-hand-size);
+    height: var(--arte-hand-size);
     position: absolute;
-    /* Center 260px inside the current Arte disc (310px) */
-    top: 25px;
-    left: 25px;
+    /* Center the inner Arte hand using variables */
+    top: var(--arte-hand-offset);
+    left: var(--arte-hand-offset);
     z-index: 2;
     border-radius: 50%;
     object-fit: contain;
 }
 /* Sounds logo affianco: stessa grandezza del logo Arte (non sovrapposto) */
-.sounds-stack { position: relative; width: 320px; height: 320px; }
-.sounds-halo { position: absolute; top: 0; left: 0; width: 320px; height: 320px; z-index: 1; border-radius: 50%; background: transparent; pointer-events: none; box-shadow: 0 0 80px 40px #ffd700, 0 0 120px 60px #fff; animation: pulse-glow 1.2s infinite; }
+.sounds-stack { position: relative; width: var(--circle-size); height: var(--circle-size); }
+.sounds-halo { position: absolute; top: 0; left: 0; width: var(--circle-size); height: var(--circle-size); z-index: 1; border-radius: 50%; background: transparent; pointer-events: none; box-shadow: 0 0 80px 40px #ffd700, 0 0 120px 60px #fff; animation: pulse-glow 1.2s infinite; }
 .sounds-logo-img {
     position: absolute;
-    /* Desktop: uguale al disco di Arte e stesso bordo dalla tendina */
-    top: 8px;
-    left: 8px;
-    width: 304px;
-    height: 304px;
+    /* Equalized to Arte disc using shared variables */
+    top: var(--inset);
+    left: var(--inset);
+    width: calc(var(--circle-size) - (2 * var(--inset)));
+    height: calc(var(--circle-size) - (2 * var(--inset)));
     border-radius: 50%;
     -webkit-clip-path: circle(50% at 50% 50%);
     clip-path: circle(50% at 50% 50%);
@@ -437,6 +445,24 @@ body {
     z-index: 2;
     /* Rimuovi alone aggiuntivo per avere stesso bordo percepito del disco Arte */
     filter: none;
+}
+
+/* New: Sounds app-style icon under the Arte disc */
+.sounds-app { display: grid; place-items: center; }
+.sounds-app-img {
+    display: block;
+    width: min(240px, calc(var(--circle-size) * 0.78));
+    aspect-ratio: 1 / 1;
+    border-radius: 24%; /* iOS-like squircle */
+    object-fit: cover;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.55), 0 0 18px rgba(255,255,255,0.18);
+    outline: 1px solid rgba(255,255,255,0.06);
+}
+@media (max-width: 900px) {
+    .sounds-app-img { width: min(200px, calc(var(--circle-size) * 0.82)); }
+}
+@media (max-width: 520px) {
+    .sounds-app-img { width: min(160px, calc(var(--circle-size) * 0.90)); border-radius: 26%; }
 }
 .navbar {
     width: 100%;
@@ -599,18 +625,10 @@ body {
     .page-studio .studio-container { padding: 10px 12px; }
     .page-studio .studio-btn { border-width: 4px; box-shadow: 0 0 18px rgba(255,215,0,0.6), 0 0 28px rgba(255,255,255,0.25); }
     .page-studio .studio-btn img { max-width: 94vw; max-height: 70vh; border-radius: 16px; }
-    /* Tablet & small laptop: logo ancora grande ma proporzionato */
-    .logo-stack { width: 260px; height: 260px; }
-    .disco-img { width: 260px; height: 260px; }
-    .logo-img { width: 210px; height: 210px; top: 25px; left: 25px; }
-        .sounds-stack { width: 260px; height: 260px; }
-        .sounds-halo { width: 260px; height: 260px; border-radius: 50%; }
-    .sounds-logo-img { width: 210px; height: 210px; top: 25px; left: 25px; }
 }
 
 @media (max-width: 700px) and (min-width: 481px) {
-    .sounds-stack { width: 320px; height: 320px; }
-        .sounds-halo { width: 320px; height: 320px; border-radius: 50%; }
+    /* Logo sizes controlled by variables; no explicit overrides needed here */
 }
 
 /* Ensure strong pulsing glow on mobile for both logos */
@@ -1146,10 +1164,13 @@ body {
     .page-studio .studio-container { padding: 8px 8px; }
     .page-studio .studio-btn { border-width: 3px; box-shadow: 0 0 12px rgba(255,215,0,0.55), 0 0 18px rgba(255,255,255,0.2); }
     .page-studio .studio-btn img { max-width: 96vw; max-height: 64vh; border-radius: 12px; }
-    /* Smartphone: aumenta dimensioni per leggere bene la scritta nel logo */
-    .logo-stack { width: 200px; height: 200px; }
-    .disco-img { width: 200px; height: 200px; }
-    .logo-img { width: 160px; height: 160px; top: 20px; left: 20px; }
+    /* Smartphone variables so both logos remain equal and readable */
+    :root {
+        --circle-size: 190px;
+        --inset: 6px;
+        --arte-hand-size: 142px;
+        --arte-hand-offset: 18px;
+    }
     /* Keep icon grid compact on small phones */
     .icon-grid {
         grid-template-columns: repeat(5, 52px);
@@ -1898,12 +1919,4 @@ body > * {
 /* ===== Mobile layout: keep logos side-by-side and slightly smaller ===== */
 @media (max-width: 520px) {
     .logo-combo { flex-direction: row; gap: 22px; }
-    /* Overall size: two circles fit side-by-side on small phones */
-    .logo-stack, .sounds-stack { width: 190px; height: 190px; }
-    .disco-img, .sounds-halo { width: 190px; height: 190px; }
-    /* Mobile: aumentiamo di poco solo il disco Arte mantenendo la stessa tendina */
-    .disco-img { width: 182px; height: 182px; top: 4px; left: 4px; }
-    /* Centra il logo interno Arte rispetto al disc di 182px */
-    .logo-img { width: 142px; height: 142px; top: 20px; left: 20px; }
-    .sounds-logo-img { width: 178px; height: 178px; top: 6px; left: 6px; }
 }
