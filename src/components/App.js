@@ -8,6 +8,7 @@ import Studio from "./Studio";
 import Contatti from "./Contatti";
 import Festival from "./Festival";
 import BuyMusic from "./BuyMusic";
+import Sounds from "./Sounds";
 import Musica from "./Musica";
 import BuyGenreDetail from "./BuyGenreDetail";
 import Podcast from "./Podcast";
@@ -154,6 +155,7 @@ export default function App() {
             <Route path="/festival" element={<Festival />} />
             <Route path="/podcast" element={<Podcast />} />
             <Route path="/countdown" element={<Countdown />} />
+            <Route path="/sounds" element={<Sounds />} />
             <Route path="/buy" element={<BuyMusic />} />
             <Route path="/musica" element={<Musica />} />
             <Route path="/buy/genre/:gid" element={<BuyGenreDetail />} />

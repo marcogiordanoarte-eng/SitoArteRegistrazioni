@@ -50,13 +50,13 @@ export default function NavBar() {
       </div>
 
 
-      {/* Riga 4: Buy Music singolo (grande) */}
+      {/* Riga 4: Sounds singolo (grande) */}
       <div className="nav-row nav-row--single">
         <Link
-          to="/buy"
-          className={`glow-btn glow-btn--lg${isActive("/buy") ? " glow-btn--active" : ""}`}
+          to="/sounds"
+          className={`glow-btn glow-btn--lg${isActive("/sounds") ? " glow-btn--active" : ""}`}
         >
-          Buy Music
+          Sounds
         </Link>
       </div>
 
