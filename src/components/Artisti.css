@@ -1162,6 +1162,29 @@ body {
     min-width: 140px;
 }
 
+/* Inline top row holding Menu and Artists Label */
+.menu-top-row { margin: 8px auto 6px; max-width: min(980px, 94vw); }
+
+.artists-label-link {
+    display: inline-block;
+    text-decoration: none;
+    font-weight: 900;
+    letter-spacing: 0.6px;
+    /* bigger and red */
+    font-size: clamp(1.4rem, 3.2vw, 2.0rem);
+    color: #ff3b3b;
+    background: transparent;
+    padding: 6px 10px;
+    border-radius: 10px;
+}
+.artists-label-link:hover, .artists-label-link:focus-visible {
+    color: #ff5555;
+    text-shadow: 0 0 10px rgba(255,59,59,0.5);
+}
+.artists-label-link--active {
+    text-decoration: underline;
+}
+
 /* Variante blu per "Dashboard Artista" */
 .glow-btn--blue {
     background: #1976d2; /* blu accessibile */

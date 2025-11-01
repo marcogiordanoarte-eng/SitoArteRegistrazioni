@@ -13,8 +13,8 @@ export default function NavBar() {
 
   return (
     <div>
-      {/* Tasto Menu (sempre visibile) */}
-      <div className="menu-toggle-bar">
+      {/* Riga fissa: Menu + Artists Label (sempre visibile) */}
+      <div className="nav-row nav-row--pair menu-top-row">
         <button
           type="button"
           className="glow-btn glow-btn--md menu-toggle-btn"
@@ -24,28 +24,18 @@ export default function NavBar() {
         >
           Menu
         </button>
+        <Link
+          to="/artisti"
+          className={`artists-label-link${isActive("/artisti") ? " artists-label-link--active" : ""}`}
+        >
+          ARTISTS LABEL
+        </Link>
       </div>
 
-      {/* Navigazione principale a scomparsa */}
+      {/* Navigazione principale a scomparsa (resto dei pulsanti) */}
       {open && (
         <nav id="main-nav" className="glow-menu glow-menu--grid" aria-label="Navigazione principale">
-          {/* Riga 1: Home + Artisti (medio, affiancati) */}
-          <div className="nav-row nav-row--pair">
-            <Link
-              to="/"
-              className={`glow-btn glow-btn--md${isActive("/") ? " glow-btn--active" : ""}`}
-            >
-              Home
-            </Link>
-            <Link
-              to="/artisti"
-              className={`glow-btn glow-btn--md${isActive("/artisti") ? " glow-btn--active" : ""}`}
-            >
-              Artisti
-            </Link>
-          </div>
-
-          {/* Riga 2: Festival + Podcast (medio, affiancati) */}
+          {/* Riga 1: Festival + Podcast (medio, affiancati) */}
           <div className="nav-row nav-row--pair">
             <Link
               to="/festival"
@@ -61,7 +51,7 @@ export default function NavBar() {
             </Link>
           </div>
 
-          {/* Riga 3: Countdown singolo (medio) */}
+          {/* Riga 2: Countdown singolo (medio) */}
           <div className="nav-row nav-row--single">
             <Link
               to="/countdown"
@@ -71,8 +61,7 @@ export default function NavBar() {
             </Link>
           </div>
 
-
-          {/* Riga 4: Sounds singolo (grande) */}
+          {/* Riga 3: Sounds singolo (grande) */}
           <div className="nav-row nav-row--single">
             <Link
               to="/sounds"
@@ -82,7 +71,7 @@ export default function NavBar() {
             </Link>
           </div>
 
-          {/* Riga 5: Contatti (più piccolo, opzionale in coda) */}
+          {/* Riga 4: Contatti (più piccolo, opzionale in coda) */}
           <div className="nav-row nav-row--single nav-row--tail">
             <Link
               to="/contatti"
@@ -91,8 +80,6 @@ export default function NavBar() {
               Contatti
             </Link>
           </div>
-
-          {/* (Rimosso) Pulsante blu Dashboard Artista */}
         </nav>
       )}
     </div>
