@@ -8,7 +8,8 @@ import Studio from "./Studio";
 import Contatti from "./Contatti";
 import Festival from "./Festival";
 import BuyMusic from "./BuyMusic";
-import Sounds from "./Sounds";
+// Sostituito: nuova homepage Store per /sounds
+import SoundsStore from "./SoundsStore";
 import BuyGenreDetail from "./BuyGenreDetail";
 import Podcast from "./Podcast";
 import Countdown from "./Countdown";
@@ -154,7 +155,7 @@ export default function App() {
             <Route path="/festival" element={<Festival />} />
             <Route path="/podcast" element={<Podcast />} />
             <Route path="/countdown" element={<Countdown />} />
-            <Route path="/sounds" element={<Sounds />} />
+            <Route path="/sounds" element={<SoundsStore />} />
             <Route path="/buy" element={<BuyMusic />} />
             {/* Rotta /musica rimossa su richiesta */}
             <Route path="/buy/genre/:gid" element={<BuyGenreDetail />} />
