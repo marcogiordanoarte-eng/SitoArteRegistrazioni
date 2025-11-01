@@ -1145,6 +1145,10 @@ body {
     box-shadow: 0 0 16px #ffd700, 0 0 8px #fff;
     text-decoration: none;
     transition: box-shadow 0.2s, background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 .glow-btn:hover {
     background: #fffbe6;
@@ -1208,6 +1212,11 @@ body {
 .glow-btn--blue:hover {
     background: #1e88e5;
     box-shadow: 0 0 28px rgba(30,136,229,0.8), 0 0 12px rgba(255,255,255,0.3);
+}
+/* Active state highlight for blue variant */
+.glow-btn--blue.glow-btn--active {
+    box-shadow: 0 0 26px rgba(30,136,229,0.95), 0 0 12px rgba(255,255,255,0.36);
+    outline: 2px solid rgba(255,255,255,0.28);
 }
 .publicsite-title {
     /* color and backdrop are defined above for readability */

@@ -35,7 +35,7 @@ export default function NavBar() {
         <div className="nav-row nav-row--single">
           <Link
             to="/artisti"
-            className={`glow-btn glow-btn--lg glow-btn--red${isActive("/artisti") ? " glow-btn--active" : ""}`}
+            className={`glow-btn glow-btn--lg glow-btn--blue${isActive("/artisti") ? " glow-btn--active" : ""}`}
           >
             ARTISTS LABEL
           </Link>
