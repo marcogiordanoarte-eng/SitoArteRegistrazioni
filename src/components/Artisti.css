@@ -1162,6 +1162,27 @@ body {
     min-width: 140px;
 }
 
+/* Collapsible menu container with smooth slide/fade animation */
+.menu-collapsible {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: max-height 320ms ease, opacity 220ms ease, transform 260ms ease;
+    margin: 0 auto; /* override grid default margin when closed */
+    pointer-events: none; /* prevent focus/tab into hidden items */
+}
+.menu-collapsible.is-open {
+    max-height: 2000px; /* enough for all rows; content defines actual height */
+    opacity: 1;
+    transform: translateY(0);
+    margin: 4px auto 10px; /* restore spacing from glow-menu--grid */
+    pointer-events: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+    .menu-collapsible { transition: none; transform: none; }
+}
+
 /* Inline top row holding Menu and Artists Label */
 /* Variant button: "rosso fuoco" with black text always */
 .glow-btn--red {
