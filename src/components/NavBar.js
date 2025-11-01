@@ -13,8 +13,8 @@ export default function NavBar() {
 
   return (
     <div>
-      {/* Riga fissa: Menu + Artists Label (sempre visibile) */}
-      <div className="nav-row nav-row--pair menu-top-row">
+      {/* Barra toggle (solo pulsante Menu, sempre visibile) */}
+      <div className="menu-toggle-bar">
         <button
           type="button"
           className="glow-btn glow-btn--md menu-toggle-btn"
@@ -24,17 +24,21 @@ export default function NavBar() {
         >
           Menu
         </button>
-        <Link
-          to="/artisti"
-          className={`artists-label-link${isActive("/artisti") ? " artists-label-link--active" : ""}`}
-        >
-          ARTISTS LABEL
-        </Link>
       </div>
 
-      {/* Navigazione principale a scomparsa (resto dei pulsanti) */}
+      {/* Navigazione principale a scomparsa */}
       {open && (
         <nav id="main-nav" className="glow-menu glow-menu--grid" aria-label="Navigazione principale">
+          {/* Primo tasto: ARTISTS LABEL (rosso fuoco, testo nero) */}
+          <div className="nav-row nav-row--single">
+            <Link
+              to="/artisti"
+              className={`glow-btn glow-btn--lg glow-btn--red${isActive("/artisti") ? " glow-btn--active" : ""}`}
+            >
+              ARTISTS LABEL
+            </Link>
+          </div>
+
           {/* Riga 1: Festival + Podcast (medio, affiancati) */}
           <div className="nav-row nav-row--pair">
             <Link
