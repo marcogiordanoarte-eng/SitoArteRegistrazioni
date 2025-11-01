@@ -389,6 +389,7 @@ body {
     align-items: center;
     margin-bottom: 8px; /* tighter below logo; navbar spacing handled separately */
 }
+.logo-combo { display: flex; align-items: center; justify-content: center; gap: 16px; }
 .logo-stack {
     position: relative;
     width: 320px;
@@ -417,15 +418,11 @@ body {
     border-radius: 50%;
     object-fit: contain;
 }
-/* Sounds logo: app-style rounded square with same golden glow */
+/* Sounds logo affianco: stessa grandezza del logo Arte (non sovrapposto) */
 .sounds-logo-img {
-    width: 84px;
-    height: 84px;
-    position: absolute;
-    top: 30px;
-    right: 18px;
-    z-index: 2;
-    border-radius: 22%;
+    width: 260px; /* uguale a .logo-img di default */
+    height: 260px;
+    border-radius: 22%; /* icona app */
     object-fit: cover;
     filter: drop-shadow(0 0 12px #ffd700);
 }
@@ -594,7 +591,7 @@ body {
     .logo-stack { width: 260px; height: 260px; }
     .disco-img { width: 260px; height: 260px; }
     .logo-img { width: 210px; height: 210px; top: 25px; left: 25px; }
-    .sounds-logo-img { width: 68px; height: 68px; top: 22px; right: 20px; }
+    .sounds-logo-img { width: 210px; height: 210px; }
 }
 @media (max-width: 700px) {
     .navbar {

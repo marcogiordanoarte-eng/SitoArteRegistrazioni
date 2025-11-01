@@ -90,7 +90,7 @@ export default function PublicSite() {
   <Link to="/login" className="dash-badge" title="Dashboard">Dashboard</Link>
       <div className="publicsite-bg page-home">
     {/* DISCO ANIMATO SOTTO LE FRECCE */}
-  <div
+        <div
       className="logo-wrapper"
       style={{ cursor: 'pointer', margin: '18px 0 0 0', position:'relative' }}
       onClick={openLogoOverlay}
@@ -101,9 +101,11 @@ export default function PublicSite() {
       title="Video Logo"
     >
   <LogoPrompt show={!showOverlay} text="Premi" position="bottom" />
-          <div className="logo-stack">
-            <img src="/disco.png" alt="Disco" className="disco-img" />
-            <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
+          <div className="logo-combo">
+            <div className="logo-stack">
+              <img src="/disco.png" alt="Disco" className="disco-img" />
+              <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
+            </div>
             <img src="/soundslogo.jpg" alt="Logo Sounds" className="sounds-logo-img" />
           </div>
         </div>
