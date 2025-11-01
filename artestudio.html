@@ -16,6 +16,12 @@
             padding: 40px;
             position: relative;
         }
+    /* Logo stack at top (disco + Arte + Sounds) */
+    .logo-wrapper { display:flex; justify-content:center; align-items:center; margin: 24px 0 10px; }
+    .logo-stack { position:relative; width:180px; height:180px; display:flex; justify-content:center; align-items:center; }
+    .disco-img { width:180px; height:180px; border-radius:50%; box-shadow:0 0 16px #222; position:absolute; inset:0; z-index:1; }
+    .logo-img { width:120px; height:120px; position:absolute; top:30px; left:30px; z-index:2; filter:drop-shadow(0 0 12px #ffd700); }
+    .sounds-logo-img { width:84px; height:84px; position:absolute; top:30px; right:18px; z-index:2; border-radius:22%; object-fit:cover; filter:drop-shadow(0 0 12px #ffd700); }
         body::before {
             content: "";
             position: fixed;
@@ -114,6 +120,13 @@
     </style>
 </head>
 <body>
+    <div class="logo-wrapper">
+        <div class="logo-stack">
+            <img src="disco.png" alt="Disco" class="disco-img">
+            <img src="logo.png" alt="Logo Arte Registrazioni" class="logo-img">
+            <img src="sounds-logo.png" alt="Logo Sounds" class="sounds-logo-img">
+        </div>
+    </div>
     <nav class="navbar">
         <ul>
             <li><a href="../index.html">Home</a></li>
