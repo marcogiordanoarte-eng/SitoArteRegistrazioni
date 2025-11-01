@@ -422,7 +422,21 @@ body {
 /* Sounds logo affianco: stessa grandezza del logo Arte (non sovrapposto) */
 .sounds-stack { position: relative; width: 320px; height: 320px; }
 .sounds-halo { position: absolute; top: 0; left: 0; width: 320px; height: 320px; z-index: 1; border-radius: 50%; background: transparent; pointer-events: none; box-shadow: 0 0 80px 40px #ffd700, 0 0 120px 60px #fff; animation: pulse-glow 1.2s infinite; }
-.sounds-logo-img { position: absolute; top: 30px; left: 30px; width: 260px; height: 260px; border-radius: 22%; object-fit: cover; z-index: 2; filter: drop-shadow(0 0 12px #ffd700); }
+.sounds-logo-img {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    width: 260px;
+    height: 260px;
+    /* Make the Sounds logo perfectly round and fill the inner circle */
+    border-radius: 50%;
+    -webkit-clip-path: circle(50% at 50% 50%);
+    clip-path: circle(50% at 50% 50%);
+    object-fit: cover;
+    background: #000; /* uniform edge inside the circle */
+    z-index: 2;
+    filter: drop-shadow(0 0 12px #ffd700);
+}
 .navbar {
     width: 100%;
     display: grid;
