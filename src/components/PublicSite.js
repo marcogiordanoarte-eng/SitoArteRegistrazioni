@@ -104,6 +104,7 @@ export default function PublicSite() {
           <div className="logo-stack">
             <img src="/disco.png" alt="Disco" className="disco-img" />
             <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
+            <img src="/soundslogo.jpg" alt="Logo Sounds" className="sounds-logo-img" />
           </div>
         </div>
         <button

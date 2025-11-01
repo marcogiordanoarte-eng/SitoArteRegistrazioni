@@ -417,6 +417,18 @@ body {
     border-radius: 50%;
     object-fit: contain;
 }
+/* Sounds logo: app-style rounded square with same golden glow */
+.sounds-logo-img {
+    width: 84px;
+    height: 84px;
+    position: absolute;
+    top: 30px;
+    right: 18px;
+    z-index: 2;
+    border-radius: 22%;
+    object-fit: cover;
+    filter: drop-shadow(0 0 12px #ffd700);
+}
 .navbar {
     width: 100%;
     display: grid;
@@ -582,6 +594,7 @@ body {
     .logo-stack { width: 260px; height: 260px; }
     .disco-img { width: 260px; height: 260px; }
     .logo-img { width: 210px; height: 210px; top: 25px; left: 25px; }
+    .sounds-logo-img { width: 68px; height: 68px; top: 22px; right: 20px; }
 }
 @media (max-width: 700px) {
     .navbar {
