@@ -390,6 +390,7 @@ body {
     margin-bottom: 8px; /* tighter below logo; navbar spacing handled separately */
 }
 .logo-combo { display: flex; align-items: center; justify-content: center; gap: 26px; }
+@media (max-width: 520px) { .logo-combo { flex-direction: column; gap: 18px; } }
 .logo-stack {
     position: relative;
     width: 320px;
@@ -420,7 +421,7 @@ body {
 }
 /* Sounds logo affianco: stessa grandezza del logo Arte (non sovrapposto) */
 .sounds-stack { position: relative; width: 320px; height: 320px; }
-.sounds-halo { position: absolute; top: 0; left: 0; width: 320px; height: 320px; z-index: 1; border-radius: 28px; box-shadow: 0 0 80px 40px #ffd700, 0 0 120px 60px #fff; animation: pulse-glow 1.2s infinite; }
+.sounds-halo { position: absolute; top: 0; left: 0; width: 320px; height: 320px; z-index: 1; border-radius: 50%; background: transparent; pointer-events: none; box-shadow: 0 0 80px 40px #ffd700, 0 0 120px 60px #fff; animation: pulse-glow 1.2s infinite; }
 .sounds-logo-img { position: absolute; top: 30px; left: 30px; width: 260px; height: 260px; border-radius: 22%; object-fit: cover; z-index: 2; filter: drop-shadow(0 0 12px #ffd700); }
 .navbar {
     width: 100%;
@@ -587,14 +588,23 @@ body {
     .logo-stack { width: 260px; height: 260px; }
     .disco-img { width: 260px; height: 260px; }
     .logo-img { width: 210px; height: 210px; top: 25px; left: 25px; }
-    .sounds-stack { width: 260px; height: 260px; }
-    .sounds-halo { width: 260px; height: 260px; border-radius: 22px; }
+        .sounds-stack { width: 260px; height: 260px; }
+        .sounds-halo { width: 260px; height: 260px; border-radius: 50%; }
     .sounds-logo-img { width: 210px; height: 210px; top: 25px; left: 25px; }
 }
 
 @media (max-width: 700px) and (min-width: 481px) {
     .sounds-stack { width: 320px; height: 320px; }
-    .sounds-halo { width: 320px; height: 320px; border-radius: 28px; }
+        .sounds-halo { width: 320px; height: 320px; border-radius: 50%; }
+}
+
+/* Ensure strong pulsing glow on mobile for both logos */
+@media (hover: none), (pointer: coarse), (max-width: 820px) {
+    .disco-img, .sounds-halo {
+        animation-duration: 1.4s !important;
+        box-shadow: 0 0 80px 40px #ffd700, 0 0 120px 60px #fff !important;
+        filter: none !important;
+    }
 }
 @media (max-width: 700px) {
     .navbar {
