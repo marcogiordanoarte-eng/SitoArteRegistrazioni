@@ -42,11 +42,17 @@ export default function SoundsStore() {
     <div className="sounds-store">
       <header className="site-header" role="banner">
         <div className="container header-inner">
-          <a href="#" className="brand" aria-label="Sounds di Arte Registrazioni - Home">
+          <Link to="/sounds" className="brand" aria-label="Sounds di Arte Registrazioni - Home">
+            <img
+              className="brand-logo"
+              src="/soundslogo.jpg"
+              alt="Logo Sounds"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
             <span className="brand-sounds">Sounds</span>
             <span className="brand-by">di</span>
             <span className="brand-arte">Arte Registrazioni</span>
-          </a>
+          </Link>
           <nav className="main-nav" aria-label="Menu principale">
             <button className="nav-toggle" aria-expanded="false" aria-controls="nav-list" aria-label="Apri menù">☰</button>
             <ul id="nav-list" className="nav-list">
