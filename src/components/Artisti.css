@@ -1149,6 +1149,8 @@ body {
     align-items: center;
     justify-content: center;
     text-align: center;
+    position: relative; /* for glossy overlays */
+    overflow: hidden;   /* keep gloss inside rounded corners */
 }
 .glow-btn:hover {
     background: #fffbe6;
@@ -1204,18 +1206,37 @@ body {
 }
 
 /* Variante blu per "Dashboard Artista" */
+/* Blue glossy variant — same look and feel as brand button (blu + lucido) */
 .glow-btn--blue {
-    background: #1976d2; /* blu accessibile */
-    color: #fff;
-    box-shadow: 0 0 16px rgba(25,118,210,0.6), 0 0 8px rgba(255,255,255,0.2);
+    color: #fff !important;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+    background: linear-gradient(180deg, #2b7de9 0%, #1f66c8 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 20px rgba(25, 118, 210, 0.45), 0 0 8px rgba(255, 255, 255, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.glow-btn--blue::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    top: 2px;
+    height: 52%;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.16) 45%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+    filter: blur(0.2px);
 }
 .glow-btn--blue:hover {
-    background: #1e88e5;
-    box-shadow: 0 0 28px rgba(30,136,229,0.8), 0 0 12px rgba(255,255,255,0.3);
+    background: linear-gradient(180deg, #3a87f0 0%, #2671d2 100%);
+    box-shadow: 0 10px 26px rgba(30, 136, 229, 0.55), 0 0 10px rgba(255, 255, 255, 0.24), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
-/* Active state highlight for blue variant */
+.glow-btn--blue:active {
+    transform: translateY(1px);
+    box-shadow: 0 6px 16px rgba(30, 136, 229, 0.45), inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+/* Active route state highlight for blue variant */
 .glow-btn--blue.glow-btn--active {
-    box-shadow: 0 0 26px rgba(30,136,229,0.95), 0 0 12px rgba(255,255,255,0.36);
+    box-shadow: 0 0 26px rgba(30,136,229,0.95), 0 0 12px rgba(255,255,255,0.36), inset 0 0 0 1px rgba(255,255,255,0.08);
     outline: 2px solid rgba(255,255,255,0.28);
 }
 .publicsite-title {
