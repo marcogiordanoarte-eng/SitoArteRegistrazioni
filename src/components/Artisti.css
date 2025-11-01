@@ -1897,12 +1897,14 @@ body > * {
 
 /* ===== Mobile layout: keep logos side-by-side and slightly smaller ===== */
 @media (max-width: 520px) {
-    .logo-combo { flex-direction: row; gap: 18px; }
-    /* Bigger but still within viewport */
-    .logo-stack, .sounds-stack { width: 180px; height: 180px; }
-    .disco-img, .sounds-halo { width: 180px; height: 180px; }
-    /* Arte logo inside disc */
-    .logo-img { width: 150px; height: 150px; top: 15px; left: 15px; }
-    /* Sounds slightly larger: match Arte's disc (fills inner circle) */
-    .sounds-logo-img { width: 180px; height: 180px; top: 0; left: 0; }
+    .logo-combo { flex-direction: row; gap: 22px; }
+    /* Slightly larger overall, with a small uniform border to the halo */
+    .logo-stack, .sounds-stack { width: 190px; height: 190px; }
+    .disco-img, .sounds-halo { width: 190px; height: 190px; }
+    /* Enlarge Arte disc slightly within halo, keep a thin border */
+    .disco-img { width: 186px; height: 186px; top: 2px; left: 2px; }
+    /* Arte inner logo a bit larger too */
+    .logo-img { width: 158px; height: 158px; top: 16px; left: 16px; }
+    /* Sounds: same visible diameter as Arte disc, with the same thin border */
+    .sounds-logo-img { width: 186px; height: 186px; top: 2px; left: 2px; }
 }
