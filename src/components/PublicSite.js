@@ -102,11 +102,14 @@ export default function PublicSite() {
     >
   <LogoPrompt show={!showOverlay} text="Premi" position="bottom" />
           <div className="logo-combo">
-            <div className="logo-stack">
+            <div className="logo-stack" aria-hidden="true">
               <img src="/disco.png" alt="Disco" className="disco-img" />
               <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
             </div>
-            <img src="/soundslogo.jpg" alt="Logo Sounds" className="sounds-logo-img" />
+            <div className="sounds-stack" aria-hidden="true">
+              <div className="sounds-halo" />
+              <img src="/soundslogo.jpg" alt="Logo Sounds" className="sounds-logo-img" />
+            </div>
           </div>
         </div>
         <button
