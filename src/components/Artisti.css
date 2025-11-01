@@ -412,8 +412,9 @@ body {
     width: 260px;
     height: 260px;
     position: absolute;
-    top: 30px;
-    left: 30px;
+    /* Center 260px inside the current Arte disc (310px) */
+    top: 25px;
+    left: 25px;
     z-index: 2;
     border-radius: 50%;
     object-fit: contain;
@@ -1902,7 +1903,7 @@ body > * {
     .disco-img, .sounds-halo { width: 190px; height: 190px; }
     /* Mobile: aumentiamo di poco solo il disco Arte mantenendo la stessa tendina */
     .disco-img { width: 182px; height: 182px; top: 4px; left: 4px; }
-    /* Centra il logo interno Arte rispetto al disc di 178px */
-    .logo-img { width: 142px; height: 142px; top: 19px; left: 19px; }
+    /* Centra il logo interno Arte rispetto al disc di 182px */
+    .logo-img { width: 142px; height: 142px; top: 20px; left: 20px; }
     .sounds-logo-img { width: 178px; height: 178px; top: 6px; left: 6px; }
 }
