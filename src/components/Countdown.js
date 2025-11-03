@@ -9,6 +9,7 @@ import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import { doc, collection, onSnapshot } from 'firebase/firestore';
 import './Artisti.css';
 import { db } from './firebase';
+import { useI18n } from '../i18n';
 
 function toMillis(ts) {
   if (!ts) return null;
@@ -33,6 +34,7 @@ function formatDHMS(msLeft) {
 }
 
 export default function Countdown() {
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const [showOverlay, setShowOverlay] = useState(false);
   const [studioVideoUrl, setStudioVideoUrl] = useState('');
@@ -162,7 +164,7 @@ export default function Countdown() {
         {/* Data esatta di uscita sotto al timer */}
         {r && (
           <div style={{ marginTop: 6, color:'#9fe8c4', fontSize: 12, textShadow:'0 0 6px rgba(0,255,136,0.35)', textAlign:'center' }}>
-            {new Date(r).toLocaleString('it-IT', {
+            {new Date(r).toLocaleString(lang === 'it' ? 'it-IT' : 'en-US', {
               weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
               hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false
             })}
@@ -176,7 +178,7 @@ export default function Countdown() {
               <span style={{ animation:'blink 1.2s infinite', animationDelay:'0.2s' }}>➤</span>
               <span style={{ animation:'blink 1.2s infinite', animationDelay:'0.4s' }}>➤</span>
             </span>
-            <span>Fuori ora! puoi ascoltare</span>
+            <span>{t('countdown_out_now')}</span>
           </div>
         )}
       </div>
@@ -205,7 +207,7 @@ export default function Countdown() {
                 boxShadow: '0 6px 14px rgba(0,0,0,0.35)',
                 border: '1px solid rgba(255,255,255,0.08)'
               }}>
-                Disponibile ora
+                {t('countdown_available_now')}
               </div>
             )}
           </div>
@@ -219,7 +221,7 @@ export default function Countdown() {
       <Link to="/login" className="dash-badge">Dashboard</Link>
   {/* Intro vocale rimossa */}
   <div className="logo-wrapper" style={{ cursor: 'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} openOverlay('logo'); }} title="Video Logo">
-    <LogoPrompt show={!showOverlay && !logoDismissed} text="Premi" position="top" />
+    <LogoPrompt show={!showOverlay && !logoDismissed} text={t('ps_press')} position="top" />
         <div className="logo-stack">
             <img src="/disco.png" alt="Disco" className="disco-img" />
             <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
@@ -227,8 +229,8 @@ export default function Countdown() {
       </div>
       <button
         onClick={() => navigate(-1)}
-        aria-label="Torna indietro"
-        title="Indietro"
+        aria-label={t('ps_back')}
+        title={t('ps_back')}
         style={{ position:'fixed', top:'12px', left:'12px', zIndex:100002, background:'rgba(0,0,0,0.55)', border:'1px solid #ffd700', color:'#ffd700', borderRadius:'50%', width:46, height:46, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 12px #000' }}
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -236,16 +238,16 @@ export default function Countdown() {
       <NavBar />
 
       <div className="container" style={{ maxWidth: 1280, margin: '28px auto 36px', padding: '0 12px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <h1 className="publicsite-title countdown-title">Countdown</h1>
+        <h1 className="publicsite-title countdown-title">{t('countdown_title')}</h1>
 
         {loading && (
           <div style={{ color: '#dfffea', background: 'rgba(0,0,0,0.55)', padding: '10px 12px', borderRadius: 10, boxShadow: '0 6px 12px rgba(0,0,0,0.35)', marginTop: 10 }}>
-            Caricamento…
+            {t('countdown_loading')}
           </div>
         )}
         {error && !loading && (
           <div style={{ color: '#ffb3b3', background: 'rgba(0,0,0,0.6)', padding: '10px 12px', borderRadius: 10, boxShadow: '0 6px 12px rgba(0,0,0,0.35)', marginTop: 10 }}>
-            Errore: {error}
+            {t('countdown_error_prefix')} {error}
           </div>
         )}
 
@@ -256,14 +258,14 @@ export default function Countdown() {
                 split.upcoming.map(it => <Card key={it.id} item={it} showTimer />)
               ) : (
                 <div style={{ color: '#888', textAlign: 'center', background: 'rgba(0,0,0,0.45)', padding: '10px 12px', borderRadius: 10 }}>
-                  Nessun countdown imminente. Torna presto!
+                  {t('countdown_none')}
                 </div>
               )}
             </div>
 
             {split.past.length > 0 && (
               <div style={{ width: '100%', maxWidth: 980, marginTop: 28 }}>
-                <h2 className="publicsite-title" style={{ fontSize: '1.3rem', marginBottom: 8 }}>Uscite recenti</h2>
+                <h2 className="publicsite-title" style={{ fontSize: '1.3rem', marginBottom: 8 }}>{t('countdown_recent')}</h2>
                 <div className="gallery-row">
                   {split.past.map(it => (
                     <Card key={it.id} item={it} showTimer={true} />
@@ -285,7 +287,7 @@ export default function Countdown() {
       <div style={{ marginTop: 12, display:'flex', justifyContent:'center', gap: 10, flexWrap:'wrap' }}>
         <BrandButton onClick={() => openOverlay('studio')} />
         <Link to="/calend-arte" className="dash-small-btn" style={{ textDecoration:'none', border:'1px solid #ffd700', color:'#ffd700', padding:'8px 10px', borderRadius:8, background:'rgba(0,0,0,0.45)' }}>
-          CalendArte →
+          {t('calend_arte')}
         </Link>
       </div>
   <Footer showArteButton={false} />

@@ -7,8 +7,10 @@ import BrandButton from './BrandButton';
 import './Artisti.css';
 import { db } from './firebase';
 import { collection, doc, onSnapshot, onSnapshot as onDocSnapshot } from 'firebase/firestore';
+import { useI18n } from '../i18n';
 
 export default function BuyMusic() {
+  const { t } = useI18n();
   // Admin-only draft states removed (not used on public page)
 
   const [genres, setGenres] = useState([]); // [{id, name, coverUrl}]
@@ -72,8 +74,8 @@ export default function BuyMusic() {
         </div>
         <button
           onClick={() => navigate(-1)}
-          aria-label="Torna indietro"
-          title="Indietro"
+          aria-label={t('ps_back')}
+          title={t('ps_back')}
           style={{ position:'fixed', top:'12px', left:'12px', zIndex:100002, background:'rgba(0,0,0,0.55)', border:'1px solid #ffd700', color:'#ffd700', borderRadius:'50%', width:46, height:46, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 12px #000' }}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -117,9 +119,9 @@ export default function BuyMusic() {
                     fontWeight: 700,
                     boxShadow: '0 0 8px rgba(255,215,0,0.25)'
                   }}
-                  title={showEn ? 'Nascondi traduzione inglese' : 'Mostra traduzione inglese'}
+                  title={showEn ? t('buymusic_toggle_hide_en') : t('buymusic_toggle_show_en')}
                 >
-                  {showEn ? 'Nascondi traduzione inglese' : 'Mostra traduzione inglese'}
+                  {showEn ? t('buymusic_toggle_hide_en') : t('buymusic_toggle_show_en')}
                 </button>
               </div>
             </div>
@@ -131,9 +133,9 @@ export default function BuyMusic() {
               </div>
             )}
           </div>
-          <h1 className="publicsite-title">Buy Music</h1>
+          <h1 className="publicsite-title">{t('buymusic_title')}</h1>
           <div className="publicsite-desc" style={{ maxWidth: 980, margin: '8px auto 14px', textAlign: 'center' }}>
-            <strong>Come funziona</strong>: scegli un genere, ascolta l’anteprima di 15s e acquista il brano che preferisci. I prezzi sono indicati accanto ad ogni brano (esempi: € 1,99 singolo, € 9,99 album, € 100 pacchetto). Dopo il pagamento ottieni il download immediato e la licenza d’uso. Per provare una pagina di pagamento funzionante, apri <Link to="/pagamento-esempio" style={{ color: '#ffd700', textDecoration: 'underline' }}>questa demo</Link>.
+            <strong>{t('buymusic_how_title')}</strong>: scegli un genere, ascolta l’anteprima di 15s e acquista il brano che preferisci. I prezzi sono indicati accanto ad ogni brano (esempi: € 1,99 singolo, € 9,99 album, € 100 pacchetto). Dopo il pagamento ottieni il download immediato e la licenza d’uso. Per provare una pagina di pagamento funzionante, apri <Link to="/pagamento-esempio" style={{ color: '#ffd700', textDecoration: 'underline' }}>questa demo</Link>.
           </div>
           {genres.length === 0 ? (
             <div style={{ color: '#ffd700', textAlign: 'center', marginTop: 24 }}>Nessun genere disponibile al momento.</div>

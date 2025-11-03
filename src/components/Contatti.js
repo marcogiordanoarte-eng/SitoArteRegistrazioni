@@ -8,8 +8,10 @@ import ContactForm from './ContactForm';
 import LogoPrompt from './LogoPrompt';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import "./Artisti.css";
+import { useI18n } from '../i18n';
 
 export default function Contatti() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [showOverlay, setShowOverlay] = React.useState(false);
   const [studioVideoUrl, setStudioVideoUrl] = React.useState('');
@@ -34,14 +36,14 @@ export default function Contatti() {
   // Autoplay gestito internamente dal componente FullscreenVideoOverlay
   return (
     <div className="publicsite-bg page-contatti">
-      <Link to="/login" className="dash-badge">Dashboard</Link>
-      <button onClick={() => navigate(-1)} aria-label="Torna indietro" style={{ position: 'fixed', top: 10, left: 10, zIndex: 10000, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', border: '2px solid #ffd700', width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 12px rgba(255,215,0,0.6)' }}>
+  <Link to="/login" className="dash-badge">Dashboard</Link>
+  <button onClick={() => navigate(-1)} aria-label={t('ps_back')} title={t('ps_back')} style={{ position: 'fixed', top: 10, left: 10, zIndex: 10000, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', border: '2px solid #ffd700', width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 12px rgba(255,215,0,0.6)' }}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6" />
         </svg>
       </button>
-  <div className="logo-wrapper" style={{ cursor: 'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {} ; setLogoDismissed(true);} setOverlaySource('logo'); setShowOverlay(true); }} title="Video Logo">
-    <LogoPrompt show={!showOverlay && !logoDismissed} text="Premi" position="top" />
+  <div className="logo-wrapper" style={{ cursor: 'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {} ; setLogoDismissed(true);} setOverlaySource('logo'); setShowOverlay(true); }} title="Logo Video">
+    <LogoPrompt show={!showOverlay && !logoDismissed} text={t('ps_press')} position="top" />
         <div className="logo-stack">
           <img src="/disco.png" alt="Disco" className="disco-img" />
           <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
@@ -55,20 +57,20 @@ export default function Contatti() {
       />
       <NavBar />
       <div className="container contacts-container" style={{ maxWidth: 600, margin: "60px auto 0 auto", textAlign: "center", display: "flex", flexDirection: "column", gap: 48, padding: "16px 0" }}>
-        <h1 style={{ fontSize: "2.2em", color: "#ffd700", marginBottom: 32 }}>Contatti</h1>
+        <h1 style={{ fontSize: "2.2em", color: "#ffd700", marginBottom: 32 }}>{t('contacts_title')}</h1>
         <div className="contact-card" style={{ marginBottom: 0, padding: 32, background: "#181818", borderRadius: 18, boxShadow: "0 0 16px #ffd700", minHeight: 120 }}>
-          <h2 style={{ color: "#ffd700", marginBottom: 18, fontSize: "1.7em" }}>TELEFONO</h2>
+          <h2 style={{ color: "#ffd700", marginBottom: 18, fontSize: "1.7em" }}>{t('contacts_phone').toUpperCase()}</h2>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
             <span style={{ fontSize: "1.55em", color: "#ffd700", fontWeight: "bold", letterSpacing: 1, marginBottom: 8 }}>+39 371 1532403</span>
-            <a className="glow-btn" href="tel:+393711532403" style={{ background: "#ffd700", color: "#222", fontWeight: "bold", borderRadius: 12, padding: "16px 48px", fontSize: "1.25em", textDecoration: "none", boxShadow: "0 0 8px #ffd700", cursor: "pointer", textShadow: "0 0 4px #ffd700" }}>Chiama</a>
+            <a className="glow-btn" href="tel:+393711532403" style={{ background: "#ffd700", color: "#222", fontWeight: "bold", borderRadius: 12, padding: "16px 48px", fontSize: "1.25em", textDecoration: "none", boxShadow: "0 0 8px #ffd700", cursor: "pointer", textShadow: "0 0 4px #ffd700" }}>{t('contacts_call')}</a>
           </div>
         </div>
         <div className="contact-card" style={{ marginBottom: 0, padding: 32, background: "#181818", borderRadius: 18, boxShadow: "0 0 16px #ffd700", minHeight: 180 }}>
-          <h3 style={{ color: "#ffd700", marginBottom: 18, fontSize: "1.5em" }}>Scrivi un messaggio</h3>
+          <h3 style={{ color: "#ffd700", marginBottom: 18, fontSize: "1.5em" }}>{t('contacts_write_message')}</h3>
           <ContactForm />
         </div>
         <div className="contact-card" style={{ marginBottom: 0, padding: 32, background: "#111", borderRadius: 18, boxShadow: "0 0 16px #ffd700", minHeight: 120 }}>
-          <h2 style={{ color: "#ffd700", marginBottom: 18, fontSize: "1.7em" }}>INDIRIZZO</h2>
+          <h2 style={{ color: "#ffd700", marginBottom: 18, fontSize: "1.7em" }}>{t('contacts_address').toUpperCase()}</h2>
           <div style={{ fontSize: "1.35em", color: "#fcfbfb", fontWeight: "bold", marginBottom: 18 }}>Corso Francia 169, Torino (To) Italia</div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
             <iframe
@@ -81,7 +83,7 @@ export default function Contatti() {
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             ></iframe>
-            <a className="glow-btn" href="https://share.google/WoJQ6fCnnUcrPv7dl" target="_blank" rel="noopener noreferrer" style={{ marginTop: 12, fontSize: "1.15em", background: "#ffd700", color: "#222", borderRadius: 12, padding: "12px 32px", textDecoration: "none", fontWeight: "bold", boxShadow: "0 0 8px #ffd700", textShadow: "0 0 4px #ffd700" }}>Apri su Google Maps</a>
+            <a className="glow-btn" href="https://share.google/WoJQ6fCnnUcrPv7dl" target="_blank" rel="noopener noreferrer" style={{ marginTop: 12, fontSize: "1.15em", background: "#ffd700", color: "#222", borderRadius: 12, padding: "12px 32px", textDecoration: "none", fontWeight: "bold", boxShadow: "0 0 8px #ffd700", textShadow: "0 0 4px #ffd700" }}>{t('contacts_open_maps')}</a>
           </div>
         </div>
       <style>{`

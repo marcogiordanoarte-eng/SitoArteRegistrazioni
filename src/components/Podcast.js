@@ -9,6 +9,7 @@ import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import './Artisti.css';
 import { db } from './firebase';
 import { collection, onSnapshot, doc } from 'firebase/firestore';
+import { useI18n } from '../i18n';
 
 // Funzione di utilità per timestamp (se serve)
 function toMs(ts) {
@@ -32,6 +33,7 @@ function getYouTubeEmbed(url) {
 }
 
 export default function Podcast() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [videos, setVideos] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -99,7 +101,7 @@ export default function Podcast() {
     <div className="publicsite-bg page-podcast">
   <Link to="/login" className="dash-badge">Dashboard</Link>
   <div className="logo-wrapper" style={{ cursor: 'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} openOverlay('logo'); }} title="Video Logo">
-    <LogoPrompt show={!showOverlay && !logoDismissed} text="Premi" position="top" />
+    <LogoPrompt show={!showOverlay && !logoDismissed} text={t('ps_press')} position="top" />
         <div className="logo-stack">
           <img src="/disco.png" alt="Disco" className="disco-img" />
           <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
@@ -107,25 +109,25 @@ export default function Podcast() {
       </div>
       <button
         onClick={() => navigate(-1)}
-        aria-label="Torna indietro"
-        title="Indietro"
+        aria-label={t('ps_back')}
+        title={t('ps_back')}
         style={{ position:'fixed', top:'12px', left:'12px', zIndex:100002, background:'rgba(0,0,0,0.55)', border:'1px solid #ffd700', color:'#ffd700', borderRadius:'50%', width:46, height:46, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 12px #000' }}
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
       <NavBar />
       <div className="container" style={{ maxWidth: 1100, margin: '24px auto', padding: '0 12px' }}>
-        <h1 className="publicsite-title" style={{ textAlign: 'center' }}>Podcast</h1>
+        <h1 className="publicsite-title" style={{ textAlign: 'center' }}>{t('podcast_title')}</h1>
         <p className="publicsite-desc" style={{ textAlign: 'center' }}>
-          Benvenuti nella pagina Podcast di Arte Registrazioni!<br/>
-          Qui potete seguire le interviste agli artisti di Arte Registrazioni scegliendo tra i filmati.
+          {t('podcast_intro1')}<br/>
+          {t('podcast_intro2')}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, flexWrap: 'wrap', marginTop: 6 }}>
           <div style={{ color: '#ffd700', fontWeight: 600, textAlign: 'center' }}>
-            Per partecipare dal vivo ai podcast o fare una richiesta contattaci qui
+            {t('podcast_cta_text')}
           </div>
           <Link to="/contatti" className="glow-btn" style={{ background: '#ffd700', color: '#222', fontWeight: 'bold', borderRadius: 12, padding: '10px 22px', textDecoration: 'none', boxShadow: '0 0 8px #ffd700' }}>
-            Contatti
+            {t('podcast_cta_btn')}
           </Link>
         </div>
 
@@ -152,18 +154,18 @@ export default function Podcast() {
                   style={{ width: '100%', height: 'auto', background: '#000' }}
                 />
               ) : (
-                <div style={{ color: '#ffd700', textAlign: 'center', padding: 20 }}>Video non disponibile</div>
+                <div style={{ color: '#ffd700', textAlign: 'center', padding: 20 }}>{t('podcast_no_video')}</div>
               )}
             </div>
             <div style={{ maxWidth: 1000, width: '100%', color: '#fff' }}>
-              <h2 style={{ margin: '8px 0', color: '#ffd700' }}>{selected.title || 'Senza titolo'}</h2>
+              <h2 style={{ margin: '8px 0', color: '#ffd700' }}>{selected.title || t('podcast_untitled')}</h2>
               {selected.description ? (
                 <p style={{ margin: '6px 0 0' }}>{selected.description}</p>
               ) : null}
             </div>
           </div>
         ) : (
-          <div style={{ color: '#ffd700', textAlign: 'center', marginTop: 12 }}>Nessun contenuto disponibile.</div>
+          <div style={{ color: '#ffd700', textAlign: 'center', marginTop: 12 }}>{t('podcast_no_content')}</div>
         )}
 
         {/* Lista filmati */}
