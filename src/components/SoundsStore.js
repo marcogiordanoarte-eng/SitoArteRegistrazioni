@@ -88,7 +88,7 @@ export default function SoundsStore() {
           <nav className="main-nav" aria-label="Menu principale">
             <button className="nav-toggle" aria-expanded="false" aria-controls="nav-list" aria-label="Apri menù">☰</button>
             <ul id="nav-list" className="nav-list">
-              <li><a href="#" className="active">Home</a></li>
+              <li><a href="/" className="active">Home</a></li>
               <li><a href="#distribuzione">Distribuzione</a></li>
               <li><a href="#editing">Editing</a></li>
               <li><a href="#negozio">Negozio</a></li>
@@ -97,7 +97,7 @@ export default function SoundsStore() {
               <li><a href="#login" className="login">Login</a></li>
             </ul>
           </nav>
-          <Link className="btn btn-label" to="/" title="Vai alla Label (home attuale)">Label</Link>
+          <Link className="btn btn-label" to="/label" title="Vai alla Label">Label</Link>
         </div>
       </header>
 
@@ -254,20 +254,20 @@ export default function SoundsStore() {
             <div className="copy">2025 © Arte Registrazioni</div>
           </div>
           <div className="social">
-            <a href="#" aria-label="Instagram" className="social-link">
+            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="social-link">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="3" y="3" width="18" height="18" rx="5" stroke="#94a3b8" strokeWidth="1.5"/>
                 <circle cx="12" cy="12" r="4" stroke="#94a3b8" strokeWidth="1.5"/>
                 <circle cx="17.5" cy="6.5" r="1" fill="#94a3b8"/>
               </svg>
             </a>
-            <a href="#" aria-label="TikTok" className="social-link">
+            <a href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="social-link">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M14 3v8.2a3.8 3.8 0 1 1-3.8-3.8" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/>
                 <path d="M14 6c1.2 1.8 3.1 3 5 3" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
             </a>
-            <a href="#" aria-label="Telegram" className="social-link">
+            <a href="https://t.me/" target="_blank" rel="noopener noreferrer" aria-label="Telegram" className="social-link">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M21 5 10 13l-2 6 3-4 10-10Z" stroke="#94a3b8" strokeWidth="1.5" strokeLinejoin="round"/>
                 <path d="M21 5 4 11l5 2" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/>

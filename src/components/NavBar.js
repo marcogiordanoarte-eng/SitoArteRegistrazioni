@@ -70,8 +70,8 @@ export default function NavBar() {
         {/* Riga 3: Sounds singolo (grande) */}
         <div className="nav-row nav-row--single">
           <Link
-            to="/sounds"
-            className={`glow-btn glow-btn--lg${isActive("/sounds") ? " glow-btn--active" : ""}`}
+            to="/"
+            className={`glow-btn glow-btn--lg${isActive("/") ? " glow-btn--active" : ""}`}
           >
             Sounds
           </Link>

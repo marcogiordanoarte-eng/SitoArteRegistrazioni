@@ -148,14 +148,18 @@ export default function App() {
       <BrowserRouter>
         <div style={{ position:'relative', minHeight:'100vh' }}>
           <Routes>
-            <Route path="/" element={<PublicSite />} />
+            {/* Sounds diventa la Home di tutto il progetto */}
+            <Route path="/" element={<SoundsStore />} />
             <Route path="/artisti" element={<Artisti />} />
             <Route path="/artista/:id" element={<ArtistDetail />} />
             <Route path="/studio" element={<Studio />} />
             <Route path="/festival" element={<Festival />} />
             <Route path="/podcast" element={<Podcast />} />
             <Route path="/countdown" element={<Countdown />} />
-            <Route path="/sounds" element={<SoundsStore />} />
+            {/* Rotta esplicita per Sounds (alias della home) */}
+            <Route path="/sounds" element={<Navigate to="/" replace />} />
+            {/* Spostiamo la vecchia home (Label) su /label */}
+            <Route path="/label" element={<PublicSite />} />
             <Route path="/buy" element={<BuyMusic />} />
             {/* Rotta /musica rimossa su richiesta */}
             <Route path="/buy/genre/:gid" element={<BuyGenreDetail />} />
