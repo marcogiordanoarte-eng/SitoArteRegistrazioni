@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { Link, useNavigate } from 'react-router-dom';
+import { collection, onSnapshot, doc, onSnapshot as onDocSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import './SoundsStore.css';
+import './Artisti.css';
 
 export default function SoundsStore() {
   const messages = {
@@ -195,6 +196,34 @@ export default function SoundsStore() {
     } catch {}
   }, []);
 
+  // Copy of BuyMusic "site/config" content, logo, and intro (IT + EN toggle)
+  const navigate = useNavigate();
+  const logoCandidates = React.useMemo(() => [
+    '/soundslogo.jpg', '/soundslogo.jpeg', '/icons/soundslogo.jpg', '/icons/soundslogo.jpeg',
+    '/sounds.png', '/sounds.svg', '/sounds.jpg', '/sounds.jpeg',
+    '/sounds-logo.png', '/sounds_logo.png', '/logo-sounds.png', '/sounds/logo.png',
+    '/img/sounds.png', '/img/sounds-logo.png',
+    '/icons/sounds.jpg', '/icons/sounds.jpeg', '/icons/sounds.png', '/icons/sounds.svg',
+    '/icons/sounds-logo.jpg', '/icons/sounds-logo.png', '/icons/logo-sounds.png'
+  ], []);
+  const [logoIdx, setLogoIdx] = useState(0);
+  const [soundsLogoUrl, setSoundsLogoUrl] = useState('');
+  const [buyIntroIt, setBuyIntroIt] = useState('');
+  const [buyIntroEn, setBuyIntroEn] = useState('');
+  const [showEn, setShowEn] = useState(false);
+
+  useEffect(() => {
+    const unsub = onDocSnapshot(doc(db, 'site', 'config'), (snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      setSoundsLogoUrl(data?.soundsLogoUrl || '');
+      setBuyIntroIt(data?.buyIntroIt || '');
+      setBuyIntroEn(data?.buyIntroEn || '');
+    });
+    return () => unsub();
+  }, []);
+
+  const openGenre = (gid) => navigate(`/buy/genre/${gid}`);
+
   return (
     <div className="sounds-store">
       <header className="site-header" role="banner">
@@ -372,43 +401,101 @@ export default function SoundsStore() {
           </form>
         </section>
 
-        {/* Buy Music: embed preview section at the bottom of the home */}
+        {/* Buy Music: reinsert full texts & formatting exactly as in the BuyMusic page (excluding page-level header/footer) */}
         <section id="buy-music" className="container" aria-labelledby="buy-music-title" style={{ marginTop: 36, marginBottom: 8 }}>
-          <h2 id="buy-music-title" className="section-title reveal">{t('buymusic_title')}</h2>
-          {genres.length === 0 ? (
-            <div style={{ color: '#94a3b8', textAlign: 'center', background: 'rgba(0,0,0,0.35)', padding: '10px 12px', borderRadius: 10, marginTop: 8 }}>
-              {t('buymusic_empty')}
+          {/* Logo block */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10, marginBottom: 12 }}>
+            {logoIdx < logoCandidates.length ? (
+              <img
+                src={logoCandidates[logoIdx]}
+                alt="Sounds - Arte Registrazioni"
+                onError={() => setLogoIdx(i => (i + 1 <= logoCandidates.length ? i + 1 : i + 1))}
+                style={{ width: 240, maxWidth: '70vw', height: 'auto', filter: 'drop-shadow(0 0 10px rgba(255,215,0,0.55))' }}
+              />
+            ) : soundsLogoUrl ? (
+              <img src={soundsLogoUrl} alt="Sounds - Arte Registrazioni" style={{ width: 240, maxWidth: '70vw', height: 'auto', filter: 'drop-shadow(0 0 10px rgba(255,215,0,0.55))' }} />
+            ) : (
+              <div style={{ fontSize: 'clamp(1.6rem, 4.5vw, 2.4rem)', color: '#ffd700', fontWeight: 800, textShadow: '0 0 12px rgba(255,215,0,0.5)' }}>
+                Sounds
+              </div>
+            )}
+          </div>
+
+          {/* Intro IT + toggle EN */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 16 }}>
+            <div style={{ margin: '8px 0' }}>
+              <p className="publicsite-desc" style={{ margin: '4px 0', fontSize: 'clamp(1.15rem, 2.8vw, 1.7rem)', lineHeight: 1.5, textAlign: 'center', maxWidth: 980 }}>
+                {buyIntroIt || 'In collaborazione con "Sounds" di Arte Registrazioni qui trovi brani di musica royalty‑free da acquistare e utilizzare a piacimento; una volta acquistato un brano, diventa di tua proprietà e non sarà più possibile acquistarlo ulteriormente. Scopri il tuo sound perfetto: scegli un genere musicale, ascolta un’anteprima di 15 secondi e acquista il brano che ti conquista! Sei un videomaker, YouTuber o un creator di reels, post social e podcast? Cerchi relax per dormire meglio o meditare? Qui puoi acquistare, scaricare e sfruttare musica royalty‑free per ogni tua avventura creativa!'}
+              </p>
+              <div style={{ marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowEn(v => !v)}
+                  aria-expanded={showEn}
+                  aria-controls="buy-intro-en"
+                  style={{
+                    background: 'transparent',
+                    color: '#ffd700',
+                    border: '1px solid #ffd700',
+                    borderRadius: 10,
+                    padding: '6px 12px',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    boxShadow: '0 0 8px rgba(255,215,0,0.25)'
+                  }}
+                  title={showEn ? 'Nascondi traduzione inglese' : 'Mostra traduzione inglese'}
+                >
+                  {showEn ? 'Nascondi traduzione inglese' : 'Mostra traduzione inglese'}
+                </button>
+              </div>
             </div>
+            {showEn && (
+              <div id="buy-intro-en" style={{ margin: '8px 0' }}>
+                <p className="publicsite-desc" style={{ margin: '4px 0', opacity: 0.95, fontSize: 'clamp(1.15rem, 2.8vw, 1.7rem)', lineHeight: 1.5, textAlign: 'center', maxWidth: 980 }}>
+                  {buyIntroEn || 'In collaboration with "Sounds" by Arte Registrazioni, here you can find royalty‑free music tracks to purchase and use as you wish. Once a track has been purchased, it becomes your property and can no longer be purchased by others. Discover your perfect sound: choose a music genre, listen to a 15‑second preview, and buy the track that wins you over! Are you a videomaker, YouTuber, or a creator of reels, social posts, and podcasts? Looking for relaxation to sleep better or meditate? Here you can purchase, download, and make the most of royalty‑free music for every creative adventure!'}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Title as in page */}
+          <h1 className="publicsite-title">Buy Music</h1>
+
+          {/* Come funziona */}
+          <div className="publicsite-desc" style={{ maxWidth: 980, margin: '8px auto 14px', textAlign: 'center' }}>
+            <strong>Come funziona</strong>: scegli un genere, ascolta l’anteprima di 15s e acquista il brano che preferisci. I prezzi sono indicati accanto ad ogni brano (esempi: € 1,99 singolo, € 9,99 album, € 100 pacchetto). Dopo il pagamento ottieni il download immediato e la licenza d’uso. Per provare una pagina di pagamento funzionante, apri <Link to="/pagamento-esempio" style={{ color: '#ffd700', textDecoration: 'underline' }}>questa demo</Link>.
+          </div>
+
+          {/* Genres grid identical classes/structure */}
+          {genres.length === 0 ? (
+            <div style={{ color: '#ffd700', textAlign: 'center', marginTop: 24 }}>Nessun genere disponibile al momento.</div>
           ) : (
-            <div className="buy-genres-grid-home" style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-              gap: 12,
-              marginTop: 12
-            }}>
+            <div className="buy-genres-grid">
               {genres.map(g => {
                 const coverSrc = g.coverUrl || g.cover || g.coverImage || g.cover_image || g.imageUrl || g.image || '/logo.png';
                 return (
-                  <Link key={g.id} to={`/buy/genre/${g.id}`} className="buy-genre-card-home" style={{
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    background: 'rgba(0,0,0,0.45)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 12,
-                    overflow: 'hidden',
-                    boxShadow: '0 6px 14px rgba(0,0,0,0.35)'
-                  }}>
-                    <div style={{
-                      height: 140,
-                      backgroundImage: `url(${coverSrc})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      backgroundColor: '#111'
-                    }} />
-                    <div style={{ padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#e6fdff' }}>
-                      {g.name || 'Genere'}
+                  <div key={g.id} className="buy-genre-card" onClick={() => openGenre(g.id)}>
+                    <div
+                      className="buy-genre-cover-wrap"
+                      style={{
+                        backgroundImage: `url(${coverSrc})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundColor: '#111',
+                        border: '1px solid #222'
+                      }}
+                    >
+                      <img
+                        src={coverSrc}
+                        alt={g.name || 'Genere'}
+                        loading="lazy"
+                        decoding="async"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { if (e.currentTarget.src !== window.location.origin + '/logo.png') { e.currentTarget.src = '/logo.png'; } }}
+                      />
                     </div>
-                  </Link>
+                    <div className="buy-genre-name">{g.name || 'Genere'}</div>
+                  </div>
                 );
               })}
             </div>
