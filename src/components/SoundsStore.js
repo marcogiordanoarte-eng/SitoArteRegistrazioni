@@ -210,7 +210,6 @@ export default function SoundsStore() {
   const [soundsLogoUrl, setSoundsLogoUrl] = useState('');
   const [buyIntroIt, setBuyIntroIt] = useState('');
   const [buyIntroEn, setBuyIntroEn] = useState('');
-  const [showEn, setShowEn] = useState(false);
 
   useEffect(() => {
     const unsub = onDocSnapshot(doc(db, 'site', 'config'), (snap) => {
@@ -421,41 +420,15 @@ export default function SoundsStore() {
             )}
           </div>
 
-          {/* Intro IT + toggle EN */}
+          {/* Intro: show IT/EN based on selected language (no toggle) */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 16 }}>
             <div style={{ margin: '8px 0' }}>
               <p className="publicsite-desc" style={{ margin: '4px 0', fontSize: 'clamp(1.15rem, 2.8vw, 1.7rem)', lineHeight: 1.5, textAlign: 'center', maxWidth: 980 }}>
-                {buyIntroIt || 'In collaborazione con "Sounds" di Arte Registrazioni qui trovi brani di musica royalty‑free da acquistare e utilizzare a piacimento; una volta acquistato un brano, diventa di tua proprietà e non sarà più possibile acquistarlo ulteriormente. Scopri il tuo sound perfetto: scegli un genere musicale, ascolta un’anteprima di 15 secondi e acquista il brano che ti conquista! Sei un videomaker, YouTuber o un creator di reels, post social e podcast? Cerchi relax per dormire meglio o meditare? Qui puoi acquistare, scaricare e sfruttare musica royalty‑free per ogni tua avventura creativa!'}
+                {lang === 'it'
+                  ? (buyIntroIt || 'Qui trovi brani di musica royalty‑free da acquistare e utilizzare a piacimento. Scopri il tuo sound perfetto: scegli un genere musicale, ascolta un’anteprima e acquista il brano che ti conquista! Sei un videomaker, YouTuber o un creator di reels, post social e podcast? Cerchi relax per dormire meglio o meditare? Qui puoi acquistare, scaricare e sfruttare musica royalty‑free per ogni tua avventura creativa!')
+                  : (buyIntroEn || 'Here you can find royalty‑free music tracks to purchase and use as you wish. Discover your perfect sound: choose a music genre, listen to a preview, and buy the track that wins you over! Are you a videomaker, YouTuber, or a creator of reels, social posts, and podcasts? Looking for relaxation to sleep better or meditate? Here you can purchase, download, and make the most of royalty‑free music for every creative adventure!')}
               </p>
-              <div style={{ marginTop: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => setShowEn(v => !v)}
-                  aria-expanded={showEn}
-                  aria-controls="buy-intro-en"
-                  style={{
-                    background: 'transparent',
-                    color: '#ffd700',
-                    border: '1px solid #ffd700',
-                    borderRadius: 10,
-                    padding: '6px 12px',
-                    cursor: 'pointer',
-                    fontWeight: 700,
-                    boxShadow: '0 0 8px rgba(255,215,0,0.25)'
-                  }}
-                  title={showEn ? 'Nascondi traduzione inglese' : 'Mostra traduzione inglese'}
-                >
-                  {showEn ? 'Nascondi traduzione inglese' : 'Mostra traduzione inglese'}
-                </button>
-              </div>
             </div>
-            {showEn && (
-              <div id="buy-intro-en" style={{ margin: '8px 0' }}>
-                <p className="publicsite-desc" style={{ margin: '4px 0', opacity: 0.95, fontSize: 'clamp(1.15rem, 2.8vw, 1.7rem)', lineHeight: 1.5, textAlign: 'center', maxWidth: 980 }}>
-                  {buyIntroEn || 'In collaboration with "Sounds" by Arte Registrazioni, here you can find royalty‑free music tracks to purchase and use as you wish. Once a track has been purchased, it becomes your property and can no longer be purchased by others. Discover your perfect sound: choose a music genre, listen to a 15‑second preview, and buy the track that wins you over! Are you a videomaker, YouTuber, or a creator of reels, social posts, and podcasts? Looking for relaxation to sleep better or meditate? Here you can purchase, download, and make the most of royalty‑free music for every creative adventure!'}
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Title as in page */}
@@ -463,7 +436,7 @@ export default function SoundsStore() {
 
           {/* Come funziona */}
           <div className="publicsite-desc" style={{ maxWidth: 980, margin: '8px auto 14px', textAlign: 'center' }}>
-            <strong>Come funziona</strong>: scegli un genere, ascolta l’anteprima di 15s e acquista il brano che preferisci. I prezzi sono indicati accanto ad ogni brano (esempi: € 1,99 singolo, € 9,99 album, € 100 pacchetto). Dopo il pagamento ottieni il download immediato e la licenza d’uso. Per provare una pagina di pagamento funzionante, apri <Link to="/pagamento-esempio" style={{ color: '#ffd700', textDecoration: 'underline' }}>questa demo</Link>.
+            <strong>Come funziona</strong>: scegli un genere, ascolta l’anteprima e acquista il brano che preferisci. I prezzi sono indicati accanto ad ogni brano (esempi: € 1,99 singolo, € 9,99 album, € 100 pacchetto). Dopo il pagamento ottieni il download immediato e la licenza d’uso. Per provare una pagina di pagamento funzionante, apri <Link to="/pagamento-esempio" style={{ color: '#ffd700', textDecoration: 'underline' }}>questa demo</Link>.
           </div>
 
           {/* Genres grid identical classes/structure */}
