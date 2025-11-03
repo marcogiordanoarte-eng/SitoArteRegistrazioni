@@ -44,7 +44,7 @@ export default function SoundsStore() {
       placeholder_demo: 'https://…',
       form_submit: 'Richiedi invito',
       form_details: 'Vedi dettagli',
-      alert_thanks_email: "Grazie! Ti contatteremo all'indirizzo: ${email}",
+  alert_thanks_email: "Grazie! Ti contatteremo all'indirizzo: {email}",
       alert_thanks: 'Grazie! Ti contatteremo presto.',
       footer_privacy: 'Privacy',
       footer_cookie: 'Cookie',
@@ -93,7 +93,7 @@ export default function SoundsStore() {
       placeholder_demo: 'https://…',
       form_submit: 'Request invite',
       form_details: 'See details',
-      alert_thanks_email: "Thanks! We'll reach out at: ${email}",
+  alert_thanks_email: "Thanks! We'll reach out at: {email}",
       alert_thanks: "Thanks! We'll contact you soon.",
       footer_privacy: 'Privacy',
       footer_cookie: 'Cookie',
@@ -107,7 +107,7 @@ export default function SoundsStore() {
   const [lang, setLang] = useState(typeof window !== 'undefined' ? (localStorage.getItem('lang') || 'it') : 'it');
   useEffect(() => { try { localStorage.setItem('lang', lang); } catch(_) {} }, [lang]);
   const t = (key) => (messages[lang] && messages[lang][key]) || key;
-  const format = (template, vars) => template.replace(/\$\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+  const format = (template, vars) => template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
   useEffect(() => {
     // Mobile menu toggle (scoped)
     const wrap = document.querySelector('.sounds-store');
