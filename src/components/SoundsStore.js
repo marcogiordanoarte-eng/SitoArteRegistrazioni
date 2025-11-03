@@ -10,7 +10,7 @@ export default function SoundsStore() {
       nav_editing: 'Editing',
       nav_store: 'Negozio',
       nav_join: 'Unisciti',
-      nav_login: 'Login',
+  nav_login: 'Accedi',
       label_btn: 'Label',
       label_title: 'Vai alla Label',
       hero_title: 'Suona. Edita. Vendi.',

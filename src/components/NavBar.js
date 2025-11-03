@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useI18n } from "../i18n";
 
 export default function NavBar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const { t, lang, setLang } = useI18n();
 
   useEffect(() => {
     // Close menu on route change
@@ -22,7 +24,7 @@ export default function NavBar() {
           aria-controls="main-nav"
           onClick={() => setOpen((o) => !o)}
         >
-          Menu
+          {t('nav_menu')}
         </button>
       </div>
 
@@ -37,7 +39,7 @@ export default function NavBar() {
             to="/artisti"
             className={`glow-btn glow-btn--lg glow-btn--blue${isActive("/artisti") ? " glow-btn--active" : ""}`}
           >
-            ARTISTS LABEL
+            {t('nav_artists_label')}
           </Link>
         </div>
 
@@ -47,13 +49,13 @@ export default function NavBar() {
             to="/festival"
             className={`glow-btn glow-btn--md${isActive("/festival") ? " glow-btn--active" : ""}`}
           >
-            Festival
+            {t('nav_festival')}
           </Link>
           <Link
             to="/podcast"
             className={`glow-btn glow-btn--md${isActive("/podcast") ? " glow-btn--active" : ""}`}
           >
-            Podcast
+            {t('nav_podcast')}
           </Link>
         </div>
 
@@ -63,7 +65,7 @@ export default function NavBar() {
             to="/countdown"
             className={`glow-btn glow-btn--md${isActive("/countdown") ? " glow-btn--active" : ""}`}
           >
-            Countdown
+            {t('nav_countdown')}
           </Link>
         </div>
 
@@ -73,7 +75,7 @@ export default function NavBar() {
             to="/"
             className={`glow-btn glow-btn--lg${isActive("/") ? " glow-btn--active" : ""}`}
           >
-            Sounds
+            {t('nav_sounds')}
           </Link>
         </div>
 
@@ -83,8 +85,19 @@ export default function NavBar() {
             to="/contatti"
             className={`glow-btn glow-btn--sm${isActive("/contatti") ? " glow-btn--active" : ""}`}
           >
-            Contatti
+            {t('nav_contacts')}
           </Link>
+        </div>
+
+        {/* Lingua switch */}
+        <div className="nav-row nav-row--tail" style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+          <span style={{ color: '#9aa3b2', fontSize: 12 }}>{t('nav_language')}:</span>
+          <button type="button" className={`glow-btn glow-btn--sm${lang==='it' ? ' glow-btn--active' : ''}`} onClick={() => setLang('it')} aria-pressed={lang==='it'}>
+            {t('lang_it')}
+          </button>
+          <button type="button" className={`glow-btn glow-btn--sm${lang==='en' ? ' glow-btn--active' : ''}`} onClick={() => setLang('en')} aria-pressed={lang==='en'}>
+            {t('lang_en')}
+          </button>
         </div>
       </nav>
     </div>

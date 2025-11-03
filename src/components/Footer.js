@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useI18n } from '../i18n';
 
 export default function Footer({ align = 'center', showArteButton = false, onArteClick }) {
+  const { t } = useI18n();
   const year = new Date().getFullYear();
   return (
     <footer
@@ -42,11 +44,11 @@ export default function Footer({ align = 'center', showArteButton = false, onArt
         >
           © {year} Arte Registrazioni - <a href="https://www.arteregistrazioni.com" target="_blank" rel="noopener noreferrer" style={{ color: '#ffd700', textDecoration: 'underline' }}>www.arteregistrazioni.com</a> - Marco Giordano - Partita IVA: 12531290018
           <span style={{ marginLeft: 12 }}>
-            <Link to="/termini" className="footer-link">Termini</Link>
+            <Link to="/termini" className="footer-link">{t('footer_terms')}</Link>
             <span style={{ margin: '0 6px', opacity: 0.6 }}>|</span>
-            <Link to="/privacy" className="footer-link">Privacy</Link>
+            <Link to="/privacy" className="footer-link">{t('footer_privacy')}</Link>
             <span style={{ margin: '0 6px', opacity: 0.6 }}>|</span>
-            <Link to="/licenza" className="footer-link">Licenza</Link>
+            <Link to="/licenza" className="footer-link">{t('footer_license')}</Link>
           </span>
         </div>
       </div>

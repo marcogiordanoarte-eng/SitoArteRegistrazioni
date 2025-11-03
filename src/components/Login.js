@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useI18n } from '../i18n';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
 import { ADMIN_UIDS } from './config';
 
 export default function Login() {
+  const { t } = useI18n();
   const { login, signup, user, loading } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
@@ -57,20 +59,20 @@ export default function Login() {
         </div>
       </div>
       <form onSubmit={handleSubmit} className="login-form">
-        <h2 className="login-title">{mode === 'login' ? 'Accedi' : 'Registrati'}</h2>
+        <h2 className="login-title">{mode === 'login' ? t('login_title_login') : t('login_title_signup')}</h2>
         {user && !ADMIN_UIDS.includes(user.uid) && (
           <div className="login-info" style={{ background: 'rgba(0,0,0,0.35)', padding: '8px 10px', borderRadius: 8, marginBottom: 16 }}>
             <div>Per accedere alla tua dashboard usa il link con codice personale (Dashboard Artista) che ti mandiamo noi.</div>
           </div>
         )}
         <div className="login-mode-switch">
-          <button type="button" onClick={() => setMode('login')} className={"login-mode-btn" + (mode === 'login' ? ' active' : '')}>Login</button>
-            <button type="button" onClick={() => setMode('signup')} className={"login-mode-btn" + (mode === 'signup' ? ' active' : '')}>Registrati</button>
+          <button type="button" onClick={() => setMode('login')} className={"login-mode-btn" + (mode === 'login' ? ' active' : '')}>{t('login_tab_login')}</button>
+            <button type="button" onClick={() => setMode('signup')} className={"login-mode-btn" + (mode === 'signup' ? ' active' : '')}>{t('login_tab_signup')}</button>
         </div>
-        <label className="login-label">Email</label>
+        <label className="login-label">{t('login_email')}</label>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="login-input" />
-        <label className="login-label login-password-label">Password
-          <span className="login-hint">{password.length >= 6 ? '' : 'min 6 caratteri'}</span>
+        <label className="login-label login-password-label">{t('login_password')}
+          <span className="login-hint">{password.length >= 6 ? '' : t('login_password_hint')}</span>
         </label>
         <div className="login-password-wrapper">
           <input
@@ -84,7 +86,7 @@ export default function Login() {
           <button
             type="button"
             onClick={() => setShowPass(s => !s)}
-            aria-label={showPass ? 'Nascondi password' : 'Mostra password'}
+            aria-label={showPass ? t('login_hide_password') : t('login_show_password')}
             className="login-eye-btn"
             data-active={showPass ? 'true' : 'false'}
           >
@@ -104,7 +106,7 @@ export default function Login() {
           </button>
         </div>
         {error && <div className="login-error">{error}</div>}
-        <button type="submit" disabled={submitting} className="login-submit">{submitting ? 'Attendere...' : (mode === 'login' ? 'Entra' : 'Crea Account')}</button>
+        <button type="submit" disabled={submitting} className="login-submit">{submitting ? t('login_attendere') : (mode === 'login' ? t('login_submit_login') : t('login_submit_signup'))}</button>
       </form>
     </div>
   );

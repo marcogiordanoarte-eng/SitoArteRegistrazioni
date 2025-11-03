@@ -21,6 +21,7 @@ import Dashboard from "./Dashboard";
 import Login from "./Login";
 import ArtistLogin from './ArtistLogin';
 import { AuthProvider, useAuth } from "./AuthContext";
+import { I18nProvider } from "../i18n";
 import { ADMIN_UIDS } from './config';
 import ArtistSelfDashboard from './ArtistSelfDashboard';
 import CalendArte from './CalendArte';
@@ -145,6 +146,7 @@ export default function App() {
 
   return (
     <AuthProvider>
+      <I18nProvider>
       <BrowserRouter>
         <div style={{ position:'relative', minHeight:'100vh' }}>
           <Routes>
@@ -180,6 +182,7 @@ export default function App() {
             {/* Nessun assistente o finestrella: UI IA rimossa */}
         </div>
       </BrowserRouter>
+      </I18nProvider>
     </AuthProvider>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useI18n } from '../i18n';
 import YouTubeButton from './YouTubeButton';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
@@ -11,6 +12,7 @@ import NavBar from './NavBar';
 import LogoPrompt from './LogoPrompt';
 
 export default function PublicSite() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const promoRef = useRef(null);
   const [homeVideoUrl, setHomeVideoUrl] = useState('');
@@ -97,10 +99,10 @@ export default function PublicSite() {
       onKeyDown={handleLogoKeyDown}
       role="button"
       tabIndex={0}
-      aria-label="Apri video logo"
-      title="Video Logo"
+  aria-label={t('ps_open_logo_video')}
+  title="Logo Video"
     >
-  <LogoPrompt show={!showOverlay} text="Premi" position="bottom" />
+  <LogoPrompt show={!showOverlay} text={t('ps_press')} position="bottom" />
           <div className="logo-combo">
             <div className="logo-stack" aria-hidden="true">
               <img src="/disco.png" alt="Disco" className="disco-img" />
@@ -113,8 +115,8 @@ export default function PublicSite() {
         </div>
         <button
           onClick={() => navigate(-1)}
-          aria-label="Torna indietro"
-          title="Indietro"
+          aria-label={t('ps_back')}
+          title={t('ps_back')}
           style={{ position:'fixed', top:'12px', left:'12px', zIndex:100002, background:'rgba(0,0,0,0.55)', border:'1px solid #ffd700', color:'#ffd700', borderRadius:'50%', width:46, height:46, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 12px #000' }}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -143,10 +145,10 @@ export default function PublicSite() {
           objectFit="cover"
           controls
         />
-  <h1 className="publicsite-title">Benvenuto su Arte Registrazioni</h1>
+  <h1 className="publicsite-title">{t('ps_welcome_title')}</h1>
         <p className="publicsite-desc">
-          Scopri i nostri artisti, ascolta la loro musica e vivi l'esperienza unica di Arte Registrazioni.<br />
-          Utilizza il menu per navigare tra le pagine e accedere a tutte le funzionalità.
+          {t('ps_welcome_desc_line1')}<br />
+          {t('ps_welcome_desc_line2')}
         </p>
         <div className="youtube-under-menu">
           <YouTubeButton small layout="row" />
