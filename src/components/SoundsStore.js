@@ -1,8 +1,113 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './SoundsStore.css';
 
 export default function SoundsStore() {
+  const messages = {
+    it: {
+      nav_home: 'Home',
+      nav_distribution: 'Distribuzione',
+      nav_editing: 'Editing',
+      nav_store: 'Negozio',
+      nav_join: 'Unisciti',
+      nav_login: 'Login',
+      label_btn: 'Label',
+      label_title: 'Vai alla Label',
+      hero_title: 'Suona. Edita. Vendi.',
+      hero_lead: "La piattaforma italiana per distribuire la tua musica, curare l'editing editoriale e vendere direttamente ai tuoi fan.",
+      cta_upload: 'Carica il tuo brano',
+      cta_how: 'Come funziona',
+      social_title: 'SOCIAL SOUNDS',
+      social_sub: 'Dove i tuoi concerti prendono vita. Posta il volantino, annuncia la data, fatti trovare.',
+      social_live: 'Live',
+      social_near: 'Vicino a te',
+      social_rsvp: 'RSVP',
+      social_join: 'Entra ora',
+      how_title: 'Come funziona',
+      how_upload: 'Carica',
+      how_upload_desc: 'Inserisci audio, metadati e cover — validati in tempo reale.',
+      how_edit: 'Edita',
+      how_edit_desc: 'Diventiamo editori tuoi. Royalties, diritti, tutto incluso.',
+      how_distribute: 'Distribuisci',
+      how_distribute_desc: 'Uscita su 150 store. Una tantum, zero abbonamento.',
+      how_sell: 'Vendi',
+      how_sell_desc: 'Download €0.99 sul tuo Sounds Store. 100% netto.',
+      store_title: 'Scopri il Negozio',
+      store_desc: 'Un assaggio del tuo futuro storefront. Copertine grandi, anteprime rapide, acquisto immediato.',
+      placeholder_track: 'Titolo Brano',
+      placeholder_artist: 'Nome Artista',
+      join_title: 'Unisciti a Sounds',
+      join_lead: "Apri il tuo store, distribuisci sui principali servizi e affida a noi l'editing editoriale.",
+      form_email: 'La tua email',
+      placeholder_email: 'tu@esempio.com',
+      form_demo: 'Link a un brano di esempio (opzionale)',
+      placeholder_demo: 'https://…',
+      form_submit: 'Richiedi invito',
+      form_details: 'Vedi dettagli',
+      alert_thanks_email: "Grazie! Ti contatteremo all'indirizzo: ${email}",
+      alert_thanks: 'Grazie! Ti contatteremo presto.',
+      footer_privacy: 'Privacy',
+      footer_cookie: 'Cookie',
+      lang_label: 'Lingua',
+      lang_it: 'IT',
+      lang_en: 'EN',
+      nav_aria_open_menu: 'Apri menù',
+    },
+    en: {
+      nav_home: 'Home',
+      nav_distribution: 'Distribution',
+      nav_editing: 'Editing',
+      nav_store: 'Store',
+      nav_join: 'Join',
+      nav_login: 'Login',
+      label_btn: 'Label',
+      label_title: 'Go to Label',
+      hero_title: 'Play. Edit. Sell.',
+      hero_lead: "The Italian platform to distribute your music, handle editorial editing, and sell directly to your fans.",
+      cta_upload: 'Upload your track',
+      cta_how: 'How it works',
+      social_title: 'SOCIAL SOUNDS',
+      social_sub: 'Where your gigs come to life. Post your flyer, announce the date, get discovered.',
+      social_live: 'Live',
+      social_near: 'Near you',
+      social_rsvp: 'RSVP',
+      social_join: 'Join now',
+      how_title: 'How it works',
+      how_upload: 'Upload',
+      how_upload_desc: 'Add audio, metadata and cover — validated in real time.',
+      how_edit: 'Edit',
+      how_edit_desc: 'We become your publisher. Royalties, rights, all included.',
+      how_distribute: 'Distribute',
+      how_distribute_desc: 'Release to 150 stores. One-off, no subscription.',
+      how_sell: 'Sell',
+      how_sell_desc: 'Download €0.99 on your Sounds Store. 100% net.',
+      store_title: 'Discover the Store',
+      store_desc: 'A glimpse of your future storefront. Large covers, quick previews, instant purchase.',
+      placeholder_track: 'Track Title',
+      placeholder_artist: 'Artist Name',
+      join_title: 'Join Sounds',
+      join_lead: 'Open your store, distribute to the main services and let us handle editorial editing.',
+      form_email: 'Your email',
+      placeholder_email: 'you@example.com',
+      form_demo: 'Link to a sample track (optional)',
+      placeholder_demo: 'https://…',
+      form_submit: 'Request invite',
+      form_details: 'See details',
+      alert_thanks_email: "Thanks! We'll reach out at: ${email}",
+      alert_thanks: "Thanks! We'll contact you soon.",
+      footer_privacy: 'Privacy',
+      footer_cookie: 'Cookie',
+      lang_label: 'Language',
+      lang_it: 'IT',
+      lang_en: 'EN',
+      nav_aria_open_menu: 'Open menu',
+    }
+  };
+
+  const [lang, setLang] = useState(typeof window !== 'undefined' ? (localStorage.getItem('lang') || 'it') : 'it');
+  useEffect(() => { try { localStorage.setItem('lang', lang); } catch(_) {} }, [lang]);
+  const t = (key) => (messages[lang] && messages[lang][key]) || key;
+  const format = (template, vars) => template.replace(/\$\{(\w+)\}/g, (_, k) => vars[k] ?? '');
   useEffect(() => {
     // Mobile menu toggle (scoped)
     const wrap = document.querySelector('.sounds-store');
@@ -71,7 +176,7 @@ export default function SoundsStore() {
     <div className="sounds-store">
       <header className="site-header" role="banner">
         <div className="container header-inner">
-          <Link to="/sounds" className="brand" aria-label="Sounds di Arte Registrazioni - Home">
+          <Link to="/" className="brand" aria-label="Sounds di Arte Registrazioni - Home">
             <img
               className="brand-logo"
               src="/soundslogo.jpg"
@@ -86,18 +191,24 @@ export default function SoundsStore() {
             </span>
           </Link>
           <nav className="main-nav" aria-label="Menu principale">
-            <button className="nav-toggle" aria-expanded="false" aria-controls="nav-list" aria-label="Apri menù">☰</button>
+            <button className="nav-toggle" aria-expanded="false" aria-controls="nav-list" aria-label={t('nav_aria_open_menu')}>☰</button>
             <ul id="nav-list" className="nav-list">
-              <li><a href="/" className="active">Home</a></li>
-              <li><a href="#distribuzione">Distribuzione</a></li>
-              <li><a href="#editing">Editing</a></li>
-              <li><a href="#negozio">Negozio</a></li>
-              <li><a href="#unisciti">Unisciti</a></li>
+              <li><a href="/" className="active">{t('nav_home')}</a></li>
+              <li><a href="#distribuzione">{t('nav_distribution')}</a></li>
+              <li><a href="#editing">{t('nav_editing')}</a></li>
+              <li><a href="#negozio">{t('nav_store')}</a></li>
+              <li><a href="#unisciti">{t('nav_join')}</a></li>
               <li className="sep"></li>
-              <li><a href="#login" className="login">Login</a></li>
+              <li><a href="#login" className="login">{t('nav_login')}</a></li>
             </ul>
           </nav>
-          <Link className="btn btn-label" to="/label" title="Vai alla Label">Label</Link>
+          <div className="right-ctrls">
+            <div className="lang-switch" role="group" aria-label={t('lang_label')}>
+              <button type="button" className={lang==='it' ? 'active' : ''} aria-pressed={lang==='it'} onClick={() => setLang('it')}>{t('lang_it')}</button>
+              <button type="button" className={lang==='en' ? 'active' : ''} aria-pressed={lang==='en'} onClick={() => setLang('en')}>{t('lang_en')}</button>
+            </div>
+            <Link className="btn btn-label" to="/label" title={t('label_title')}>{t('label_btn')}</Link>
+          </div>
         </div>
       </header>
 
@@ -107,11 +218,11 @@ export default function SoundsStore() {
             <video className="hero-video" autoPlay muted loop playsInline preload="metadata" aria-hidden="true" />
           </div>
           <div className="hero-overlay container">
-            <h1 className="reveal">Suona. Edita. Venditi.</h1>
-            <p className="lead reveal">La piattaforma italiana per distribuire la tua musica, curare l'editing editoriale e vendere direttamente ai tuoi fan.</p>
+            <h1 className="reveal">{t('hero_title')}</h1>
+            <p className="lead reveal">{t('hero_lead')}</p>
             <div className="cta-row reveal">
-              <a className="btn btn-primary" href="#unisciti">Carica il tuo brano</a>
-              <a className="btn btn-ghost" href="#come-funziona">Come funziona</a>
+              <a className="btn btn-primary" href="#unisciti">{t('cta_upload')}</a>
+              <a className="btn btn-ghost" href="#come-funziona">{t('cta_how')}</a>
             </div>
           </div>
         </section>
@@ -120,8 +231,8 @@ export default function SoundsStore() {
         <section id="social" className="social-sounds container" aria-labelledby="social-title">
           <div className="social-card reveal" data-animate-on-view>
             <div className="social-head">
-              <h2 id="social-title" className="social-title">SOCIAL SOUNDS</h2>
-              <p className="social-sub">Dove i tuoi concerti prendono vita. Posta il volantino, annuncia la data, fatti trovare.</p>
+              <h2 id="social-title" className="social-title">{t('social_title')}</h2>
+              <p className="social-sub">{t('social_sub')}</p>
             </div>
             <div className="social-icons" role="list" aria-label="Funzioni principali">
               <div className="social-icon megaphone" role="listitem" aria-label="Annuncia live">
@@ -130,13 +241,13 @@ export default function SoundsStore() {
                   <path d="M8 14.5 7 20" stroke="#60a5fa" strokeWidth="1.6" strokeLinecap="round"/>
                   <path d="M18 8c1.2.8 2 2.1 2 3.6s-.8 2.8-2 3.6" stroke="#60a5fa" strokeWidth="1.6" strokeLinecap="round"/>
                 </svg>
-                <span>Live</span>
+                <span>{t('social_live')}</span>
               </div>
               <div className="social-icon map" role="listitem" aria-label="Eventi vicini">
                 <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <path d="M12 2C8.7 2 6 4.7 6 8c0 4.5 6 12 6 12s6-7.5 6-12c0-3.3-2.7-6-6-6Zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z" stroke="#60a5fa" strokeWidth="1.6"/>
                 </svg>
-                <span>Vicino a te</span>
+                <span>{t('social_near')}</span>
                 <span className="ping" aria-hidden="true"></span>
               </div>
               <div className="social-icon chat" role="listitem" aria-label="RSVP e chat">
@@ -146,17 +257,17 @@ export default function SoundsStore() {
                   <circle cx="12" cy="11" r="1" fill="#60a5fa"/>
                   <circle cx="15" cy="11" r="1" fill="#60a5fa"/>
                 </svg>
-                <span>RSVP</span>
+                <span>{t('social_rsvp')}</span>
               </div>
             </div>
             <div className="social-cta">
-              <a className="btn btn-join" href="/social">Entra ora</a>
+              <a className="btn btn-join" href="/social">{t('social_join')}</a>
             </div>
           </div>
         </section>
 
         <section id="come-funziona" className="how container" aria-labelledby="how-title">
-          <h2 id="how-title" className="section-title reveal">Come funziona</h2>
+          <h2 id="how-title" className="section-title reveal">{t('how_title')}</h2>
           <div className="cards">
             <article className="card reveal">
               <div className="icon-wrap" aria-hidden="true">
@@ -165,8 +276,8 @@ export default function SoundsStore() {
                   <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="#60a5fa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <h3>Carica</h3>
-              <p>Inserisci audio, metadati e cover — validati in tempo reale.</p>
+              <h3>{t('how_upload')}</h3>
+              <p>{t('how_upload_desc')}</p>
             </article>
             <article className="card reveal">
               <div className="icon-wrap" aria-hidden="true">
@@ -175,8 +286,8 @@ export default function SoundsStore() {
                   <path d="m9 12 2 2 4-4" stroke="#60a5fa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <h3>Edita</h3>
-              <p>Diventiamo editori tuoi. Royalties, diritti, tutto incluso.</p>
+              <h3>{t('how_edit')}</h3>
+              <p>{t('how_edit_desc')}</p>
             </article>
             <article id="distribuzione" className="card reveal">
               <div className="icon-wrap" aria-hidden="true">
@@ -186,8 +297,8 @@ export default function SoundsStore() {
                   <rect x="17" y="3" width="3" height="16" rx="1.5" stroke="#60a5fa" strokeWidth="1.5"/>
                 </svg>
               </div>
-              <h3>Distribuisci</h3>
-              <p>Uscita su 150 store. Una tantum, zero abbonamento.</p>
+              <h3>{t('how_distribute')}</h3>
+              <p>{t('how_distribute_desc')}</p>
             </article>
             <article id="negozio" className="card reveal">
               <div className="icon-wrap" aria-hidden="true">
@@ -197,22 +308,22 @@ export default function SoundsStore() {
                   <circle cx="17" cy="19" r="1.5" stroke="#60a5fa" strokeWidth="1.5"/>
                 </svg>
               </div>
-              <h3>Vendi</h3>
-              <p>Download €0.99 sul tuo Sounds Store. 100% netto.</p>
+              <h3>{t('how_sell')}</h3>
+              <p>{t('how_sell_desc')}</p>
             </article>
           </div>
         </section>
 
         <section className="store-teaser container" aria-labelledby="store-title">
-          <h2 id="store-title" className="section-title reveal">Scopri il Negozio</h2>
-          <p className="muted reveal">Un assaggio del tuo futuro storefront. Copertine grandi, anteprime rapide, acquisto immediato.</p>
+          <h2 id="store-title" className="section-title reveal">{t('store_title')}</h2>
+          <p className="muted reveal">{t('store_desc')}</p>
           <div className="album-grid">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="album-card reveal" aria-label="Album placeholder">
                 <div className="cover"></div>
                 <div className="meta">
-                  <span className="title">Titolo Brano</span>
-                  <span className="artist">Nome Artista</span>
+                  <span className="title">{t('placeholder_track')}</span>
+                  <span className="artist">{t('placeholder_artist')}</span>
                 </div>
               </div>
             ))}
@@ -220,20 +331,20 @@ export default function SoundsStore() {
         </section>
 
         <section id="unisciti" className="join container" aria-labelledby="join-title">
-          <h2 id="join-title" className="section-title reveal">Unisciti a Sounds</h2>
-          <p className="lead reveal">Apri il tuo store, distribuisci sui principali servizi e affida a noi l'editing editoriale.</p>
-          <form className="join-form reveal" action="#" method="get" onSubmit={(e)=>{ e.preventDefault(); const email = e.currentTarget.querySelector('input[type="email"]').value.trim(); alert(email ? `Grazie! Ti contatteremo all'indirizzo: ${email}` : 'Grazie! Ti contatteremo presto.'); }}>
+          <h2 id="join-title" className="section-title reveal">{t('join_title')}</h2>
+          <p className="lead reveal">{t('join_lead')}</p>
+          <form className="join-form reveal" action="#" method="get" onSubmit={(e)=>{ e.preventDefault(); const email = e.currentTarget.querySelector('input[type="email"]').value.trim(); alert(email ? format(t('alert_thanks_email'), { email }) : t('alert_thanks')); }}>
             <label className="field">
-              <span>La tua email</span>
-              <input type="email" placeholder="tu@esempio.com" required />
+              <span>{t('form_email')}</span>
+              <input type="email" placeholder={t('placeholder_email')} required />
             </label>
             <label className="field">
-              <span>Link a un brano di esempio (opzionale)</span>
-              <input type="url" placeholder="https://…" />
+              <span>{t('form_demo')}</span>
+              <input type="url" placeholder={t('placeholder_demo')} />
             </label>
             <div className="actions">
-              <button className="btn btn-primary" type="submit">Richiedi invito</button>
-              <a className="btn btn-ghost" href="#come-funziona">Vedi dettagli</a>
+              <button className="btn btn-primary" type="submit">{t('form_submit')}</button>
+              <a className="btn btn-ghost" href="#come-funziona">{t('form_details')}</a>
             </div>
           </form>
         </section>
@@ -247,9 +358,9 @@ export default function SoundsStore() {
               <span className="badge">P.IVA 12531290018</span>
             </div>
             <div className="links">
-              <a href="#privacy">Privacy</a>
+              <a href="#privacy">{t('footer_privacy')}</a>
               <span className="dot" aria-hidden="true">•</span>
-              <a href="#cookie">Cookie</a>
+              <a href="#cookie">{t('footer_cookie')}</a>
             </div>
             <div className="copy">2025 © Arte Registrazioni</div>
           </div>
