@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from './firebase';
 import './SoundsStore.css';
 
 export default function SoundsStore() {
@@ -52,6 +54,8 @@ export default function SoundsStore() {
       lang_it: 'IT',
       lang_en: 'EN',
       nav_aria_open_menu: 'Apri menù',
+      buymusic_title: 'Compra Musica',
+      buymusic_empty: 'Nessun genere disponibile al momento.'
     },
     en: {
       nav_home: 'Home',
@@ -101,6 +105,8 @@ export default function SoundsStore() {
       lang_it: 'IT',
       lang_en: 'EN',
       nav_aria_open_menu: 'Open menu',
+      buymusic_title: 'Buy Music',
+      buymusic_empty: 'No genres available at the moment.'
     }
   };
 
@@ -170,6 +176,23 @@ export default function SoundsStore() {
       ro?.disconnect?.();
       window.removeEventListener?.('resize', applyLogoWidth);
     };
+  }, []);
+
+  // BuyMusic section: fetch genres to preview the store at the bottom of the home
+  const [genres, setGenres] = useState([]);
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(collection(db, 'buyGenres'), (snap) => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        list.sort((a, b) => {
+          const ams = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
+          const bms = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Number.MAX_SAFE_INTEGER);
+          return ams - bms;
+        });
+        setGenres(list);
+      });
+      return () => unsub();
+    } catch {}
   }, []);
 
   return (
@@ -347,6 +370,49 @@ export default function SoundsStore() {
               <a className="btn btn-ghost" href="#come-funziona">{t('form_details')}</a>
             </div>
           </form>
+        </section>
+
+        {/* Buy Music: embed preview section at the bottom of the home */}
+        <section id="buy-music" className="container" aria-labelledby="buy-music-title" style={{ marginTop: 36, marginBottom: 8 }}>
+          <h2 id="buy-music-title" className="section-title reveal">{t('buymusic_title')}</h2>
+          {genres.length === 0 ? (
+            <div style={{ color: '#94a3b8', textAlign: 'center', background: 'rgba(0,0,0,0.35)', padding: '10px 12px', borderRadius: 10, marginTop: 8 }}>
+              {t('buymusic_empty')}
+            </div>
+          ) : (
+            <div className="buy-genres-grid-home" style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+              gap: 12,
+              marginTop: 12
+            }}>
+              {genres.map(g => {
+                const coverSrc = g.coverUrl || g.cover || g.coverImage || g.cover_image || g.imageUrl || g.image || '/logo.png';
+                return (
+                  <Link key={g.id} to={`/buy/genre/${g.id}`} className="buy-genre-card-home" style={{
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    background: 'rgba(0,0,0,0.45)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 12,
+                    overflow: 'hidden',
+                    boxShadow: '0 6px 14px rgba(0,0,0,0.35)'
+                  }}>
+                    <div style={{
+                      height: 140,
+                      backgroundImage: `url(${coverSrc})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundColor: '#111'
+                    }} />
+                    <div style={{ padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#e6fdff' }}>
+                      {g.name || 'Genere'}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </section>
       </main>
 
