@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 // Pentagramma Runner: 5 staff lines (white on black). Collect coins on lines/spaces to play notes.

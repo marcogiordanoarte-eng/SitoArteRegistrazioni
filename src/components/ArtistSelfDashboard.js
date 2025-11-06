@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './Artisti.css';
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import { doc, getDoc, setDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import ArtistPageEditable from './ArtistPageEditable';
 

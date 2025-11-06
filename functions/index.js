@@ -12,17 +12,22 @@ import crypto from 'crypto';
 // Nota: per i progetti Firebase nuovi, lo storageBucket è "<project>.firebasestorage.app".
 const PROJECT_ID = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'arteregistrazioni-2025';
 let DEFAULT_BUCKET = `${PROJECT_ID}.appspot.com`;
+let DATABASE_URL = `https://${PROJECT_ID}-default-rtdb.europe-west1.firebasedatabase.app`;
 try {
   if (process.env.FIREBASE_CONFIG) {
     const cfg = JSON.parse(process.env.FIREBASE_CONFIG);
     if (cfg && cfg.storageBucket) {
       DEFAULT_BUCKET = cfg.storageBucket; // es. arteregistrazioni-2025.firebasestorage.app
     }
+    if (cfg && cfg.databaseURL) {
+      DATABASE_URL = cfg.databaseURL;
+    }
   }
 } catch {}
-admin.initializeApp({ storageBucket: DEFAULT_BUCKET });
+admin.initializeApp({ storageBucket: DEFAULT_BUCKET, databaseURL: DATABASE_URL });
 const storage = admin.storage();
 const firestore = admin.firestore();
+const rtdb = admin.database();
 
 // (1) Existing (copied) album zip generator could be re-added later if needed.
 
@@ -204,6 +209,7 @@ export const sendContactAutoReply = functions.https.onCall(async (data, context)
   }
   const sendgridKey = functions.config()?.sendgrid?.key;
   const sender = functions.config()?.site?.senderemail;
+  const replyTo = functions.config()?.site?.replyto || null; // opzionale: inoltra risposte alla PEC
   if (!sendgridKey || !sender) {
     throw new functions.https.HttpsError('failed-precondition', 'Email non configurata');
   }
@@ -212,7 +218,7 @@ export const sendContactAutoReply = functions.https.onCall(async (data, context)
   const plain = `Ciao ${safeName},\n\nGrazie per averci scritto! Abbiamo ricevuto il tuo messaggio e ti risponderemo appena possibile.\n\nIl tuo messaggio:\n"${message.slice(0,1000)}"\n\nA presto,\nArte Registrazioni`;
   const html = `<p>Ciao ${safeName},</p><p>Grazie per averci scritto! Abbiamo ricevuto il tuo messaggio e ti risponderemo appena possibile.</p><blockquote>${message.slice(0,1000)}</blockquote><p>A presto,<br/>Arte Registrazioni</p>`;
   try {
-    await sgMail.send({ to: email, from: sender, subject: 'Abbiamo ricevuto il tuo messaggio', text: plain, html });
+    await sgMail.send({ to: email, from: sender, replyTo: replyTo || undefined, subject: 'Abbiamo ricevuto il tuo messaggio', text: plain, html });
     await firestore.collection('contacts').add({ email, name: safeName, message: message.slice(0,5000), createdAt: admin.firestore.FieldValue.serverTimestamp() });
     return { ok: true };
   } catch (e) {
@@ -416,3 +422,140 @@ export const ttsSynthesize = functions.https.onCall(async (data, context) => {
 // Manteniamo stub vuoti per evitare errori da vecchi client eventualmente in cache.
 export const processVoiceSamples = functions.https.onCall(async () => ({ deprecated: true }));
 export const voiceProcessingDiagnostics = functions.https.onCall(async () => ({ deprecated: true }));
+
+// (G) verifyArtist: auto-verifica via Spotify Client Credentials
+// Input: { spotify: string } where spotify is an URL like https://open.spotify.com/artist/{id} or a spotify:artist:{id} or plain id
+// Behavior: if artist has at least one release (album/single) -> set users/{uid}/isArtist=true and mark artistRequests/{uid}
+function parseSpotifyArtistId(input) {
+  if (!input) return null;
+  const s = String(input).trim();
+  // spotify:artist:{id}
+  const colon = s.match(/^spotify:artist:([a-zA-Z0-9]{10,})/);
+  if (colon) return colon[1];
+  // https://open.spotify.com/artist/{id}
+  try {
+    const u = new URL(s);
+    if (u.hostname.includes('open.spotify.com')) {
+      const parts = u.pathname.split('/').filter(Boolean);
+      const idx = parts.indexOf('artist');
+      if (idx >= 0 && parts[idx+1]) return parts[idx+1].split('?')[0];
+    }
+  } catch {}
+  // plain id
+  if (/^[a-zA-Z0-9]{10,}$/.test(s)) return s;
+  return null;
+}
+
+async function getSpotifyToken() {
+  const cfg = functions.config();
+  const clientId = cfg?.spotify?.client_id;
+  const clientSecret = cfg?.spotify?.client_secret;
+  if (!clientId || !clientSecret) throw new functions.https.HttpsError('failed-precondition', 'Spotify non configurato');
+  const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  const resp = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: { 'Authorization': `Basic ${basic}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'grant_type=client_credentials'
+  });
+  if (!resp.ok) {
+    const t = await resp.text();
+    functions.logger.error('Spotify token error', resp.status, t.slice(0, 280));
+    throw new functions.https.HttpsError('internal', 'Spotify token failure');
+  }
+  const json = await resp.json();
+  return json?.access_token || null;
+}
+
+async function artistHasReleases(token, artistId) {
+  // 1) Check albums/singles/compilations/appears_on presence
+  const url = `https://api.spotify.com/v1/artists/${encodeURIComponent(artistId)}/albums?include_groups=album,single,compilation,appears_on&limit=1`;
+  let resp = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+  if (resp.ok) {
+    const data = await resp.json();
+    if (Array.isArray(data?.items) && data.items.length > 0) return true;
+  } else {
+    const t = await resp.text();
+    functions.logger.warn('Spotify albums error', resp.status, t.slice(0, 280));
+  }
+  // 2) Fallback: top-tracks as a signal of public presence
+  try {
+    const ttUrl = `https://api.spotify.com/v1/artists/${encodeURIComponent(artistId)}/top-tracks?market=US`;
+    resp = await fetch(ttUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (resp.ok) {
+      const j = await resp.json();
+      if (Array.isArray(j?.tracks) && j.tracks.length > 0) return true;
+    } else {
+      const t2 = await resp.text();
+      functions.logger.warn('Spotify top-tracks error', resp.status, t2.slice(0, 280));
+    }
+  } catch (e) {
+    functions.logger.warn('Spotify top-tracks fetch failed', e);
+  }
+  return false;
+}
+
+export const verifyArtist = functions.region('europe-west1').https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Auth richiesta');
+  const uid = context.auth.uid;
+  const spotifyInput = (data && data.spotify) ? String(data.spotify) : '';
+  const artistId = parseSpotifyArtistId(spotifyInput);
+  if (!artistId) throw new functions.https.HttpsError('invalid-argument', 'Link/ID Spotify artista non valido');
+  try {
+    const token = await getSpotifyToken();
+    const ok = await artistHasReleases(token, artistId);
+    const now = Date.now();
+    await rtdb.ref('artistRequests').child(uid).update({
+      spotify: spotifyInput,
+      lastCheckedAt: now,
+      spotifyArtistId: artistId,
+      autoCheck: true,
+      autoCheckOk: !!ok
+    });
+    if (ok) {
+      await rtdb.ref('users').child(uid).update({ isArtist: true, verifiedAt: now, verifiedBy: 'spotify-auto' });
+      return { ok: true, verified: true };
+    }
+    return { ok: true, verified: false };
+  } catch (e) {
+    functions.logger.error('verifyArtist error', e);
+    throw new functions.https.HttpsError('internal', 'Verifica non riuscita');
+  }
+});
+
+// (H) approveArtist: admin-only promote to artist
+// Input: { uid: string }
+async function isAdminUid(uid) {
+  try {
+    const snap = await rtdb.ref('admins').child(uid).once('value');
+    return snap && snap.val() === true;
+  } catch (e) {
+    functions.logger.warn('isAdminUid check failed', e);
+    return false;
+  }
+}
+
+export const approveArtist = functions.region('europe-west1').https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Auth richiesta');
+  const caller = context.auth.uid;
+  let allowed = await isAdminUid(caller);
+  // Temporary fallback: allow specific emails even if /admins missing
+  if (!allowed) {
+    const email = context.auth.token?.email || '';
+    if (/^marcogiordanoarte@gmail\.com$/i.test(email) || /^arteregistrazioni@gmail\.com$/i.test(email)) {
+      allowed = true;
+      functions.logger.info('approveArtist: bypass admin check via email allowlist for', email);
+    }
+  }
+  if (!allowed) throw new functions.https.HttpsError('permission-denied', 'Solo admin');
+  const targetUid = (data && data.uid) ? String(data.uid) : '';
+  if (!targetUid) throw new functions.https.HttpsError('invalid-argument', 'uid richiesto');
+  const now = Date.now();
+  try {
+    await rtdb.ref('users').child(targetUid).update({ isArtist: true, verifiedAt: now, verifiedBy: `admin:${caller}` });
+    await rtdb.ref('artistRequests').child(targetUid).update({ approvedAt: now, approvedBy: caller, status: 'approved' });
+    return { ok: true };
+  } catch (e) {
+    functions.logger.error('approveArtist error', e);
+    throw new functions.https.HttpsError('internal', 'Impossibile approvare');
+  }
+});

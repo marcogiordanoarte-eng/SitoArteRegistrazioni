@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin – Richieste Artista</title>
+  <meta name="description" content="Pannello admin per approvare richieste artista." />
+  <link rel="stylesheet" href="/social.css" />
+</head>
+<body>
+  <header class="ss-topbar">
+    <div class="ss-container" style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="ss-brand">ADMIN • SOCIAL SOUNDS</div>
+      <div>
+        <span id="admUser"></span>
+        <button id="admLogin" class="ss-btn ss-btn-ghost">Login</button>
+        <button id="admLogout" class="ss-btn ss-btn-ghost" hidden>Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="ss-main">
+    <div class="ss-container">
+      <h1>Richieste verifica artista</h1>
+      <p id="admStatus" class="ss-status"></p>
+      <div id="admGate" class="ss-card" style="padding:12px;" hidden>
+        <p>Accesso riservato agli amministratori.</p>
+      </div>
+      <div id="reqList" class="ss-feed-grid" role="list"></div>
+    </div>
+  </main>
+
+  <!-- Clear any lingering App Check debug token on localhost to prevent 403 exchanges -->
+  <script>
+    (function(){
+      try {
+        var host=(location&&location.hostname)||'';
+        var isLocal = (host==='localhost'||host==='127.0.0.1'||/\.local$/.test(host));
+        if(isLocal){
+          // Base behavior: clear any stale debug token to avoid mismatches
+          try{ localStorage.removeItem('firebase-app-check-debug-token'); }catch(_){ }
+          try{ localStorage.removeItem('FIREBASE_APPCHECK_DEBUG_TOKEN'); }catch(_){ }
+          try{ delete window.FIREBASE_APPCHECK_DEBUG_TOKEN; }catch(_){ }
+          window.FIREBASE_APPCHECK_DEBUG_TOKEN = undefined;
+          // Optional: allow enabling App Check debug on localhost if enforcement is ON
+          // Toggle via query ?debugAppCheck=1 or localStorage flag 'enable-appcheck-debug'='1'
+          var q = (typeof URLSearchParams!=='undefined') ? new URLSearchParams(location.search) : null;
+          var wantDebug = (q && q.get('debugAppCheck')==='1') || localStorage.getItem('enable-appcheck-debug')==='1';
+          if (wantDebug) {
+            try { window.FIREBASE_APPCHECK_DEBUG_TOKEN = true; console.info('[Admin] App Check debug token enabled on localhost.'); } catch(_) {}
+          }
+        }
+      } catch(_) {}
+    })();
+  </script>
+
+  <!-- Firebase v10 compat CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+  <script>
+    (function(){
+      window.__firebaseReady = new Promise((resolve) => { window.__resolveFirebaseReady = resolve; });
+      const fallbackConfig = {
+        apiKey: "REPLACE_ME",
+        authDomain: "REPLACE_ME.firebaseapp.com",
+        databaseURL: "https://REPLACE_ME-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "REPLACE_ME",
+        storageBucket: "REPLACE_ME.appspot.com",
+        messagingSenderId: "REPLACE_ME",
+        appId: "REPLACE_ME"
+      };
+      function safeInit(cfg){
+        try { firebase.initializeApp(cfg); } catch(_) {}
+        try {
+          var host = (location && location.hostname) || '';
+          var isLocal = (host === 'localhost' || host === '127.0.0.1' || /\.local$/.test(host));
+          if (!isLocal) {
+            var siteKey = (cfg && (cfg.recaptchaEnterpriseSiteKey || cfg.recaptchaV3SiteKey || cfg.appCheckSiteKey)) || window.__APP_CHECK_SITE_KEY;
+            if (siteKey && firebase && firebase.appCheck && firebase.appCheck.ReCaptchaEnterpriseProvider) {
+              var provider = new firebase.appCheck.ReCaptchaEnterpriseProvider(siteKey);
+              firebase.appCheck().activate(provider, true);
+            } else if (siteKey && firebase && firebase.appCheck) {
+              firebase.appCheck().activate(siteKey, true);
+            }
+          } else {
+            // On localhost, optionally enable App Check debug if requested (see script above)
+            var siteKeyLocal = (cfg && (cfg.recaptchaEnterpriseSiteKey || cfg.recaptchaV3SiteKey || cfg.appCheckSiteKey)) || window.__APP_CHECK_SITE_KEY;
+            if (window.FIREBASE_APPCHECK_DEBUG_TOKEN && siteKeyLocal && firebase && firebase.appCheck) {
+              try {
+                if (firebase.appCheck.ReCaptchaEnterpriseProvider) {
+                  var providerLocal = new firebase.appCheck.ReCaptchaEnterpriseProvider(siteKeyLocal);
+                  firebase.appCheck().activate(providerLocal, true);
+                } else {
+                  firebase.appCheck().activate(siteKeyLocal, true);
+                }
+                console.info('[Admin] App Check debug attivato su localhost.');
+              } catch(_) { /* ignore */ }
+            } else {
+              try { console.info('[Admin] App Check disabilitato su localhost.'); } catch(_) {}
+            }
+          }
+        } catch(_) {}
+        try { if (window.__resolveFirebaseReady) window.__resolveFirebaseReady(firebase); } catch(_) {}
+      }
+      fetch('/firebaseConfig.json', { cache:'no-store' })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(cfg => safeInit(cfg))
+        .catch(()=> safeInit(fallbackConfig));
+    })();
+  </script>
+  <script src="/admin.js"></script>
+  <script src="/nav.js"></script>
+</body>
+</html>

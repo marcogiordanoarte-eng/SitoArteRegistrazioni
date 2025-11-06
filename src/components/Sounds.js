@@ -5,7 +5,7 @@ import YouTubeButton from './YouTubeButton';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
 import './Artisti.css';
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import { collection, doc, onSnapshot, onSnapshot as onDocSnapshot } from 'firebase/firestore';
 
 export default function Sounds() {

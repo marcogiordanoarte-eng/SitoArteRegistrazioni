@@ -36,7 +36,10 @@
 .sounds-store .nav-list .sep { width: 1px; height: 24px; background: rgba(255,255,255,0.08); }
 
 /* Right side controls: language + label button */
-.sounds-store .right-ctrls { display: inline-flex; align-items: center; gap: 10px; margin-left: 10px; }
+.sounds-store .right-ctrls { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 6px; margin-left: 10px; }
+.sounds-store .mini-arte { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; }
+.sounds-store .mini-arte img { width: 42px; height: 42px; object-fit: cover; border-radius: 10px; background: #000; border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
+.sounds-store .mini-arte-text { margin-top: 4px; font-size: 0.74rem; font-weight: 800; color: #a5d8ff; letter-spacing: 0.2px; text-shadow: 0 0 8px rgba(77,163,255,0.25); }
 .sounds-store .lang-switch { display: inline-flex; gap: 6px; }
 .sounds-store .lang-switch button { appearance: none; background: transparent; color: var(--muted); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-weight: 600; }
 .sounds-store .lang-switch button.active { color: var(--text); border-color: var(--accent); }
@@ -51,13 +54,20 @@
 .sounds-store .btn-label:hover { box-shadow: 0 0 0 6px rgba(77,163,255,0.12); }
 
 /* Hero */
-.sounds-store .hero { position: relative; min-height: 68vh; display: grid; place-items: center; overflow: clip; }
+.sounds-store .hero { position: relative; min-height: 56vh; display: grid; place-items: center; overflow: clip; }
 .sounds-store .hero-media { position: absolute; inset: 0; background: #000; }
 .sounds-store .hero-video { width: 100%; height: 100%; object-fit: cover; opacity: 0.28; }
 .sounds-store .hero::after { content: ""; position: absolute; inset: 0; background: radial-gradient(80% 60% at 50% 0%, rgba(77,163,255,0.12) 0%, rgba(0,0,0,0) 60%); pointer-events: none; }
-.sounds-store .hero-overlay { position: relative; z-index: 1; text-align: left; padding: 72px 20px; }
+.sounds-store .hero-overlay { position: relative; z-index: 1; text-align: left; padding: 40px 20px; }
 .sounds-store .hero h1 { margin: 0 0 10px; font-size: clamp(2rem, 5vw, 3.2rem); letter-spacing: 0.6px; }
 .sounds-store .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.sounds-store .cta-after-social { margin-top: 8px; }
+
+/* Social Sounds inside hero: più compatto e subito visibile */
+.sounds-store .social-sounds-hero { padding: 6px 0 0; }
+.sounds-store .social-sounds-hero .social-card { max-width: 100%; padding: 12px; }
+.sounds-store .social-sounds-hero .social-title { font-size: clamp(1.3rem, 4.2vw, 1.8rem); }
+.sounds-store .social-sounds-hero .social-icons { margin-top: 10px; }
 
 /* How */
 .sounds-store .how { padding: 46px 20px; }
@@ -155,6 +165,8 @@
   .sounds-store .header-inner { min-height: 60px; }
 }
 @media (max-width: 720px) {
+  .sounds-store .hero { min-height: 52vh; }
+  .sounds-store .hero-overlay { padding: 28px 16px; }
   .sounds-store .nav-toggle { display: inline-flex; }
   .sounds-store .nav-list { position: absolute; right: 20px; top: 64px; background: rgba(13,16,20,0.98); border: 1px solid rgba(255,255,255,0.06); padding: 10px; border-radius: 12px; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 180px; display: none; }
   .sounds-store .nav-list.open { display: flex; }

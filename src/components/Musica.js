@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import Footer from './Footer';
 import NavBar from './NavBar';
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import { collection, onSnapshot, getDocs, doc } from 'firebase/firestore';
 import LogoPrompt from './LogoPrompt';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';

@@ -7,9 +7,10 @@ import BrandButton from './BrandButton';
 import LogoPrompt from './LogoPrompt';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import './Artisti.css';
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import { collection, onSnapshot, doc } from 'firebase/firestore';
 import { useI18n } from '../i18n';
+import LanguageSwitchBadge from './LanguageSwitchBadge';
 
 // Funzione di utilità per timestamp (se serve)
 function toMs(ts) {
@@ -100,6 +101,7 @@ export default function Podcast() {
   return (
     <div className="publicsite-bg page-podcast">
   <Link to="/login" className="dash-badge">Dashboard</Link>
+  <LanguageSwitchBadge />
   <div className="logo-wrapper" style={{ cursor: 'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} openOverlay('logo'); }} title="Video Logo">
     <LogoPrompt show={!showOverlay && !logoDismissed} text={t('ps_press')} position="top" />
         <div className="logo-stack">

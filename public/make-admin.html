@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bootstrap Admin • Social Sounds</title>
+  <link rel="stylesheet" href="/social.css" />
+  <style>
+    .box{max-width:680px;margin:6vh auto;background:#0b1020;color:#e5e7eb;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.45);padding:16px}
+  </style>
+</head>
+<body>
+  <main class="ss-main">
+    <div class="ss-container">
+      <div class="box">
+        <h1>Imposta il mio account come admin</h1>
+        <p>Questa pagina serve SOLO in locale per il bootstrap del primo amministratore.</p>
+        <p id="status" class="ss-status"></p>
+        <div style="margin-top:12px">
+          <button id="loginBtn" class="ss-btn ss-btn-ghost">Accedi con Google</button>
+          <button id="makeBtn" class="ss-btn ss-btn-primary" style="margin-left:8px" disabled>Rendimi admin</button>
+          <button id="logoutBtn" class="ss-btn ss-btn-ghost" style="margin-left:8px" hidden>Esci</button>
+        </div>
+        <p style="margin-top:12px;font-size:12px;opacity:.8">Sicurezza: questa pagina disabilita App Check in localhost e funziona solo su 127.0.0.1/localhost. Dopo il bootstrap, cancellala o lasciala non linkata.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Pre-clear any debug token and skip App Check on localhost -->
+  <script>
+    (function(){
+      try{
+        var host=(location&&location.hostname)||'';
+        if(host==='localhost'||host==='127.0.0.1'||/\.local$/.test(host)){
+          try{ localStorage.removeItem('firebase-app-check-debug-token'); }catch(_){ }
+          try{ localStorage.removeItem('FIREBASE_APPCHECK_DEBUG_TOKEN'); }catch(_){ }
+          try{ delete window.FIREBASE_APPCHECK_DEBUG_TOKEN; }catch(_){ }
+          window.FIREBASE_APPCHECK_DEBUG_TOKEN=undefined;
+        }
+      }catch(_){ }
+    })();
+  </script>
+
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script>
+    (function(){
+      const statusEl = document.getElementById('status');
+      const loginBtn = document.getElementById('loginBtn');
+      const makeBtn = document.getElementById('makeBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+
+      function setStatus(msg, variant){
+        statusEl.textContent = msg || '';
+        statusEl.style.color = variant==='error'?'#fca5a5':variant==='success'?'#a7f3d0':'';
+      }
+
+      function isLocal(){
+        const h = (location && location.hostname) || '';
+        return h==='localhost'||h==='127.0.0.1'||/\.local$/.test(h);
+      }
+
+      function initApp(cfg){
+        try{ firebase.initializeApp(cfg); }catch(_){ }
+      }
+
+      function disableAppCheckOnLocal(cfg){
+        // We simply don't activate App Check when local
+        return;
+      }
+
+      fetch('/firebaseConfig.json', { cache:'no-store' })
+        .then(r=>r.ok?r.json():Promise.reject())
+        .then(cfg=>{ initApp(cfg); if(!isLocal()){ disableAppCheckOnLocal(cfg); } })
+        .catch(()=>{
+          // Minimal fallback if config missing
+          initApp({ apiKey:"REPLACE_ME", authDomain:"REPLACE_ME.firebaseapp.com", databaseURL:"https://REPLACE_ME-default-rtdb.europe-west1.firebasedatabase.app", projectId:"REPLACE_ME" });
+        })
+        .finally(wire);
+
+      function wire(){
+        const auth = firebase.auth();
+        const db = firebase.database();
+        loginBtn.addEventListener('click', async ()=>{
+          try{
+            const provider = new firebase.auth.GoogleAuthProvider();
+            await auth.signInWithPopup(provider);
+          }catch(e){ setStatus('Login fallito', 'error'); }
+        });
+        logoutBtn.addEventListener('click', async ()=>{ try{ await auth.signOut(); }catch(_){ } });
+        makeBtn.addEventListener('click', async ()=>{
+          const u = auth.currentUser;
+          if(!u){ setStatus('Accedi prima con Google', 'error'); return; }
+          if(!isLocal()){ setStatus('Operazione consentita solo in locale.', 'error'); return; }
+          try{
+            await db.ref('admins').child(u.uid).set(true);
+            setStatus('Impostato admin per '+(u.email||u.uid), 'success');
+          }catch(e){ setStatus('Scrittura su RTDB negata: verifica regole.', 'error'); }
+        });
+        auth.onAuthStateChanged(u=>{
+          if(u){
+            setStatus('Loggato come '+(u.email||u.uid));
+            makeBtn.disabled=false; loginBtn.disabled=true; logoutBtn.hidden=false;
+          }else{
+            setStatus('Non loggato');
+            makeBtn.disabled=true; loginBtn.disabled=false; logoutBtn.hidden=true;
+          }
+        });
+      }
+    })();
+  </script>
+  <script>
+    // Auto-close helper after successful admin bootstrap
+    (function(){
+      const statusEl = document.getElementById('status');
+      const orig = statusEl && statusEl.textContent;
+      const obs = new MutationObserver(()=>{
+        try {
+          const txt = (statusEl && statusEl.textContent) || '';
+          if (/Impostato admin/i.test(txt)) {
+            // If opened as a popup, try to close; otherwise go back home after a short delay
+            setTimeout(()=>{ try{ window.close(); }catch(_){}; try{ window.location.href = '/admin'; }catch(_){} }, 1400);
+          }
+        } catch(_) {}
+      });
+      if (statusEl) obs.observe(statusEl, { childList: true, subtree: true, characterData: true });
+    })();
+  </script>
+  <script src="/nav.js"></script>
+</body>
+</html>

@@ -7,7 +7,7 @@ import BrandButton from './BrandButton';
 import LogoPrompt from './LogoPrompt';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import "./Artisti.css";
-import { db } from "./firebase";
+import { db } from "../services/firebase";
 import NavBar from './NavBar';
 
 export default function Artisti() {

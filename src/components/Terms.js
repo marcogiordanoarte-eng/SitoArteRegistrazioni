@@ -5,13 +5,15 @@ import NavBar from './NavBar';
 import Footer from './Footer';
 import './Artisti.css';
 import { useI18n } from '../i18n';
+import LanguageSwitchBadge from './LanguageSwitchBadge';
 
 export default function Terms() {
   const { t } = useI18n();
   const navigate = useNavigate();
   return (
     <div className="publicsite-bg">
-      <Link to="/login" className="dash-badge">Dashboard</Link>
+  <Link to="/login" className="dash-badge">Dashboard</Link>
+  <LanguageSwitchBadge />
       <div className="logo-wrapper">
         <div className="logo-stack">
             <img src="/disco.png" alt="Disco" className="disco-img" />

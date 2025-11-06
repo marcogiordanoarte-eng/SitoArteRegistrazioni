@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { ADMIN_UIDS, ADMIN_EMAILS } from './config';
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { storage } from './firebase';
+import { storage } from '../services/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 function extOf(file) { return (file?.name?.split('.')?.pop() || '').toLowerCase(); }

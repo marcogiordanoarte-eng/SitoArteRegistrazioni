@@ -8,8 +8,9 @@ import LogoPrompt from './LogoPrompt';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import { doc, collection, onSnapshot } from 'firebase/firestore';
 import './Artisti.css';
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import { useI18n } from '../i18n';
+import LanguageSwitchBadge from './LanguageSwitchBadge';
 
 function toMillis(ts) {
   if (!ts) return null;
@@ -218,7 +219,8 @@ export default function Countdown() {
 
   return (
     <div className="publicsite-bg page-countdown">
-      <Link to="/login" className="dash-badge">Dashboard</Link>
+  <Link to="/login" className="dash-badge">Dashboard</Link>
+  <LanguageSwitchBadge />
   {/* Intro vocale rimossa */}
   <div className="logo-wrapper" style={{ cursor: 'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} openOverlay('logo'); }} title="Video Logo">
     <LogoPrompt show={!showOverlay && !logoDismissed} text={t('ps_press')} position="top" />

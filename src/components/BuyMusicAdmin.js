@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Footer from './Footer';
-import { db, storage } from './firebase';
+import { db, storage } from '../services/firebase';
 import { collection, addDoc, deleteDoc, setDoc, serverTimestamp, doc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 

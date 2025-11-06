@@ -2,7 +2,7 @@ import React from 'react';
 import { getApp } from 'firebase/app';
 import NavBar from './NavBar';
 import Footer from './Footer';
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 // Minimal mapping from ISO country codes to rough lat/lon (subset for MVP)

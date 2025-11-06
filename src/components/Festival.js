@@ -8,7 +8,7 @@ import LogoPrompt from './LogoPrompt';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import { onSnapshot, doc } from 'firebase/firestore';
 import "./Artisti.css";
-import { db } from './firebase';
+import { db } from '../services/firebase';
 
 // Placeholder: public page showing festival PDF if available.
 export default function Festival({ pdfUrl }) {

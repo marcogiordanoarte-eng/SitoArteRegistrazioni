@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import ArtistPageEditable from "./ArtistPageEditable";
 import { useAuth } from './AuthContext';
-import { storage } from './firebase';
+import { storage } from '../services/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db } from "./firebase";
+import { db } from "../services/firebase";
 import { useNavigate } from 'react-router-dom';
 import {
   collection,
@@ -22,7 +22,7 @@ import DashboardVideoManager from './DashboardVideoManager';
 import DashboardLogoVideoManager from './DashboardLogoVideoManager';
 import ArtistTracksManager from './ArtistTracksManager';
 import DashboardGameMusic from './DashboardGameMusic';
-import { auth, resetPassword } from './firebase';
+import { auth, resetPassword } from '../services/firebase';
 import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 
 function Dashboard() {

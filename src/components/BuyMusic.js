@@ -5,9 +5,10 @@ import YouTubeButton from './YouTubeButton';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
 import './Artisti.css';
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import { collection, doc, onSnapshot, onSnapshot as onDocSnapshot } from 'firebase/firestore';
 import { useI18n } from '../i18n';
+import LanguageSwitchBadge from './LanguageSwitchBadge';
 
 export default function BuyMusic() {
   const { t, lang } = useI18n();
@@ -62,7 +63,8 @@ export default function BuyMusic() {
     <div>
       {/* Pagina Buy Music */}
       <div className="publicsite-bg page-buymusic">
-        <Link to="/login" className="dash-badge">Dashboard</Link>
+  <Link to="/login" className="dash-badge">Dashboard</Link>
+  <LanguageSwitchBadge />
         <div className="logo-wrapper">
           <div className="logo-stack">
             <div>
@@ -107,9 +109,6 @@ export default function BuyMusic() {
             </div>
           </div>
           <h1 className="publicsite-title">{t('buymusic_title')}</h1>
-          <div className="publicsite-desc" style={{ maxWidth: 980, margin: '8px auto 14px', textAlign: 'center' }}>
-            <strong>{t('buymusic_how_title')}</strong>: scegli un genere, ascolta l’anteprima e acquista il brano che preferisci. I prezzi sono indicati accanto ad ogni brano (esempi: € 1,99 singolo, € 9,99 album, € 100 pacchetto). Dopo il pagamento ottieni il download immediato e la licenza d’uso. Per provare una pagina di pagamento funzionante, apri <Link to="/pagamento-esempio" style={{ color: '#ffd700', textDecoration: 'underline' }}>questa demo</Link>.
-          </div>
           {genres.length === 0 ? (
             <div style={{ color: '#ffd700', textAlign: 'center', marginTop: 24 }}>Nessun genere disponibile al momento.</div>
           ) : (

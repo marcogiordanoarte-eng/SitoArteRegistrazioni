@@ -5,7 +5,7 @@ import { useI18n } from "../i18n";
 export default function NavBar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
 
   useEffect(() => {
     // Close menu on route change
@@ -72,8 +72,8 @@ export default function NavBar() {
         {/* Riga 3: Sounds singolo (grande) */}
         <div className="nav-row nav-row--single">
           <Link
-            to="/"
-            className={`glow-btn glow-btn--lg${isActive("/") ? " glow-btn--active" : ""}`}
+            to="/store"
+            className={`glow-btn glow-btn--lg${isActive("/store") ? " glow-btn--active" : ""}`}
           >
             {t('nav_sounds')}
           </Link>
@@ -89,16 +89,7 @@ export default function NavBar() {
           </Link>
         </div>
 
-        {/* Lingua switch */}
-        <div className="nav-row nav-row--tail" style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-          <span style={{ color: '#9aa3b2', fontSize: 12 }}>{t('nav_language')}:</span>
-          <button type="button" className={`glow-btn glow-btn--sm${lang==='it' ? ' glow-btn--active' : ''}`} onClick={() => setLang('it')} aria-pressed={lang==='it'}>
-            {t('lang_it')}
-          </button>
-          <button type="button" className={`glow-btn glow-btn--sm${lang==='en' ? ' glow-btn--active' : ''}`} onClick={() => setLang('en')} aria-pressed={lang==='en'}>
-            {t('lang_en')}
-          </button>
-        </div>
+        {/* Lingua switch spostata accanto al badge Dashboard su richiesta */}
       </nav>
     </div>
   );

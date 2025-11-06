@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import "./Artisti.css";
 // Reintroduciamo solo l'upload verso Firebase Storage al momento del salvataggio
-import { storage, functions, auth, STORAGE_BUCKET } from "./firebase";
+import { storage, functions, auth, STORAGE_BUCKET } from "../services/firebase";
 import { httpsCallable } from "firebase/functions";
 import Icon from "./Icon";
 import { ref, uploadBytesResumable, uploadBytes, getDownloadURL } from "firebase/storage";

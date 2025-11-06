@@ -6,10 +6,11 @@ import Footer from './Footer';
 import BrandButton from './BrandButton';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import "./Artisti.css";
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import NavBar from './NavBar';
 import LogoPrompt from './LogoPrompt';
+import LanguageSwitchBadge from './LanguageSwitchBadge';
 
 export default function PublicSite() {
   const { t } = useI18n();
@@ -90,6 +91,7 @@ export default function PublicSite() {
   return (
     <>
   <Link to="/login" className="dash-badge" title="Dashboard">Dashboard</Link>
+  <LanguageSwitchBadge />
       <div className="publicsite-bg page-home">
     {/* DISCO ANIMATO SOTTO LE FRECCE */}
         <div

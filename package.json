@@ -17,14 +17,33 @@
     "react-router-dom": "^7.9.1"
   },
   "scripts": {
-    "start": "react-scripts start",
+  "dev": "react-scripts start",
+  "start": "react-scripts start",
+    "start:home": "concurrently -k -r \"npm:dev\" \"sh -lc 'npx wait-on http-get://127.0.0.1:$PORT/ --timeout 120000 && open -a \"Google Chrome\" http://127.0.0.1:$PORT/'\"",
+    "port:free": "sh -c 'P=${PORT:-5174}; for p in $P 3001 3000; do PIDS=$(lsof -tiTCP:$p -sTCP:LISTEN -n -P || true); if [ -n \"$PIDS\" ]; then echo Killing on $p: \"$PIDS\"; kill -9 $PIDS; fi; done'",
+    "start:one": "npm run port:free && npm run start:home",
+    "sim:open": "bash ./scripts/start-sim.sh",
+    "start:sim": "concurrently -k -r \"npm:dev\" \"sh -lc 'npx wait-on http-get://127.0.0.1:$PORT/ --timeout 120000 && npm run sim:open'\"",
+    "start:all": "npm run port:free && cross-env PORT=5174 HOST=127.0.0.1 BROWSER=none concurrently -k -r \"npm:dev\" \"sh -lc 'npx wait-on http-get://127.0.0.1:$PORT/ --timeout 120000 && PORT=$PORT bash ./scripts/open-browsers.sh'\"",
+    "preview:build": "react-scripts build",
+    "preview:start": "serve -s build -l tcp://127.0.0.1:3001 -n",
+    "preview": "npm run preview:build && npm run preview:start",
+    "static:3002": "serve public -l tcp://127.0.0.1:3002 -n",
+    "quick:social": "cross-env PORT=0 npm run port:free && serve public -l tcp://127.0.0.1:3002 -n",
+    "open:social": "open -a 'Google Chrome' http://127.0.0.1:3002/social.html",
+    "quick:social:open": "sh -lc 'npm run quick:social & sleep 1 && npm run open:social'",
+    "deploy:db": "firebase deploy --only database",
+    "deploy:storage": "firebase deploy --only storage",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "emulate:db": "firebase emulators:start --only database,ui",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "voice-backend": "HOST=127.0.0.1 PORT=5005 SIMPLE_TTS_ENABLED=1 python3 ../voice_server.py || HOST=127.0.0.1 PORT=5005 SIMPLE_TTS_ENABLED=1 python ../voice_server.py",
     "voice-backend-full": "HOST=127.0.0.1 PORT=5005 python3 ../voice_server.py || HOST=127.0.0.1 PORT=5005 python ../voice_server.py",
     "voice-backend-venv": "HOST=127.0.0.1 PORT=5005 SIMPLE_TTS_ENABLED=1 ../.venv/bin/python ../voice_server.py",
-    "dev:all": "concurrently \"npm:start\" \"npm:voice-backend\""
+    "dev:all": "concurrently \"npm:dev\" \"npm:voice-backend\"",
+    "dev:all:sim": "npm run port:free && cross-env PORT=5174 HOST=127.0.0.1 BROWSER=none concurrently -k -r \"npm:voice-backend\" \"npm:dev\" \"sh -lc 'npx wait-on http-get://127.0.0.1:$PORT/ --timeout 120000 && npm run sim:open'\""
   },
   "eslintConfig": {
     "extends": [
@@ -46,6 +65,10 @@
   },
   "devDependencies": {
     "firebase-tools": "^14.20.0",
-    "react-scripts": "^5.0.1"
+    "react-scripts": "^5.0.1",
+    "concurrently": "^9.0.1",
+    "wait-on": "^7.2.0",
+    "cross-env": "^7.0.3",
+    "serve": "^14.2.1"
   }
 }

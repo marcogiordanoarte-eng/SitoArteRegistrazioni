@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Social Sounds</title>
+  <meta name="description" content="Social Sounds – Annuncia concerti e scopri i live vicino a te." />
+  <link rel="stylesheet" href="/social.css" />
+</head>
+<body>
+  <!-- Topbar: utente loggato simulato -->
+  <header class="ss-topbar">
+    <div class="ss-container">
+      <div class="ss-brand">SOCIAL SOUNDS</div>
+      <div class="ss-user" id="ssAuthBox">
+        <button id="ssFanBtn" class="ss-btn ss-btn-ghost">Entra come Fan</button>
+        <button id="ssArtistBtn" class="ss-btn ss-btn-primary" style="margin-left:8px">Entra come Artista</button>
+        <div id="ssUserBox" hidden>
+          Ciao, <span id="ssUserName"></span>
+          <button id="ssLogoutBtn" class="ss-btn ss-btn-ghost" style="margin-left:8px">Esci</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="ss-main">
+    <section class="ss-compose" aria-labelledby="compose-title">
+      <div class="ss-container">
+        <h1 id="compose-title">Annuncia concerto</h1>
+        <form id="composeForm" class="ss-form" autocomplete="off">
+          <div class="ss-field">
+            <label for="ssImage">Volantino (immagine)</label>
+            <input type="file" id="ssImage" accept="image/*" />
+          </div>
+          <div class="ss-grid">
+            <div class="ss-field">
+              <label for="ssTitle">Titolo</label>
+              <input type="text" id="ssTitle" placeholder="Es. Live al Blue Note" required />
+            </div>
+            <div class="ss-field">
+              <label for="ssDate">Data</label>
+              <input type="date" id="ssDate" required />
+            </div>
+            <div class="ss-field">
+              <label for="ssCity">Città</label>
+              <input type="text" id="ssCity" placeholder="Es. Milano" required />
+              <div class="ss-toggle-row">
+                <label class="ss-toggle"><input type="checkbox" id="ssUseLocation" /> Usa la mia posizione</label>
+                <label class="ss-toggle"><input type="checkbox" id="ssShowDistance" /> Mostra distanza</label>
+              </div>
+            </div>
+          </div>
+          <div class="ss-field">
+            <label for="ssDesc">Descrizione breve</label>
+            <textarea id="ssDesc" rows="3" placeholder="Un paio di righe sull'evento" required></textarea>
+          </div>
+          <div class="ss-field">
+            <img id="ssPreview" class="ss-preview" alt="Anteprima volantino" hidden />
+            <div id="ssProgress" class="ss-progress" hidden>
+              <div id="ssProgressBar" class="ss-progress-bar" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="ss-actions">
+            <button id="ssPublishBtn" type="submit" class="ss-btn ss-btn-primary">Pubblica</button>
+            <span id="ssStatus" class="ss-status" aria-live="polite"></span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="ss-feed" aria-labelledby="feed-title">
+      <div class="ss-container">
+        <h2 id="feed-title">Eventi recenti</h2>
+        <div id="ssFeed" class="ss-feed-grid" role="list"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Clear any lingering App Check debug token in localhost to prevent 403 exchanges -->
+  <script>
+    (function(){
+      try {
+        var host=(location&&location.hostname)||'';
+        if(host==='localhost'||host==='127.0.0.1'||/\.local$/.test(host)){
+          // Remove any persisted debug token keys that SDK may look for
+          try{ localStorage.removeItem('firebase-app-check-debug-token'); }catch(_){}
+          try{ localStorage.removeItem('FIREBASE_APPCHECK_DEBUG_TOKEN'); }catch(_){}
+          try{ delete window.FIREBASE_APPCHECK_DEBUG_TOKEN; }catch(_){}
+          window.FIREBASE_APPCHECK_DEBUG_TOKEN = undefined;
+        }
+      } catch(_) {}
+    })();
+  </script>
+
+  <!-- Firebase v10 compat CDN: mantiene le API v8 ma abilita App Check Enterprise -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+  <script>
+    // Inizializzazione Firebase con fallback: tenta di caricare /firebaseConfig.json
+    // e, se assente, usa i placeholder (da sostituire manualmente in produzione).
+    (function(){
+      // Promise globale per segnalare quando Firebase è pronto
+      window.__firebaseReady = new Promise((resolve) => { window.__resolveFirebaseReady = resolve; });
+      const fallbackConfig = {
+        apiKey: "REPLACE_ME",
+        authDomain: "REPLACE_ME.firebaseapp.com",
+        databaseURL: "https://REPLACE_ME-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "REPLACE_ME",
+        storageBucket: "REPLACE_ME.appspot.com",
+        messagingSenderId: "REPLACE_ME",
+        appId: "REPLACE_ME"
+      };
+      function safeInit(cfg){
+        try { firebase.initializeApp(cfg); } catch(e) { /* ignore if already init */ }
+        // If an App Check site key is provided, activate App Check (token auto refresh enabled).
+        // On localhost we skip activation entirely to avoid 403s if the debug token isn't registered.
+        try {
+          var host = (location && location.hostname) || '';
+          var isLocal = (host === 'localhost' || host === '127.0.0.1' || /\.local$/.test(host));
+          if (!isLocal) {
+            var siteKey = (cfg && (cfg.recaptchaEnterpriseSiteKey || cfg.recaptchaV3SiteKey || cfg.appCheckSiteKey)) || window.__APP_CHECK_SITE_KEY;
+            if (siteKey && firebase && firebase.appCheck && firebase.appCheck.ReCaptchaEnterpriseProvider) {
+              // Prefer ReCAPTCHA Enterprise provider (compat API)
+              var provider = new firebase.appCheck.ReCaptchaEnterpriseProvider(siteKey);
+              firebase.appCheck().activate(provider, true);
+            } else if (siteKey && firebase && firebase.appCheck) {
+              // Fallback: older API with plain key
+              firebase.appCheck().activate(siteKey, true);
+            }
+          } else {
+            try { console.info('[Social] App Check disabilitato su localhost (nessuna reCAPTCHA durante lo sviluppo).'); } catch(_) {}
+          }
+        } catch(_) { /* non‑blocking */ }
+        try { if (window.__resolveFirebaseReady) window.__resolveFirebaseReady(firebase); } catch(_) {}
+      }
+      fetch('/firebaseConfig.json', { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(cfg => { safeInit(cfg); })
+        .catch(() => { safeInit(fallbackConfig); });
+    })();
+  </script>
+
+  <script src="/social.js"></script>
+  <script src="/nav.js"></script>
+
+  <!-- Modal richiesta verifica artista -->
+  <div id="artistModal" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding-top:6vh;">
+    <div style="position:relative;background:#0b1020;color:#e5e7eb;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.45);width:min(92%,720px);padding:16px;">
+      <button id="artistClose" type="button" aria-label="Chiudi" title="Chiudi" onclick="window.__closeArtistModal && window.__closeArtistModal();"
+        style="position:absolute;right:10px;top:10px;width:28px;height:28px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:linear-gradient(180deg,#ef4444,#b91c1c);color:#fff;font-weight:700;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.18), 0 6px 14px rgba(0,0,0,.35);">
+        ×
+      </button>
+      <h3 style="margin:0 0 8px;">Richiesta verifica artista</h3>
+      <p style="margin:0 0 12px;opacity:.9;">Inserisci almeno il link Spotify dell’artista (consigliato). Se possibile aggiungi Apple Music e un link prova (YouTube, SoundCloud, Bandcamp…)</p>
+      <form id="artistForm" class="ss-form" autocomplete="off">
+        <div class="ss-field"><label for="artSpotify">Spotify Artist Link</label><input type="url" id="artSpotify" placeholder="https://open.spotify.com/artist/..." /></div>
+        <div class="ss-field"><label for="artApple">Apple Music Link</label><input type="url" id="artApple" placeholder="https://music.apple.com/..." /></div>
+        <div class="ss-field"><label for="artProof">Prova pubblicazione online</label><input type="url" id="artProof" placeholder="https://..." /></div>
+        <div class="ss-actions"><button id="artistSubmit" type="submit" class="ss-btn ss-btn-primary">Invia richiesta</button><button id="artistCancel" type="button" class="ss-btn ss-btn-ghost" style="margin-left:8px">Annulla</button><span id="artistStatus" class="ss-status" style="margin-left:8px"></span></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Profilo utente (semplice) -->
+  <section class="ss-profile" aria-labelledby="profile-title" style="margin:24px 0;">
+    <div class="ss-container">
+      <h2 id="profile-title">Profilo</h2>
+      <form id="profileForm" class="ss-form" autocomplete="off">
+        <div class="ss-grid">
+          <div class="ss-field">
+            <label for="profDisplay">Nome pubblico</label>
+            <input type="text" id="profDisplay" maxlength="140" placeholder="Il tuo nome" />
+          </div>
+          <div class="ss-field">
+            <label for="profLink">Link (sito/Instagram)</label>
+            <input type="url" id="profLink" placeholder="https://" />
+          </div>
+        </div>
+        <div class="ss-field">
+          <label for="profBio">Bio</label>
+          <textarea id="profBio" rows="3" maxlength="500" placeholder="Racconta qualcosa di te"></textarea>
+        </div>
+        <div class="ss-field">
+          <label for="profPhoto">Foto profilo (opzionale)</label>
+          <input type="file" id="profPhoto" accept="image/*" />
+        </div>
+        <div class="ss-actions">
+          <button id="profSaveBtn" type="submit" class="ss-btn ss-btn-primary">Salva profilo</button>
+          <span id="profStatus" class="ss-status" aria-live="polite"></span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Reels basilari -->
+  <section class="ss-reels" aria-labelledby="reels-title" style="margin:24px 0;">
+    <div class="ss-container">
+      <h2 id="reels-title">Reels</h2>
+      <form id="reelForm" class="ss-form" autocomplete="off">
+        <div class="ss-grid">
+          <div class="ss-field">
+            <label for="reelTitle">Titolo</label>
+            <input type="text" id="reelTitle" maxlength="140" placeholder="Titolo del reel" />
+          </div>
+          <div class="ss-field">
+            <label for="reelDesc">Descrizione</label>
+            <input type="text" id="reelDesc" maxlength="200" placeholder="Descrizione breve" />
+          </div>
+        </div>
+        <div class="ss-field">
+          <label for="reelVideo">Video (mp4/webm, max ~30 MB)</label>
+          <input type="file" id="reelVideo" accept="video/*" />
+          <div id="reelProgress" class="ss-progress" hidden>
+            <div id="reelProgressBar" class="ss-progress-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="ss-actions">
+          <button id="reelPublishBtn" type="submit" class="ss-btn ss-btn-primary">Carica reel</button>
+          <span id="reelStatus" class="ss-status" aria-live="polite"></span>
+        </div>
+      </form>
+
+      <div id="reelsFeed" class="ss-feed-grid" role="list" style="margin-top:16px;"></div>
+    </div>
+  </section>
+  <!-- Toast container -->
+  <div id="ssToastContainer" class="ss-toast-container" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>

@@ -15,16 +15,24 @@
   },
   "functions": {
     "source": "functions",
-    "runtime": "nodejs18"
+    "runtime": "nodejs20"
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "database": {
+    "rules": "database.rules.json"
   },
   "emulators": {
     "ui": {
       "enabled": true,
       "host": "127.0.0.1",
       "port": 4000
+    },
+    "database": {
+      "host": "127.0.0.1",
+      "port": 9000,
+      "rules": "database.rules.json"
     },
     "storage": {
       "host": "127.0.0.1",

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import { db, auth } from './firebase';
+import { db, auth } from '../services/firebase';
 import { fetchSignInMethodsForEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 

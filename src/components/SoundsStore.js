@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, onSnapshot, doc, onSnapshot as onDocSnapshot } from 'firebase/firestore';
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import './SoundsStore.css';
 import './Artisti.css';
+import { useI18n } from '../i18n';
+import LanguageSwitchBadge from './LanguageSwitchBadge';
 
 export default function SoundsStore() {
   const messages = {
@@ -111,8 +113,7 @@ export default function SoundsStore() {
     }
   };
 
-  const [lang, setLang] = useState(typeof window !== 'undefined' ? (localStorage.getItem('lang') || 'it') : 'it');
-  useEffect(() => { try { localStorage.setItem('lang', lang); } catch(_) {} }, [lang]);
+  const { lang } = useI18n();
   const t = (key) => (messages[lang] && messages[lang][key]) || key;
   const format = (template, vars) => template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
   useEffect(() => {
@@ -225,6 +226,9 @@ export default function SoundsStore() {
 
   return (
     <div className="sounds-store">
+      {/* Fixed Dashboard badge + Language badge for consistency with other pages */}
+      <Link to="/login" className="dash-badge">Dashboard</Link>
+      <LanguageSwitchBadge />
       <header className="site-header" role="banner">
         <div className="container header-inner">
           <Link to="/" className="brand" aria-label="Sounds di Arte Registrazioni - Home">
@@ -254,9 +258,9 @@ export default function SoundsStore() {
             </ul>
           </nav>
           <div className="right-ctrls">
-            <div className="lang-switch" role="group" aria-label={t('lang_label')}>
-              <button type="button" className={lang==='it' ? 'active' : ''} aria-pressed={lang==='it'} onClick={() => setLang('it')}>{t('lang_it')}</button>
-              <button type="button" className={lang==='en' ? 'active' : ''} aria-pressed={lang==='en'} onClick={() => setLang('en')}>{t('lang_en')}</button>
+            <div className="mini-arte" aria-label="Arte Registrazioni">
+              <img src="/logo.png" alt="Logo Arte Registrazioni" />
+              <span className="mini-arte-text">Arte Registrazioni</span>
             </div>
             <Link className="btn btn-label" to="/label" title={t('label_title')}>{t('label_btn')}</Link>
           </div>
@@ -271,51 +275,55 @@ export default function SoundsStore() {
           <div className="hero-overlay container">
             <h1 className="reveal">{t('hero_title')}</h1>
             <p className="lead reveal">{t('hero_lead')}</p>
-            <div className="cta-row reveal">
+
+            {/* SOCIAL SOUNDS — immediatamente sotto il lead, con poco spazio */}
+            <section id="social" className="social-sounds social-sounds-hero" aria-labelledby="social-title">
+              <div className="social-card reveal" data-animate-on-view>
+                <div className="social-head">
+                  <h2 id="social-title" className="social-title">{t('social_title')}</h2>
+                  <p className="social-sub">{t('social_sub')}</p>
+                </div>
+                <div className="social-icons" role="list" aria-label="Funzioni principali">
+                  <a className="social-icon megaphone" href="/sounds#live" role="listitem" aria-label="Annuncia live">
+                    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M3 11l12-6v14L3 13V11Z" stroke="#60a5fa" strokeWidth="1.6" strokeLinejoin="round"/>
+                      <path d="M8 14.5 7 20" stroke="#60a5fa" strokeWidth="1.6" strokeLinecap="round"/>
+                      <path d="M18 8c1.2.8 2 2.1 2 3.6s-.8 2.8-2 3.6" stroke="#60a5fa" strokeWidth="1.6" strokeLinecap="round"/>
+                    </svg>
+                    <span>{t('social_live')}</span>
+                  </a>
+                  <a className="social-icon map" href="/sounds#map" role="listitem" aria-label="Eventi vicini">
+                    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M12 2C8.7 2 6 4.7 6 8c0 4.5 6 12 6 12s6-7.5 6-12c0-3.3-2.7-6-6-6Zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z" stroke="#60a5fa" strokeWidth="1.6"/>
+                    </svg>
+                    <span>{t('social_near')}</span>
+                    <span className="ping" aria-hidden="true"></span>
+                  </a>
+                  <a className="social-icon chat" href="/sounds#rsvp" role="listitem" aria-label="RSVP e chat">
+                    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M4 6h16v9a3 3 0 0 1-3 3H9l-5 3V6Z" stroke="#60a5fa" strokeWidth="1.6" strokeLinejoin="round"/>
+                      <circle cx="9" cy="11" r="1" fill="#60a5fa"/>
+                      <circle cx="12" cy="11" r="1" fill="#60a5fa"/>
+                      <circle cx="15" cy="11" r="1" fill="#60a5fa"/>
+                    </svg>
+                    <span>{t('social_rsvp')}</span>
+                  </a>
+                </div>
+                <div className="social-cta">
+                  <a className="btn btn-join" href="/sounds">{t('social_join')}</a>
+                </div>
+              </div>
+            </section>
+
+            {/* CTA spostate sotto il blocco Social (sotto tutto nell'hero) */}
+            <div className="cta-row reveal cta-after-social">
               <a className="btn btn-primary" href="#unisciti">{t('cta_upload')}</a>
               <a className="btn btn-ghost" href="#come-funziona">{t('cta_how')}</a>
             </div>
           </div>
         </section>
 
-        {/* SOCIAL SOUNDS: la rete privata dei musicisti */}
-        <section id="social" className="social-sounds container" aria-labelledby="social-title">
-          <div className="social-card reveal" data-animate-on-view>
-            <div className="social-head">
-              <h2 id="social-title" className="social-title">{t('social_title')}</h2>
-              <p className="social-sub">{t('social_sub')}</p>
-            </div>
-            <div className="social-icons" role="list" aria-label="Funzioni principali">
-              <div className="social-icon megaphone" role="listitem" aria-label="Annuncia live">
-                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M3 11l12-6v14L3 13V11Z" stroke="#60a5fa" strokeWidth="1.6" strokeLinejoin="round"/>
-                  <path d="M8 14.5 7 20" stroke="#60a5fa" strokeWidth="1.6" strokeLinecap="round"/>
-                  <path d="M18 8c1.2.8 2 2.1 2 3.6s-.8 2.8-2 3.6" stroke="#60a5fa" strokeWidth="1.6" strokeLinecap="round"/>
-                </svg>
-                <span>{t('social_live')}</span>
-              </div>
-              <div className="social-icon map" role="listitem" aria-label="Eventi vicini">
-                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M12 2C8.7 2 6 4.7 6 8c0 4.5 6 12 6 12s6-7.5 6-12c0-3.3-2.7-6-6-6Zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z" stroke="#60a5fa" strokeWidth="1.6"/>
-                </svg>
-                <span>{t('social_near')}</span>
-                <span className="ping" aria-hidden="true"></span>
-              </div>
-              <div className="social-icon chat" role="listitem" aria-label="RSVP e chat">
-                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M4 6h16v9a3 3 0 0 1-3 3H9l-5 3V6Z" stroke="#60a5fa" strokeWidth="1.6" strokeLinejoin="round"/>
-                  <circle cx="9" cy="11" r="1" fill="#60a5fa"/>
-                  <circle cx="12" cy="11" r="1" fill="#60a5fa"/>
-                  <circle cx="15" cy="11" r="1" fill="#60a5fa"/>
-                </svg>
-                <span>{t('social_rsvp')}</span>
-              </div>
-            </div>
-            <div className="social-cta">
-              <a className="btn btn-join" href="/social">{t('social_join')}</a>
-            </div>
-          </div>
-        </section>
+        
 
         <section id="come-funziona" className="how container" aria-labelledby="how-title">
           <h2 id="how-title" className="section-title reveal">{t('how_title')}</h2>
@@ -364,6 +372,7 @@ export default function SoundsStore() {
             </article>
           </div>
         </section>
+
 
         <section className="store-teaser container" aria-labelledby="store-title">
           <h2 id="store-title" className="section-title reveal">{t('store_title')}</h2>
@@ -433,11 +442,6 @@ export default function SoundsStore() {
 
           {/* Title as in page */}
           <h1 className="publicsite-title">Buy Music</h1>
-
-          {/* Come funziona */}
-          <div className="publicsite-desc" style={{ maxWidth: 980, margin: '8px auto 14px', textAlign: 'center' }}>
-            <strong>Come funziona</strong>: scegli un genere, ascolta l’anteprima e acquista il brano che preferisci. I prezzi sono indicati accanto ad ogni brano (esempi: € 1,99 singolo, € 9,99 album, € 100 pacchetto). Dopo il pagamento ottieni il download immediato e la licenza d’uso. Per provare una pagina di pagamento funzionante, apri <Link to="/pagamento-esempio" style={{ color: '#ffd700', textDecoration: 'underline' }}>questa demo</Link>.
-          </div>
 
           {/* Genres grid identical classes/structure */}
           {genres.length === 0 ? (

@@ -9,6 +9,7 @@ import LogoPrompt from './LogoPrompt';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import "./Artisti.css";
 import { useI18n } from '../i18n';
+import LanguageSwitchBadge from './LanguageSwitchBadge';
 
 export default function Contatti() {
   const { t } = useI18n();
@@ -37,6 +38,7 @@ export default function Contatti() {
   return (
     <div className="publicsite-bg page-contatti">
   <Link to="/login" className="dash-badge">Dashboard</Link>
+        <LanguageSwitchBadge />
   <button onClick={() => navigate(-1)} aria-label={t('ps_back')} title={t('ps_back')} style={{ position: 'fixed', top: 10, left: 10, zIndex: 10000, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', border: '2px solid #ffd700', width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 12px rgba(255,215,0,0.6)' }}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6" />

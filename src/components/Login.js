@@ -7,9 +7,9 @@ import { ADMIN_UIDS } from './config';
 
 export default function Login() {
   const { t } = useI18n();
-  const { login, signup, user, loading } = useAuth();
+  const { login, signup, user, loading, allowSignup } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState('login'); // 'login' | 'signup'
+  const [mode, setMode] = useState('login'); // 'login' | 'signup' (signup solo se allowSignup=true)
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -33,7 +33,7 @@ export default function Login() {
     setError(null);
     setSubmitting(true);
     try {
-      if (mode === 'signup') {
+      if (mode === 'signup' && allowSignup) {
         await signup(email.trim(), password);
       } else {
         await login(email.trim(), password);
@@ -67,7 +67,9 @@ export default function Login() {
         )}
         <div className="login-mode-switch">
           <button type="button" onClick={() => setMode('login')} className={"login-mode-btn" + (mode === 'login' ? ' active' : '')}>{t('login_tab_login')}</button>
+          {allowSignup && (
             <button type="button" onClick={() => setMode('signup')} className={"login-mode-btn" + (mode === 'signup' ? ' active' : '')}>{t('login_tab_signup')}</button>
+          )}
         </div>
         <label className="login-label">{t('login_email')}</label>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="login-input" />
@@ -106,7 +108,7 @@ export default function Login() {
           </button>
         </div>
         {error && <div className="login-error">{error}</div>}
-        <button type="submit" disabled={submitting} className="login-submit">{submitting ? t('login_attendere') : (mode === 'login' ? t('login_submit_login') : t('login_submit_signup'))}</button>
+  <button type="submit" disabled={submitting} className="login-submit">{submitting ? t('login_attendere') : (mode === 'login' || !allowSignup ? t('login_submit_login') : t('login_submit_signup'))}</button>
       </form>
     </div>
   );

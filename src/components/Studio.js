@@ -6,7 +6,7 @@ import Footer from './Footer';
 import BrandButton from './BrandButton';
 import LogoPrompt from './LogoPrompt';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import "./Artisti.css";
 

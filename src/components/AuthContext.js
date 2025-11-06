@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, registerUser, loginUser, logoutUser, resetPassword, changeCurrentUserPassword } from './firebase';
+import { auth, registerUser, loginUser, logoutUser, resetPassword, changeCurrentUserPassword } from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const AuthContext = createContext(null);
@@ -17,12 +17,16 @@ export function AuthProvider({ children }) {
     return () => unsub();
   }, []);
 
+  const allowSignup = String(process.env.REACT_APP_ALLOW_SIGNUP || '').toLowerCase() === 'true';
   const signup = useCallback(async (email, password) => {
     setError(null);
+    if (!allowSignup) {
+      throw new Error('La registrazione self-service è disabilitata. Contatta l\'amministratore.');
+    }
     const u = await registerUser(email, password);
     setUser(u);
     return u;
-  }, []);
+  }, [allowSignup]);
 
   const login = useCallback(async (email, password) => {
     setError(null);
@@ -37,7 +41,7 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = { user, loading, error, signup, login, logout, resetPassword, changeCurrentUserPassword };
+  const value = { user, loading, error, signup, login, logout, resetPassword, changeCurrentUserPassword, allowSignup };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

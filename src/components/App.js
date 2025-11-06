@@ -9,7 +9,6 @@ import Contatti from "./Contatti";
 import Festival from "./Festival";
 import BuyMusic from "./BuyMusic";
 // Sostituito: nuova homepage Store per /sounds
-import SoundsStore from "./SoundsStore";
 import BuyGenreDetail from "./BuyGenreDetail";
 import Podcast from "./Podcast";
 import Countdown from "./Countdown";
@@ -26,6 +25,8 @@ import { ADMIN_UIDS } from './config';
 import ArtistSelfDashboard from './ArtistSelfDashboard';
 import CalendArte from './CalendArte';
 import PentaPlatform from './PentaPlatform';
+import SocialPage from './SocialPage';
+import AdminPage from './AdminPage';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -150,27 +151,31 @@ export default function App() {
       <BrowserRouter>
         <div style={{ position:'relative', minHeight:'100vh' }}>
           <Routes>
-            {/* Sounds diventa la Home di tutto il progetto */}
-            <Route path="/" element={<SoundsStore />} />
+            {/* Home = PublicSite (Label/Home) */}
+            <Route path="/" element={<PublicSite />} />
             <Route path="/artisti" element={<Artisti />} />
             <Route path="/artista/:id" element={<ArtistDetail />} />
             <Route path="/studio" element={<Studio />} />
             <Route path="/festival" element={<Festival />} />
             <Route path="/podcast" element={<Podcast />} />
             <Route path="/countdown" element={<Countdown />} />
-            {/* Rotta esplicita per Sounds (alias della home) */}
-            <Route path="/sounds" element={<Navigate to="/" replace />} />
-            {/* Spostiamo la vecchia home (Label) su /label */}
-            <Route path="/label" element={<PublicSite />} />
-            <Route path="/buy" element={<BuyMusic />} />
+            {/* Social route */}
+            <Route path="/sounds" element={<SocialPage />} />
+            {/* Store route */}
+            <Route path="/store" element={<BuyMusic />} />
+            {/* Backward compatibility */}
+            <Route path="/label" element={<Navigate to="/" replace />} />
+            <Route path="/buy" element={<Navigate to="/store" replace />} />
             {/* Rotta /musica rimossa su richiesta */}
             <Route path="/buy/genre/:gid" element={<BuyGenreDetail />} />
+            {/* Unificazione: sezioni Social e Admin all'interno della SPA (embed delle pagine esistenti) */}
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="/contatti" element={<Contatti />} />
             <Route path="/termini" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/licenza" element={<Licenza />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/artist-login" element={<ArtistLogin />} />
+            <Route path="/artist/login" element={<ArtistLogin />} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/artist-dashboard" element={<AuthRoute><ArtistSelfDashboard /></AuthRoute>} />
             <Route path="/download-confirm" element={<DownloadConfirm />} />

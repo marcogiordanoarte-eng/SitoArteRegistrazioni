@@ -1,5 +1,5 @@
 import React from 'react';
-import { db } from './firebase';
+import { db } from '../services/firebase';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import Footer from './Footer';
 
