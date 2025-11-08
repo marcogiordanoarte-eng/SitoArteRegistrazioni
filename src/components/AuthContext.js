@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, registerUser, loginUser, logoutUser, resetPassword, changeCurrentUserPassword, loginWithGooglePopup } from './firebase';
+import { auth, registerUser, loginUser, logoutUser, resetPassword, changeCurrentUserPassword } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const AuthContext = createContext(null);
@@ -37,14 +37,7 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const loginWithGoogle = useCallback(async () => {
-    setError(null);
-    const u = await loginWithGooglePopup();
-    setUser(u);
-    return u;
-  }, []);
-
-  const value = { user, loading, error, signup, login, loginWithGoogle, logout, resetPassword, changeCurrentUserPassword };
+  const value = { user, loading, error, signup, login, logout, resetPassword, changeCurrentUserPassword };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

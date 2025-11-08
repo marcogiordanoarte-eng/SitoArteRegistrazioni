@@ -22,6 +22,7 @@ import DashboardVideoManager from './DashboardVideoManager';
 import DashboardLogoVideoManager from './DashboardLogoVideoManager';
 import ArtistTracksManager from './ArtistTracksManager';
 import DashboardGameMusic from './DashboardGameMusic';
+import SocialSoundsAdmin from './SocialSoundsAdmin';
 import { auth, resetPassword } from './firebase';
 import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 
@@ -461,6 +462,7 @@ function Dashboard() {
   <div className="dash-views">
         <button className="dash-btn dash-btn--ghost" onClick={() => setView('video')}>Gestione Video Studio</button>
         <button className="dash-btn dash-btn--ghost" onClick={() => setView('videoLogo')}>Gestione Video Logo</button>
+    <button className="dash-btn dash-btn--ghost" onClick={() => setView('social')}>Social Sounds (Login & Utenti)</button>
       {view === 'video' && (
         <div className="dash-editor dash-container">
           <h3 className="dash-section-title">Video Presentazione Studio</h3>
@@ -710,6 +712,12 @@ function Dashboard() {
             uploading={cdUploading}
             setUploading={setCdUploading}
           />
+        </div>
+      )}
+      {view === 'social' && (
+        <div className="dash-editor dash-container">
+          <h3 className="dash-section-title">Social Sounds – Login & Utenti</h3>
+          <SocialSoundsAdmin />
         </div>
       )}
 
