@@ -83,3 +83,21 @@ Progetto CRA con react-scripts. Porta dev: 3001. Assicurati che .env.local sia p
 - Mapping robusto (uid → authUid → loginEmail → email) con write-back di authUid
 - Salvataggio resiliente con fallback a doc uid
 - Rimosso UI di deduplica automatica, lasciato “Elimina” manuale in lista
+
+## Workflow di lavoro e salvataggi (importante)
+
+Per lavorare sempre su questa versione unica e poter ripristinare velocemente:
+
+- Avvio sviluppo: esegui `npm start` dentro la cartella `dashboard` (apre Chrome su http://localhost:3001).
+- Quando dici “Salva”: creeremo uno snapshot con tag annotato e (se serve) un branch baseline puntato all’ultimo commit approvato.
+- Se chiedi “torna all’ultimo salvataggio”: faremo checkout del branch/tag baseline più recente e aggiorneremo il puntatore del workspace.
+
+Convenzioni usate finora:
+- Branch baseline: `baseline-YYYY-MM-DD-descrizione` (es. `baseline-2025-11-08-social-presentazione-compact`).
+- Tag snapshot: `restore-YYYY-MM-DD-descrizione` + alias `baseline-current`.
+
+Come ripristinare manualmente nel dashboard:
+1. `git checkout baseline-2025-11-08-social-presentazione-compact` (oppure `git checkout baseline-current`)
+2. `npm start`
+
+Nota: manteniamo pulito il repository eliminando branch locali superflui; gli snapshot restano come tag annotati.
