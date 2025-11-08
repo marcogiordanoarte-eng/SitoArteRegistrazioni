@@ -24,6 +24,7 @@ import ArtistTracksManager from './ArtistTracksManager';
 import DashboardGameMusic from './DashboardGameMusic';
 import SocialSoundsAdmin from './SocialSoundsAdmin';
 import { auth, resetPassword } from './firebase';
+import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 
 function Dashboard() {
@@ -63,6 +64,7 @@ function Dashboard() {
   const [autoSendReset, setAutoSendReset] = useState(true);
   const [artistActionMessage, setArtistActionMessage] = useState('');
   const [artistActionError, setArtistActionError] = useState('');
+  const [adminPwCurrent, setAdminPwCurrent] = useState('');
   const [adminPwNew, setAdminPwNew] = useState('');
   const [adminPwConfirm, setAdminPwConfirm] = useState('');
   const [adminPwMsg, setAdminPwMsg] = useState('');
@@ -444,18 +446,38 @@ function Dashboard() {
 
       {/* Duplicates section removed as requested */}
         {user && (
-          <div style={{margin:'10px 0 20px', padding: '12px 16px', background:'#111', border:'1px solid #333', borderRadius:10, display:'flex', flexDirection:'column', gap:10}}>
-            <strong style={{color:'#ffd700', fontSize:14}}>Cambio password admin (solo per te)</strong>
+          <div style={{margin:'10px 0 20px', padding: '12px 16px', background:'#111', border:'1px solid #333', borderRadius:10, display:'flex', flexDirection:'column', gap:12}}>
+            <strong style={{color:'#ffd700', fontSize:14}}>Cambio password admin (reauth sicura)</strong>
             <div style={{display:'flex', flexWrap:'wrap', gap:10}}>
+              <input type="password" placeholder="Password attuale" value={adminPwCurrent} onChange={e=>setAdminPwCurrent(e.target.value)} style={{flex:'1 1 240px', minWidth:200, padding:8, borderRadius:8, border:'1px solid #444', background:'#000', color:'#fff'}} />
               <input type="password" placeholder="Nuova password" value={adminPwNew} onChange={e=>setAdminPwNew(e.target.value)} style={{flex:'1 1 200px', minWidth:180, padding:8, borderRadius:8, border:'1px solid #444', background:'#000', color:'#fff'}} />
               <input type="password" placeholder="Conferma" value={adminPwConfirm} onChange={e=>setAdminPwConfirm(e.target.value)} style={{flex:'1 1 200px', minWidth:180, padding:8, borderRadius:8, border:'1px solid #444', background:'#000', color:'#fff'}} />
-              <button className="dash-small-btn dash-small-btn--primary" disabled={!adminPwNew || adminPwNew.length<6 || adminPwNew!==adminPwConfirm} onClick={async ()=>{
-                setAdminPwMsg(''); setAdminPwErr('');
-                try { await changeCurrentUserPassword(adminPwNew.trim()); setAdminPwMsg('Password aggiornata.'); setAdminPwNew(''); setAdminPwConfirm(''); }
-                catch(e){ setAdminPwErr(e.message||'Errore cambio password'); }
-              }}>Aggiorna</button>
+              <button
+                className="dash-small-btn dash-small-btn--primary"
+                disabled={!adminPwCurrent || adminPwCurrent.length<6 || !adminPwNew || adminPwNew.length<6 || adminPwNew!==adminPwConfirm}
+                onClick={async ()=>{
+                  setAdminPwMsg(''); setAdminPwErr('');
+                  try {
+                    if(!user?.email) throw new Error('Sessione non valida');
+                    const cred = EmailAuthProvider.credential(user.email, adminPwCurrent.trim());
+                    await reauthenticateWithCredential(auth.currentUser, cred);
+                    await changeCurrentUserPassword(adminPwNew.trim());
+                    setAdminPwMsg('Password aggiornata.');
+                    setAdminPwCurrent(''); setAdminPwNew(''); setAdminPwConfirm('');
+                  } catch(e){
+                    const code = e.code || '';
+                    let msg = e.message || 'Errore cambio password';
+                    if(code === 'auth/wrong-password') msg = 'Password attuale errata.';
+                    else if(code === 'auth/too-many-requests') msg = 'Troppi tentativi: riprova tra qualche minuto.';
+                    else if(code === 'auth/requires-recent-login') msg = 'Sessione scaduta: esegui Logout e rifai Login, poi ripeti.';
+                    else if(code === 'auth/weak-password') msg = 'La nuova password è troppo debole (min 6 caratteri).';
+                    setAdminPwErr(msg);
+                  }
+                }}
+              >Aggiorna</button>
               <button className="dash-small-btn" onClick={async ()=>{ if(user?.email){ try{ await resetPassword(user.email); setAdminPwMsg('Email reset inviata al tuo indirizzo.'); } catch(e){ setAdminPwErr('Errore invio reset: '+(e.message||e)); } } }}>Invia reset via email</button>
             </div>
+            <div style={{fontSize:11, color:'#666'}}>Per sicurezza viene richiesta la password attuale (reauth). Usa l'email di reset se l'hai dimenticata.</div>
             {(adminPwMsg || adminPwErr) && <div style={{fontSize:12}}>{adminPwMsg && <span style={{color:'#6fda8b'}}>{adminPwMsg}</span>} {adminPwErr && <span style={{color:'#ff6464'}}>{adminPwErr}</span>}</div>}
           </div>
         )}
