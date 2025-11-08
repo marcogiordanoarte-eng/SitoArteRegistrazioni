@@ -269,21 +269,7 @@ export default function SoundsStore() {
       </header>
 
       <main>
-        <section className="hero" aria-label="Intro">
-          <div className="hero-media">
-            <video className="hero-video" autoPlay muted loop playsInline preload="metadata" aria-hidden="true" />
-          </div>
-          <div className="hero-overlay container">
-            <h1 className="reveal">{t('hero_title')}</h1>
-            <p className="lead reveal">{t('hero_lead')}</p>
-            <div className="cta-row reveal">
-              <a className="btn btn-primary" href="#unisciti">{t('cta_upload')}</a>
-              <a className="btn btn-ghost" href="#come-funziona">{t('cta_how')}</a>
-            </div>
-          </div>
-        </section>
-
-        {/* SOCIAL SOUNDS: la rete privata dei musicisti */}
+        {/* SOCIAL SOUNDS: la rete privata dei musicisti — spostata in alto */}
         <section id="social" className="social-sounds container" aria-labelledby="social-title">
           <div className="social-card reveal" data-animate-on-view>
             <div className="social-head">
@@ -318,6 +304,21 @@ export default function SoundsStore() {
             </div>
             <div className="social-cta">
               <a className="btn btn-join" href="/social">{t('social_join')}</a>
+            </div>
+          </div>
+        </section>
+
+        {/* Sezione hero spostata sotto Social */}
+        <section className="hero" aria-label="Intro">
+          <div className="hero-media">
+            <video className="hero-video" autoPlay muted loop playsInline preload="metadata" aria-hidden="true" />
+          </div>
+          <div className="hero-overlay container">
+            <h1 className="reveal">{t('hero_title')}</h1>
+            <p className="lead reveal">{t('hero_lead')}</p>
+            <div className="cta-row reveal">
+              <a className="btn btn-primary" href="#unisciti">{t('cta_upload')}</a>
+              <a className="btn btn-ghost" href="#come-funziona">{t('cta_how')}</a>
             </div>
           </div>
         </section>
