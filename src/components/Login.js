@@ -7,13 +7,14 @@ import { ADMIN_UIDS } from './config';
 
 export default function Login() {
   const { t } = useI18n();
-  const { login, signup, user, loading } = useAuth();
+  const { login, signup, user, loading, resetPassword } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [resetInfo, setResetInfo] = useState('');
 
   // Redirect spostato in useEffect per evitare loop di rendering
   useEffect(() => {
@@ -106,8 +107,26 @@ export default function Login() {
           </button>
         </div>
         {error && <div className="login-error">{error}</div>}
+        {resetInfo && <div className="login-success" style={{marginTop:8}}>{resetInfo}</div>}
         <button type="submit" disabled={submitting} className="login-submit">{submitting ? t('login_attendere') : (mode === 'login' ? t('login_submit_login') : t('login_submit_signup'))}</button>
-        {/* Accesso Google rimosso per sicurezza admin */}
+        <div style={{marginTop:10, display:'flex', justifyContent:'center'}}>
+          <button
+            type="button"
+            className="login-submit"
+            style={{ background:'#222', border:'1px solid #444' }}
+            disabled={submitting || !email || !email.includes('@')}
+            onClick={async ()=>{
+              setError(null); setResetInfo(''); setSubmitting(true);
+              try {
+                await resetPassword(email.trim());
+                setResetInfo('Se l\'indirizzo esiste, è stata inviata un\'email per il reset della password. Controlla anche nella posta indesiderata.');
+              } catch(e){
+                // Non esponiamo dettagli specifici per sicurezza
+                setError('Impossibile inviare il reset in questo momento. Riprova più tardi.');
+              } finally { setSubmitting(false); }
+            }}
+          >Recupera / Reset password</button>
+        </div>
       </form>
     </div>
   );
