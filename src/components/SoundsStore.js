@@ -306,15 +306,12 @@ export default function SoundsStore() {
               <a className="btn btn-join" href="/social">{t('social_join')}</a>
             </div>
           </div>
-        </section>
-
-        {/* Presentazione Social Sounds */}
-        <section className="container" aria-label="Presentazione Social Sounds">
+          {/* Presentazione subito sotto la card Social, con spaziatura minima */}
           <div
             className="reveal"
             style={{
-              marginTop: -12,
-              marginBottom: 18,
+              marginTop: 8,
+              marginBottom: 12,
               padding: '18px 16px',
               borderRadius: 12,
               border: '1px solid rgba(96,165,250,0.35)',
