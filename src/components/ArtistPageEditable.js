@@ -391,11 +391,13 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
   const [steps, setSteps] = useState(artist.steps || [null, null, null]);
   const [albums, setAlbums] = useState(artist.albums || []);
   const [totalListens, setTotalListens] = useState(null);
+  const [spotifyArtistUrl, setSpotifyArtistUrl] = useState(null);
+  const [appleArtistUrl, setAppleArtistUrl] = useState(null);
 
-  // Carica dati streaming e sostituisci audio/cover manuali con quelli reali (senza cambiare layout)
+  // Solo aggiunta plays reali da streaming, senza toccare albums/cover esistenti
   useEffect(() => {
     let aborted = false;
-    async function loadStreaming() {
+    async function fetchStreaming() {
       try {
         const lookup = (artist.nome || artist.name || name || '').trim();
         if (!lookup) return;
@@ -404,61 +406,22 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
           fetchAppleArtistData(lookup).catch(() => null)
         ]);
         if (aborted) return;
-        // Heuristica ascolti
         const followers = (sp && sp.artist && typeof sp.artist.followers === 'number') ? sp.artist.followers : 0;
-        const previews = (ap && ap.topTracks) ? ap.topTracks.filter(t => Array.isArray(t.previews) && t.previews.length > 0).length : 0;
         const popularityBoost = (sp && sp.artist && typeof sp.artist.popularity === 'number') ? sp.artist.popularity * 1000 : 0;
+        const previews = (ap && ap.topTracks) ? ap.topTracks.filter(t => Array.isArray(t.previews) && t.previews.length > 0).length : 0;
         const appleHeuristic = previews * 500;
         const total = followers + popularityBoost + appleHeuristic;
         if (total > 0) setTotalListens(total);
-
-        // Costruisci album API
-        const spTracks = Array.isArray(sp?.topTracks) ? sp.topTracks : [];
-        const apTracks = Array.isArray(ap?.topTracks) ? ap.topTracks : [];
-        const tracks = [];
-        for (const t of apTracks) {
-          const preview = Array.isArray(t.previews) && t.previews[0] ? t.previews[0].url : null;
-          if (preview) tracks.push({ title: t.name || '', link: preview });
-        }
-        for (const t of spTracks) {
-          if (t.preview_url) tracks.push({ title: t.name || '', link: t.preview_url });
-        }
-        let coverUrl = null;
-        if (sp?.artist?.images && sp.artist.images.length > 0) coverUrl = sp.artist.images[0].url;
-        else if (ap?.artist?.artwork?.url) coverUrl = ap.artist.artwork.url.replace('{w}x{h}', '600x600');
-        else if (spTracks[0]?.album?.images?.[0]?.url) coverUrl = spTracks[0].album.images[0].url;
-
-        const apiAlbum = {
-          title: 'Top Tracks',
-          year: '',
-          genre: (sp?.artist?.genres && sp.artist.genres[0]) || '',
-          cover: coverUrl,
-          buttons: [
-            { name: 'Play', icon: null, link: tracks[0]?.link || '' },
-            { name: 'YouTube', icon: null, link: '' },
-            { name: 'Buy & Download', icon: null, link: '' }
-          ],
-          videoUrl: '',
-          downloadLink: '',
-          paymentLinkUrl: '',
-          tracks
-        };
-        setAlbums([apiAlbum]);
-        // Rimuovi link manuali Spotify/Apple in eventuali album già presenti (mantieni layout)
-        setAlbums(prev => prev.map(a => ({
-          ...a,
-          buttons: (a.buttons || []).map(b => {
-            const n = (b.name || '').toLowerCase();
-            if (n === 'spotify' || n.includes('apple')) return { ...b, link: '' };
-            return b;
-          })
-        })));
+        if (sp && sp.artist && sp.artist.url) setSpotifyArtistUrl(sp.artist.url);
+        if (ap && ap.artist && ap.artist.url) setAppleArtistUrl(ap.artist.url);
       } catch {}
     }
-    loadStreaming();
+    fetchStreaming();
     return () => { aborted = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [artist?.nome, artist?.name]);
+
+  // Nessun caricamento da API streaming: manteniamo i dati album manuali come inseriti
 
   
 
@@ -929,9 +892,26 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
           In questa dashboard puoi modificare solo Foto profilo e Biografia. Per tutto il resto contatta l’amministratore.
         </div>
       )}
-      {totalListens !== null && (
-        <div style={{ color:'#ffd700', textAlign:'center', marginTop:-4, marginBottom:12, fontSize:14, fontWeight:700 }}>
-          Ascolti totali: {totalListens.toLocaleString('it-IT')}
+      {(totalListens !== null || spotifyArtistUrl || appleArtistUrl) && (
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, marginTop:-4, marginBottom:12 }}>
+          {totalListens !== null && (
+            <div style={{ color:'#ffd700', fontSize:14, fontWeight:700 }}>
+              Ascolti totali: {totalListens.toLocaleString('it-IT')}
+            </div>
+          )}
+          {/* Link dinamici streaming, sostituiscono manuali in editor vista elenco */}
+          <div style={{ display:'flex', gap:12 }}>
+            {spotifyArtistUrl && (
+              <a href={spotifyArtistUrl} target="_blank" rel="noopener noreferrer" style={{ color:'#1DB954', fontSize:12, textDecoration:'none', fontWeight:600 }}>
+                Ascolta su Spotify →
+              </a>
+            )}
+            {appleArtistUrl && (
+              <a href={appleArtistUrl} target="_blank" rel="noopener noreferrer" style={{ color:'#fff', fontSize:12, textDecoration:'none', fontWeight:600 }}>
+                Ascolta su Apple Music →
+              </a>
+            )}
+          </div>
         </div>
       )}
       {restrictToBioAndPhoto ? (
@@ -1074,7 +1054,10 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
                     <div style={{ fontWeight: "bold", color: "#ffd700", fontSize: "1.2em" }}>{album.title}</div>
                     <div style={{ color: "#fff", fontSize: "1em" }}>Anno: {album.year} | Genere: {album.genre}</div>
                     <div style={{ display: "flex", gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                      {album.buttons.map((btn, bidx) => {
+                      {album.buttons.filter(btn => {
+                        const n = (btn.name || '').toLowerCase();
+                        return n !== 'spotify' && !n.includes('apple'); // rimuovi manuali
+                      }).map((btn, bidx) => {
                         const k = btn && btn.name ? btn.name : `btn_${bidx}`;
                         return (
                           <span key={k} style={{ display: "inline-flex", alignItems: 'center' }}>
@@ -1097,6 +1080,23 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
                           </span>
                         );
                       })}
+                      {/* Link dinamici streaming */}
+                      {spotifyArtistUrl && (
+                        <span style={{ display:'inline-flex', alignItems:'center' }}>
+                          <a href={spotifyArtistUrl} target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:4, background:'#222', color:'#1DB954', border:'1px solid #1DB954', borderRadius:6, padding:'4px 8px', fontSize:12, textDecoration:'none', fontWeight:600 }}>
+                            <Icon name="Spotify" size={14} />
+                            <span>Spotify</span>
+                          </a>
+                        </span>
+                      )}
+                      {appleArtistUrl && (
+                        <span style={{ display:'inline-flex', alignItems:'center' }}>
+                          <a href={appleArtistUrl} target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:4, background:'#222', color:'#fff', border:'1px solid #555', borderRadius:6, padding:'4px 8px', fontSize:12, textDecoration:'none', fontWeight:600 }}>
+                            <Icon name="Apple Music" size={14} />
+                            <span>Apple</span>
+                          </a>
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

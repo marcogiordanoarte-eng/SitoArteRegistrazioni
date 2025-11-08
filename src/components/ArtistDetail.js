@@ -23,14 +23,14 @@ export default function ArtistDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [artist, setArtist] = useState(null);
-  const [spotifyData, setSpotifyData] = useState(null);
-  const [appleData, setAppleData] = useState(null);
-  const [totalListens, setTotalListens] = useState(null); // calcolato da popularity/preview
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [audioUiMsg, setAudioUiMsg] = useState(null);
   const [trackIndexByAlbum, setTrackIndexByAlbum] = useState({});
   const [videoError, setVideoError] = useState({});
+  const [totalListens, setTotalListens] = useState(null);
+  const [spotifyArtistUrl, setSpotifyArtistUrl] = useState(null);
+  const [appleArtistUrl, setAppleArtistUrl] = useState(null);
   const [showIntroForIdx, setShowIntroForIdx] = useState(null); // fullscreen video index
   const [showPortraitFs, setShowPortraitFs] = useState(false); // fullscreen portrait
   const [showStepsFsIdx, setShowStepsFsIdx] = useState(null); // fullscreen steps image index
@@ -51,73 +51,7 @@ export default function ArtistDetail() {
         const ref = doc(db, 'artisti', id);
         const snap = await getDoc(ref);
         if (!snap.exists()) throw new Error('Artista non trovato');
-        const baseArtist = { id: snap.id, ...snap.data() };
-        if (!aborted) setArtist(baseArtist);
-        // Avvia in parallelo fetch Spotify e Apple
-        const nameForLookup = baseArtist.nome || baseArtist.name || '';
-        if (nameForLookup) {
-          try {
-            const [sp, ap] = await Promise.all([
-              fetchArtistData(nameForLookup).catch(e => ({ error: true, message: e?.message || 'Spotify fallito' })),
-              fetchAppleArtistData(nameForLookup).catch(e => ({ error: true, message: e?.message || 'Apple fallito' }))
-            ]);
-            if (!aborted) {
-              setSpotifyData(sp);
-              setAppleData(ap);
-              // Calcolo ascolti totali (heuristic): followers (Spotify) + numero preview Apple * 500 (stima symbolica)
-              const followers = (sp && sp.artist && typeof sp.artist.followers === 'number') ? sp.artist.followers : 0;
-              const previews = (ap && ap.topTracks) ? ap.topTracks.filter(t => Array.isArray(t.previews) && t.previews.length > 0).length : 0;
-              const popularityBoost = (sp && sp.artist && typeof sp.artist.popularity === 'number') ? sp.artist.popularity * 1000 : 0;
-              const appleHeuristic = previews * 500; // stima simbolica
-              const total = followers + popularityBoost + appleHeuristic;
-              if (total > 0) setTotalListens(total);
-              // Sostituisci cover/audio manuali con dati reali dalle API
-              try {
-                const spTracks = Array.isArray(sp?.topTracks) ? sp.topTracks : [];
-                const apTracks = Array.isArray(ap?.topTracks) ? ap.topTracks : [];
-                const tracks = [];
-                // Apple previews (preferite)
-                for (const t of apTracks) {
-                  const preview = Array.isArray(t.previews) && t.previews[0] ? t.previews[0].url : null;
-                  if (preview) tracks.push({ title: t.name || '', link: preview });
-                }
-                // Spotify previews (fallback)
-                for (const t of spTracks) {
-                  if (t.preview_url) tracks.push({ title: t.name || '', link: t.preview_url });
-                }
-                // Cover: priorità immagine artista Spotify, poi artwork Apple, poi album image
-                let coverUrl = null;
-                if (sp?.artist?.images && sp.artist.images.length > 0) {
-                  coverUrl = sp.artist.images[0].url;
-                } else if (ap?.artist?.artwork?.url) {
-                  coverUrl = ap.artist.artwork.url.replace('{w}x{h}', '600x600');
-                } else if (spTracks[0]?.album?.images?.[0]?.url) {
-                  coverUrl = spTracks[0].album.images[0].url;
-                }
-                const apiAlbum = {
-                  title: 'Top Tracks',
-                  year: '',
-                  genre: (sp?.artist?.genres && sp.artist.genres[0]) || '',
-                  cover: coverUrl,
-                  buttons: [
-                    { name: 'Play', icon: null, link: tracks[0]?.link || '' },
-                    // Rimuoviamo pulsanti manuali Spotify/Apple
-                  ],
-                  videoUrl: '',
-                  downloadLink: '',
-                  paymentLinkUrl: baseArtist?.albums?.[0]?.paymentLinkUrl || '',
-                  tracks
-                };
-                // Aggiorna socials con URL ufficiali da API (senza aggiungere nuovi elementi visivi qui)
-                const socials = { ...(baseArtist.socials || {}) };
-                if (sp?.artist?.url) socials.spotify = sp.artist.url; else delete socials.spotify;
-                if (ap?.artist?.url) socials.apple = ap.artist.url; else delete socials.apple;
-                const merged = { ...baseArtist, socials, albums: [apiAlbum] };
-                setArtist(merged);
-              } catch {}
-            }
-          } catch {}
-        }
+        if (!aborted) setArtist({ id: snap.id, ...snap.data() });
       } catch (e) {
         if (!aborted) setError(e.message || 'Errore caricamento artista');
       } finally {
@@ -127,6 +61,32 @@ export default function ArtistDetail() {
     if (id) load();
     return () => { aborted = true; };
   }, [id]);
+
+  // Carica plays reali da Spotify/Apple senza toccare audio/cover manuali
+  useEffect(() => {
+    let aborted = false;
+    async function fetchStreaming() {
+      try {
+        const lookup = (artist?.nome || artist?.name || '').trim();
+        if (!lookup) return;
+        const [sp, ap] = await Promise.all([
+          fetchArtistData(lookup).catch(() => null),
+          fetchAppleArtistData(lookup).catch(() => null),
+        ]);
+        if (aborted) return;
+        const followers = (sp && sp.artist && typeof sp.artist.followers === 'number') ? sp.artist.followers : 0;
+        const popularityBoost = (sp && sp.artist && typeof sp.artist.popularity === 'number') ? sp.artist.popularity * 1000 : 0;
+        const previews = (ap && ap.topTracks) ? ap.topTracks.filter(t => Array.isArray(t.previews) && t.previews.length > 0).length : 0;
+        const appleHeuristic = previews * 500;
+        const total = followers + popularityBoost + appleHeuristic;
+        if (total > 0) setTotalListens(total);
+        if (sp && sp.artist && sp.artist.url) setSpotifyArtistUrl(sp.artist.url);
+        if (ap && ap.artist && ap.artist.url) setAppleArtistUrl(ap.artist.url);
+      } catch {}
+    }
+    fetchStreaming();
+    return () => { aborted = true; };
+  }, [artist?.nome, artist?.name]);
 
   // Fullscreen handlers (CRT video)
   const openFullscreen = (albumIdx) => setShowIntroForIdx(albumIdx);
@@ -177,8 +137,8 @@ export default function ArtistDetail() {
           </div>
         )}
         <h1 className="artist-name" style={{ textAlign: 'center', maxWidth: '92vw' }}>{artist.nome || artist.name || 'Artista'}</h1>
-        {/* Social bar (rimuoviamo link manuali Spotify/Apple se streaming dati presenti) */}
-        {(artist.socials && (artist.socials.instagram || artist.socials.youtube || artist.socials.facebook)) && (
+        {/* Social bar: Spotify/Apple dinamici da API (niente manuali) */}
+        {(artist.socials && (artist.socials.instagram || artist.socials.youtube || artist.socials.facebook)) || spotifyArtistUrl || appleArtistUrl ? (
           <div className="social-bar" style={{ marginTop: 6, marginBottom: 6 }}>
             {artist.socials.facebook && (
               <a className="social-btn social-btn--fb" href={artist.socials.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
@@ -201,14 +161,22 @@ export default function ArtistDetail() {
                 <span className="social-label">Instagram</span>
               </a>
             )}
+            {spotifyArtistUrl && (
+              <a className="social-btn" href={spotifyArtistUrl} target="_blank" rel="noopener noreferrer" aria-label="Spotify">
+                <span className="social-halo"></span>
+                <img src="/icons/spotify1.png" alt="Spotify" />
+                <span className="social-label">Spotify</span>
+              </a>
+            )}
+            {appleArtistUrl && (
+              <a className="social-btn" href={appleArtistUrl} target="_blank" rel="noopener noreferrer" aria-label="Apple Music">
+                <span className="social-halo"></span>
+                <img src="/icons/apple3.png" alt="Apple Music" />
+                <span className="social-label">Apple</span>
+              </a>
+            )}
           </div>
-        )}
-        {/* Ascolti totali sintetici (se calcolati) */}
-        {totalListens !== null && (
-          <div style={{ marginTop: 8, background:'rgba(0,0,0,0.55)', border:'1px solid rgba(255,255,255,0.12)', padding:'8px 18px', borderRadius:18, color:'#ffd700', fontWeight:600 }}>
-            Ascolti totali: {totalListens.toLocaleString('it-IT')}
-          </div>
-        )}
+        ) : null}
         {artist.website && (
           <div style={{ marginTop: 6 }}>
             <a href={artist.website} target="_blank" rel="noopener noreferrer" className="social-btn" aria-label="Sito web" style={{ textDecoration:'none', color:'#ffd700', fontWeight:700 }}>
@@ -270,9 +238,9 @@ export default function ArtistDetail() {
               const candidateSrc = hasTracks ? (currentTrack?.link || '') : (playBtn?.link || '');
               const hasPlayableAudio = isPlayableAudioUrl(candidateSrc);
               const firstTrackLink = hasTracks ? (tracks[0]?.link || '') : '';
-              // Rimuoviamo pulsanti manuali Spotify/Apple (verranno rimpiazzati da dati streaming se servisse in futuro)
-              const spotifyBtn = null;
-              const appleBtn = null;
+              // Link dinamici: se disponibili, usiamo URL artista da API (niente manuali)
+              const spotifyLink = spotifyArtistUrl || null;
+              const appleLink = appleArtistUrl || null;
               const ytBtn = album.buttons?.find(b => (b.name || '').toLowerCase().includes('youtube'));
               const downloadBtn = album.buttons?.find(b => (b.name || '').toLowerCase().includes('download'));
               const isPlaying = !!(audioRefs.current[idx]?.element && !audioRefs.current[idx].element.paused);
@@ -375,12 +343,19 @@ export default function ArtistDetail() {
                         <a className="icon-cell icon-cell--play pulse-on-hover" onPointerDown={showLabelHint} href={firstTrackLink} target="_blank" rel="noopener noreferrer" aria-label="Play" data-label="Play"><img src="/icons/play4.png" alt="Play" /></a>
                       ) : null
                     ) : null)}
-                    {/* Pulsanti Spotify/Apple manuali rimossi */}
+                    {spotifyLink && <a className="icon-cell pulse-on-hover" onPointerDown={showLabelHint} href={spotifyLink} target="_blank" rel="noopener noreferrer" aria-label="Spotify" data-label="Spotify"><img src="/icons/spotify1.png" alt="Spotify" /></a>}
+                    {appleLink && <a className="icon-cell pulse-on-hover" onPointerDown={showLabelHint} href={appleLink} target="_blank" rel="noopener noreferrer" aria-label="Apple Music" data-label="Apple Music"><img src="/icons/apple3.png" alt="Apple Music" /></a>}
                     {ytBtn && <a className="icon-cell pulse-on-hover" onPointerDown={showLabelHint} href={ytBtn.link} target="_blank" rel="noopener noreferrer" aria-label="YouTube" data-label="YouTube"><img src="/icons/youtube2.png" alt="YouTube" /></a>}
                     {album.paymentLinkUrl && (
                       <a className="icon-cell icon-cell--download pulse-on-hover" onPointerDown={showLabelHint} href={album.paymentLinkUrl} target="_blank" rel="noopener noreferrer" aria-label="Buy & Download" data-label="Buy & Download" data-price={priceLabel}><img src="/icons/download5.png" alt="Buy & Download" /></a>
                     )}
                   </div>
+                  {/* Ascolti totali sotto il player (se disponibili) */}
+                  {totalListens !== null && (
+                    <div style={{ marginTop: 8, color: '#ffd700', fontWeight: 700 }}>
+                      Ascolti totali: {totalListens.toLocaleString('it-IT')}
+                    </div>
+                  )}
                   {/* 3) Navigazione tracce */}
                   {hasTracks && (
                     <div className="album-track-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 10, color: '#ffd700' }}>
