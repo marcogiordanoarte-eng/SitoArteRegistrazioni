@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import PublicSite from "./PublicSite";
 import DownloadConfirm from "./DownloadConfirm";
 import Artisti from "./Artisti";
 import ArtistDetail from "./ArtistDetail";
@@ -159,8 +160,8 @@ export default function App() {
             <Route path="/countdown" element={<Countdown />} />
             {/* Rotta esplicita per Sounds (alias della home) */}
             <Route path="/sounds" element={<Navigate to="/" replace />} />
-            {/* Qualsiasi vecchio link a /label viene reindirizzato alla home unica */}
-            <Route path="/label" element={<Navigate to="/" replace />} />
+            {/* Pagina Label ripristinata */}
+            <Route path="/label" element={<PublicSite />} />
             <Route path="/buy" element={<BuyMusic />} />
             {/* Rotta /musica rimossa su richiesta */}
             <Route path="/buy/genre/:gid" element={<BuyGenreDetail />} />

@@ -228,6 +228,16 @@ export default function SoundsStore() {
       <header className="site-header" role="banner">
         <div className="container header-inner">
           <Link to="/" className="brand" aria-label="Sounds di Arte Registrazioni - Home">
+            {/* Logo Arte sopra */}
+            <img
+              className="brand-logo-arte"
+              src="/logo.png"
+              alt="Arte Registrazioni"
+              decoding="async"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              style={{ display:'block', margin:'0 auto 6px', width:64, height:'auto' }}
+            />
+            {/* Logo Sounds sotto */}
             <img
               className="brand-logo"
               src="/soundslogo.jpg"
@@ -258,7 +268,7 @@ export default function SoundsStore() {
               <button type="button" className={lang==='it' ? 'active' : ''} aria-pressed={lang==='it'} onClick={() => setLang('it')}>{t('lang_it')}</button>
               <button type="button" className={lang==='en' ? 'active' : ''} aria-pressed={lang==='en'} onClick={() => setLang('en')}>{t('lang_en')}</button>
             </div>
-            {/* Label button rimosso: un'unica versione del sito */}
+            <Link className="btn btn-label" to="/label" title={t('label_title')}>{t('label_btn')}</Link>
           </div>
         </div>
       </header>
