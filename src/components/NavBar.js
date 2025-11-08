@@ -69,7 +69,7 @@ export default function NavBar() {
           </Link>
         </div>
 
-        {/* Riga 3: Sounds singolo (grande) */}
+        {/* Home unica: mantiene label Sounds */}
         <div className="nav-row nav-row--single">
           <Link
             to="/"

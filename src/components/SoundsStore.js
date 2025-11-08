@@ -258,7 +258,7 @@ export default function SoundsStore() {
               <button type="button" className={lang==='it' ? 'active' : ''} aria-pressed={lang==='it'} onClick={() => setLang('it')}>{t('lang_it')}</button>
               <button type="button" className={lang==='en' ? 'active' : ''} aria-pressed={lang==='en'} onClick={() => setLang('en')}>{t('lang_en')}</button>
             </div>
-            <Link className="btn btn-label" to="/label" title={t('label_title')}>{t('label_btn')}</Link>
+            {/* Label button rimosso: un'unica versione del sito */}
           </div>
         </div>
       </header>
