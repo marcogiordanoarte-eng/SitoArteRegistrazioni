@@ -2,7 +2,7 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
-import { getAuth, connectAuthEmulator, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword } from "firebase/auth";
+import { getAuth, connectAuthEmulator, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
@@ -153,4 +153,25 @@ if (process.env.NODE_ENV !== 'production') {
   onAuthStateChanged(auth, user => {
     console.info('[Auth] Stato utente:', user ? user.uid : 'nessun utente');
   });
+}
+
+// ======= Google Sign-In =======
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: 'select_account' });
+
+export async function loginWithGooglePopup() {
+  // Preferisci popup; se blocchi popup o su Safari iOS, fai redirect
+  try {
+    const res = await signInWithPopup(auth, provider);
+    return res.user;
+  } catch (e) {
+    // Alcuni browser bloccano i popup: fallback redirect
+    try {
+      await signInWithRedirect(auth, provider);
+      const r = await getRedirectResult(auth);
+      return r?.user || null;
+    } catch (e2) {
+      throw e2 || e;
+    }
+  }
 }

@@ -7,7 +7,7 @@ import { ADMIN_UIDS } from './config';
 
 export default function Login() {
   const { t } = useI18n();
-  const { login, signup, user, loading } = useAuth();
+  const { login, signup, loginWithGoogle, user, loading } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
   const [email, setEmail] = useState('');
@@ -107,6 +107,11 @@ export default function Login() {
         </div>
         {error && <div className="login-error">{error}</div>}
         <button type="submit" disabled={submitting} className="login-submit">{submitting ? t('login_attendere') : (mode === 'login' ? t('login_submit_login') : t('login_submit_signup'))}</button>
+        <div style={{marginTop:12, display:'flex', flexDirection:'column', gap:10}}>
+          <button type="button" onClick={async()=>{ setError(null); setSubmitting(true); try { await loginWithGoogle(); } catch(e){ setError(e.message||'Errore Google'); } finally { setSubmitting(false);} }} className="login-submit" style={{background:'#fff', color:'#111', border:'2px solid #ffd700'}}>
+            {submitting ? t('login_attendere') : 'Accedi con Google'}
+          </button>
+        </div>
       </form>
     </div>
   );
