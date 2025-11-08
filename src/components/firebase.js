@@ -3,7 +3,7 @@ import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getAuth, connectAuthEmulator, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword } from "firebase/auth";
-import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import { getFunctions, connectFunctionsEmulator, httpsCallable } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
 const firebaseConfig = {
@@ -146,6 +146,40 @@ export async function resetPassword(email) {
 export async function changeCurrentUserPassword(newPassword) {
   if (!auth.currentUser) throw new Error('Nessun utente autenticato');
   await updatePassword(auth.currentUser, newPassword);
+}
+
+// Spotify artist data helper (calls Cloud Function spotifyArtistData)
+// Richiede che le funzioni siano configurate con: firebase functions:config:set spotify.clientid=... spotify.clientsecret=...
+// Non esporre mai client secret direttamente nel frontend.
+export async function fetchArtistData(artistName, market = 'IT') {
+  if (!artistName || typeof artistName !== 'string') {
+    throw new Error('artistName richiesto');
+  }
+  try {
+    const callable = httpsCallable(functions, 'spotifyArtistData');
+    const res = await callable({ artistName, market });
+    return res.data;
+  } catch (e) {
+    // Normalizza errore per UI
+    const msg = e?.message || 'Errore Spotify';
+    return { found: false, error: true, message: msg };
+  }
+}
+
+// Apple Music artist data helper
+// Richiede configurazione funzioni: firebase functions:config:set apple.musickit_teamid=... apple.musickit_keyid=... apple.musickit_privatekey="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+export async function fetchAppleArtistData(artistName, storefront = 'it') {
+  if (!artistName || typeof artistName !== 'string') {
+    throw new Error('artistName richiesto');
+  }
+  try {
+    const callable = httpsCallable(functions, 'appleArtistData');
+    const res = await callable({ artistName, storefront });
+    return res.data;
+  } catch (e) {
+    const msg = e?.message || 'Errore Apple Music';
+    return { found: false, error: true, message: msg };
+  }
 }
 
 // Log (solo sviluppo) per tracciare cambi utente

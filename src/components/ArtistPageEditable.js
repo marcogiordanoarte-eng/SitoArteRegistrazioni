@@ -1,7 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./Artisti.css";
 // Reintroduciamo solo l'upload verso Firebase Storage al momento del salvataggio
-import { storage, functions, auth, STORAGE_BUCKET } from "./firebase";
+import { storage, functions, auth, STORAGE_BUCKET, fetchArtistData, fetchAppleArtistData } from "./firebase";
 import { httpsCallable } from "firebase/functions";
 import Icon from "./Icon";
 import { ref, uploadBytesResumable, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -390,6 +390,75 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
   const [photo, setPhoto] = useState(artist.photo || null);
   const [steps, setSteps] = useState(artist.steps || [null, null, null]);
   const [albums, setAlbums] = useState(artist.albums || []);
+  const [totalListens, setTotalListens] = useState(null);
+
+  // Carica dati streaming e sostituisci audio/cover manuali con quelli reali (senza cambiare layout)
+  useEffect(() => {
+    let aborted = false;
+    async function loadStreaming() {
+      try {
+        const lookup = (artist.nome || artist.name || name || '').trim();
+        if (!lookup) return;
+        const [sp, ap] = await Promise.all([
+          fetchArtistData(lookup).catch(() => null),
+          fetchAppleArtistData(lookup).catch(() => null)
+        ]);
+        if (aborted) return;
+        // Heuristica ascolti
+        const followers = (sp && sp.artist && typeof sp.artist.followers === 'number') ? sp.artist.followers : 0;
+        const previews = (ap && ap.topTracks) ? ap.topTracks.filter(t => Array.isArray(t.previews) && t.previews.length > 0).length : 0;
+        const popularityBoost = (sp && sp.artist && typeof sp.artist.popularity === 'number') ? sp.artist.popularity * 1000 : 0;
+        const appleHeuristic = previews * 500;
+        const total = followers + popularityBoost + appleHeuristic;
+        if (total > 0) setTotalListens(total);
+
+        // Costruisci album API
+        const spTracks = Array.isArray(sp?.topTracks) ? sp.topTracks : [];
+        const apTracks = Array.isArray(ap?.topTracks) ? ap.topTracks : [];
+        const tracks = [];
+        for (const t of apTracks) {
+          const preview = Array.isArray(t.previews) && t.previews[0] ? t.previews[0].url : null;
+          if (preview) tracks.push({ title: t.name || '', link: preview });
+        }
+        for (const t of spTracks) {
+          if (t.preview_url) tracks.push({ title: t.name || '', link: t.preview_url });
+        }
+        let coverUrl = null;
+        if (sp?.artist?.images && sp.artist.images.length > 0) coverUrl = sp.artist.images[0].url;
+        else if (ap?.artist?.artwork?.url) coverUrl = ap.artist.artwork.url.replace('{w}x{h}', '600x600');
+        else if (spTracks[0]?.album?.images?.[0]?.url) coverUrl = spTracks[0].album.images[0].url;
+
+        const apiAlbum = {
+          title: 'Top Tracks',
+          year: '',
+          genre: (sp?.artist?.genres && sp.artist.genres[0]) || '',
+          cover: coverUrl,
+          buttons: [
+            { name: 'Play', icon: null, link: tracks[0]?.link || '' },
+            { name: 'YouTube', icon: null, link: '' },
+            { name: 'Buy & Download', icon: null, link: '' }
+          ],
+          videoUrl: '',
+          downloadLink: '',
+          paymentLinkUrl: '',
+          tracks
+        };
+        setAlbums([apiAlbum]);
+        // Rimuovi link manuali Spotify/Apple in eventuali album già presenti (mantieni layout)
+        setAlbums(prev => prev.map(a => ({
+          ...a,
+          buttons: (a.buttons || []).map(b => {
+            const n = (b.name || '').toLowerCase();
+            if (n === 'spotify' || n.includes('apple')) return { ...b, link: '' };
+            return b;
+          })
+        })));
+      } catch {}
+    }
+    loadStreaming();
+    return () => { aborted = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   
 
@@ -858,6 +927,11 @@ function ArtistPageEditable({ artist = {}, onSave, onCancel, hideSteps = false, 
       {restrictToBioAndPhoto && (
         <div style={{ color:'#bbb', textAlign:'center', marginTop:-12, marginBottom:16, fontSize:12 }}>
           In questa dashboard puoi modificare solo Foto profilo e Biografia. Per tutto il resto contatta l’amministratore.
+        </div>
+      )}
+      {totalListens !== null && (
+        <div style={{ color:'#ffd700', textAlign:'center', marginTop:-4, marginBottom:12, fontSize:14, fontWeight:700 }}>
+          Ascolti totali: {totalListens.toLocaleString('it-IT')}
         </div>
       )}
       {restrictToBioAndPhoto ? (

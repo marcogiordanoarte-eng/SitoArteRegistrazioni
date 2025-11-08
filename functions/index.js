@@ -7,6 +7,7 @@ import sgMail from '@sendgrid/mail';
 import { PassThrough } from 'stream';
 import { spawn } from 'child_process';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 
 // Determina dinamicamente il bucket di default.
 // Nota: per i progetti Firebase nuovi, lo storageBucket è "<project>.firebasestorage.app".
@@ -416,3 +417,300 @@ export const ttsSynthesize = functions.https.onCall(async (data, context) => {
 // Manteniamo stub vuoti per evitare errori da vecchi client eventualmente in cache.
 export const processVoiceSamples = functions.https.onCall(async () => ({ deprecated: true }));
 export const voiceProcessingDiagnostics = functions.https.onCall(async () => ({ deprecated: true }));
+
+// (G) Spotify artist data (client-credentials flow; secrets in functions:config)
+let _spotifyToken = null; // { access_token, expires_at }
+async function getSpotifyToken() {
+  const cfg = functions.config();
+  const clientId = cfg?.spotify?.clientid;
+  const clientSecret = cfg?.spotify?.clientsecret;
+  if (!clientId || !clientSecret) {
+    throw new functions.https.HttpsError('failed-precondition', 'Spotify non configurato (manca functions config spotify.clientid/spotify.clientsecret)');
+  }
+  const now = Date.now();
+  if (_spotifyToken && _spotifyToken.expires_at - 15000 > now) {
+    return _spotifyToken.access_token;
+  }
+  const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  const resp = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${basic}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: 'grant_type=client_credentials'
+  });
+  if (!resp.ok) {
+    const t = await resp.text().catch(()=>'');
+    throw new functions.https.HttpsError('internal', `Spotify token error ${resp.status}: ${t.slice(0,200)}`);
+  }
+  const json = await resp.json();
+  _spotifyToken = {
+    access_token: json.access_token,
+    expires_at: Date.now() + (json.expires_in ? (json.expires_in * 1000) : 3600_000)
+  };
+  return _spotifyToken.access_token;
+}
+
+export const spotifyArtistData = functions.https.onCall(async (data, context) => {
+  const { artistName, market = 'IT' } = data || {};
+  if (!artistName || typeof artistName !== 'string' || artistName.trim().length < 2) {
+    throw new functions.https.HttpsError('invalid-argument', 'artistName (string) richiesto');
+  }
+  try {
+    const token = await getSpotifyToken();
+    const headers = { 'Authorization': `Bearer ${token}` };
+    // 1) Cerca artista
+    const q = encodeURIComponent(artistName.trim());
+    const searchUrl = `https://api.spotify.com/v1/search?q=${q}&type=artist&limit=1&market=${encodeURIComponent(market)}`;
+    const sResp = await fetch(searchUrl, { headers });
+    if (sResp.status === 401) {
+      // Token scaduto: forza refresh una volta
+      _spotifyToken = null;
+      const fresh = await getSpotifyToken();
+      headers.Authorization = `Bearer ${fresh}`;
+    }
+    const sResp2 = sResp.status === 401 ? (await fetch(searchUrl, { headers })) : sResp;
+    if (!sResp2.ok) {
+      const t = await sResp2.text().catch(()=> '');
+      throw new Error(`Spotify search error ${sResp2.status}: ${t.slice(0,200)}`);
+    }
+    const sJson = await sResp2.json();
+    const artist = sJson?.artists?.items?.[0] || null;
+    if (!artist) {
+      return { found: false, artist: null, topTracks: [], note: 'Nessun artista trovato' };
+    }
+    const artistId = artist.id;
+    const artistData = {
+      id: artistId,
+      name: artist.name,
+      followers: artist.followers?.total ?? null,
+      popularity: artist.popularity ?? null,
+      images: Array.isArray(artist.images) ? artist.images : [],
+      genres: Array.isArray(artist.genres) ? artist.genres : [],
+      url: artist.external_urls?.spotify || null
+    };
+    // 2) Top tracks (per mercato)
+    const ttUrl = `https://api.spotify.com/v1/artists/${encodeURIComponent(artistId)}/top-tracks?market=${encodeURIComponent(market)}`;
+    const ttResp = await fetch(ttUrl, { headers });
+    let topTracks = [];
+    if (ttResp.ok) {
+      const tt = await ttResp.json();
+      topTracks = Array.isArray(tt.tracks) ? tt.tracks.map(t => ({
+        id: t.id,
+        name: t.name,
+        url: t.external_urls?.spotify || null,
+        preview_url: t.preview_url || null,
+        popularity: t.popularity ?? null,
+        duration_ms: t.duration_ms ?? null,
+        album: t.album ? {
+          id: t.album.id,
+          name: t.album.name,
+          release_date: t.album.release_date || null,
+          images: Array.isArray(t.album.images) ? t.album.images : []
+        } : null,
+        artists: Array.isArray(t.artists) ? t.artists.map(a => ({ id: a.id, name: a.name, url: a.external_urls?.spotify || null })) : []
+      })) : [];
+    } else if (ttResp.status === 429) {
+      // rate limit: ritorna solo l'artista
+      functions.logger.warn('Spotify 429 rate limited on top-tracks');
+    }
+    // Nota: Spotify non espone le "monthly listeners" via API pubbliche.
+    const note = 'I "monthly listeners" non sono disponibili via API Spotify. Restituiti: followers, popularity, topTracks.';
+    return { found: true, artist: artistData, topTracks, note };
+  } catch (e) {
+    functions.logger.error('spotifyArtistData error', e);
+    throw new functions.https.HttpsError('internal', e?.message || 'Errore integrazione Spotify');
+  }
+});
+
+// (H) Apple Music artist data via Apple Music API (requires Apple dev token)
+function getAppleMusicDevToken() {
+  const cfg = functions.config();
+  const teamId = cfg?.apple?.musickit_teamid;
+  const keyId = cfg?.apple?.musickit_keyid;
+  const privateKey = cfg?.apple?.musickit_privatekey; // store full PEM or single-line with \n
+  if (!teamId || !keyId || !privateKey) {
+    throw new functions.https.HttpsError('failed-precondition', 'Apple Music non configurato (apple.musickit_teamid/keyid/privatekey)');
+  }
+  // Normalize PEM newlines
+  const pem = privateKey.includes('BEGIN') ? privateKey : privateKey.replace(/\\n/g, '\n');
+  const token = jwt.sign({}, pem, {
+    algorithm: 'ES256',
+    keyid: keyId,
+    issuer: teamId,
+    expiresIn: '180d'
+  });
+  return token;
+}
+
+export const appleArtistData = functions.https.onCall(async (data, context) => {
+  const { artistName, storefront = 'it' } = data || {};
+  if (!artistName || typeof artistName !== 'string' || artistName.trim().length < 2) {
+    throw new functions.https.HttpsError('invalid-argument', 'artistName (string) richiesto');
+  }
+  try {
+    const devToken = getAppleMusicDevToken();
+    const headers = {
+      'Authorization': `Bearer ${devToken}`,
+      'Accept': 'application/json'
+    };
+    // 1) Search artist
+    const q = encodeURIComponent(artistName.trim());
+    const url = `https://api.music.apple.com/v1/catalog/${encodeURIComponent(storefront)}/search?term=${q}&types=artists&limit=1`;
+    const sResp = await fetch(url, { headers });
+    if (!sResp.ok) {
+      const t = await sResp.text().catch(()=> '');
+      throw new Error(`Apple search error ${sResp.status}: ${t.slice(0,200)}`);
+    }
+    const sJson = await sResp.json();
+    const artist = sJson?.results?.artists?.data?.[0] || null;
+    if (!artist) {
+      return { found: false, artist: null, topTracks: [], note: 'Nessun artista trovato' };
+    }
+    const artistId = artist.id;
+    const attrs = artist.attributes || {};
+    const artistData = {
+      id: artistId,
+      name: attrs.name || null,
+      url: attrs.url || null,
+      genreNames: attrs.genreNames || [],
+      editorialNotes: attrs.editorialNotes || null,
+      artwork: attrs.artwork || null
+    };
+    // 2) Get artist's top songs (mostra songs dell'artista)
+    // Apple non espone "monthly listeners" pubblicamente.
+    const songsUrl = `https://api.music.apple.com/v1/catalog/${encodeURIComponent(storefront)}/artists/${encodeURIComponent(artistId)}/view/top-songs?limit=10`;
+    let topTracks = [];
+    const tResp = await fetch(songsUrl, { headers });
+    if (tResp.ok) {
+      const tJson = await tResp.json();
+      const items = tJson?.data || [];
+      topTracks = items.map(it => {
+        const a = it.attributes || {};
+        return {
+          id: it.id,
+          name: a.name || null,
+          url: a.url || null,
+          duration_ms: typeof a.durationInMillis === 'number' ? a.durationInMillis : null,
+          albumName: a.albumName || null,
+          artwork: a.artwork || null,
+          previews: a.previews || []
+        };
+      });
+    } else if (tResp.status === 403) {
+      functions.logger.warn('Apple Music 403 (controlla token/permessi)');
+    }
+    const note = 'Apple Music non espone ascoltatori mensili via API pubblica. Restituiti: artwork, URL, top songs.';
+    return { found: true, artist: artistData, topTracks, note };
+  } catch (e) {
+    functions.logger.error('appleArtistData error', e);
+    throw new functions.https.HttpsError('internal', e?.message || 'Errore integrazione Apple Music');
+  }
+});
+
+// (I) Aggregatore: getStreamingData
+// Input: { artistName, market?: 'IT', storefront?: 'it' }
+// Output: { artistName, spotify: <spotifyArtistData>, apple: <appleArtistData>, aggregated: { totalListens, cover, tracks } }
+export const getStreamingData = functions.https.onCall(async (data, context) => {
+  const { artistName, market = 'IT', storefront = 'it' } = data || {};
+  if (!artistName || typeof artistName !== 'string' || artistName.trim().length < 2) {
+    throw new functions.https.HttpsError('invalid-argument', 'artistName (string) richiesto');
+  }
+  try {
+    // Reuse internal helpers to avoid an extra round-trip; call our handlers directly
+    const [sp, ap] = await Promise.all([
+      (async () => {
+        try {
+          const token = await getSpotifyToken();
+          const headers = { 'Authorization': `Bearer ${token}` };
+          const q = encodeURIComponent(artistName.trim());
+          const searchUrl = `https://api.spotify.com/v1/search?q=${q}&type=artist&limit=1&market=${encodeURIComponent(market)}`;
+          let sResp = await fetch(searchUrl, { headers });
+          if (sResp.status === 401) { _spotifyToken = null; headers.Authorization = `Bearer ${await getSpotifyToken()}`; sResp = await fetch(searchUrl, { headers }); }
+          if (!sResp.ok) throw new Error(`Spotify search error ${sResp.status}`);
+          const sJson = await sResp.json();
+          const artist = sJson?.artists?.items?.[0] || null;
+          if (!artist) return { found: false, artist: null, topTracks: [], note: 'Nessun artista trovato' };
+          const artistId = artist.id;
+          const artistData = {
+            id: artistId, name: artist.name, followers: artist.followers?.total ?? null, popularity: artist.popularity ?? null,
+            images: Array.isArray(artist.images) ? artist.images : [], genres: Array.isArray(artist.genres) ? artist.genres : [], url: artist.external_urls?.spotify || null
+          };
+          const ttUrl = `https://api.spotify.com/v1/artists/${encodeURIComponent(artistId)}/top-tracks?market=${encodeURIComponent(market)}`;
+          const ttResp = await fetch(ttUrl, { headers });
+          let topTracks = [];
+          if (ttResp.ok) {
+            const tt = await ttResp.json();
+            topTracks = Array.isArray(tt.tracks) ? tt.tracks.map(t => ({
+              id: t.id, name: t.name, url: t.external_urls?.spotify || null, preview_url: t.preview_url || null,
+              popularity: t.popularity ?? null, duration_ms: t.duration_ms ?? null,
+              album: t.album ? { id: t.album.id, name: t.album.name, release_date: t.album.release_date || null, images: Array.isArray(t.album.images) ? t.album.images : [] } : null,
+              artists: Array.isArray(t.artists) ? t.artists.map(a => ({ id: a.id, name: a.name, url: a.external_urls?.spotify || null })) : []
+            })) : [];
+          }
+          const note = 'I "monthly listeners" non sono disponibili via API Spotify. Restituiti: followers, popularity, topTracks.';
+          return { found: true, artist: artistData, topTracks, note };
+        } catch (e) {
+          functions.logger.error('getStreamingData.spotify', e);
+          return { found: false, error: true, message: e?.message || 'Errore Spotify' };
+        }
+      })(),
+      (async () => {
+        try {
+          const devToken = getAppleMusicDevToken();
+          const headers = { 'Authorization': `Bearer ${devToken}`, 'Accept': 'application/json' };
+          const q = encodeURIComponent(artistName.trim());
+          const url = `https://api.music.apple.com/v1/catalog/${encodeURIComponent(storefront)}/search?term=${q}&types=artists&limit=1`;
+          const sResp = await fetch(url, { headers });
+          if (!sResp.ok) throw new Error(`Apple search error ${sResp.status}`);
+          const sJson = await sResp.json();
+          const artist = sJson?.results?.artists?.data?.[0] || null;
+          if (!artist) return { found: false, artist: null, topTracks: [], note: 'Nessun artista trovato' };
+          const artistId = artist.id; const attrs = artist.attributes || {};
+          const artistData = { id: artistId, name: attrs.name || null, url: attrs.url || null, genreNames: attrs.genreNames || [], editorialNotes: attrs.editorialNotes || null, artwork: attrs.artwork || null };
+          const songsUrl = `https://api.music.apple.com/v1/catalog/${encodeURIComponent(storefront)}/artists/${encodeURIComponent(artistId)}/view/top-songs?limit=10`;
+          const tResp = await fetch(songsUrl, { headers });
+          let topTracks = [];
+          if (tResp.ok) {
+            const tJson = await tResp.json();
+            const items = tJson?.data || [];
+            topTracks = items.map(it => {
+              const a = it.attributes || {};
+              return { id: it.id, name: a.name || null, url: a.url || null, duration_ms: typeof a.durationInMillis === 'number' ? a.durationInMillis : null, albumName: a.albumName || null, artwork: a.artwork || null, previews: a.previews || [] };
+            });
+          }
+          const note = 'Apple Music non espone ascoltatori mensili via API pubblica. Restituiti: artwork, URL, top songs.';
+          return { found: true, artist: artistData, topTracks, note };
+        } catch (e) {
+          functions.logger.error('getStreamingData.apple', e);
+          return { found: false, error: true, message: e?.message || 'Errore Apple Music' };
+        }
+      })()
+    ]);
+
+    // Aggregazione minimale per comodità lato client
+    const followers = (sp && sp.artist && typeof sp.artist.followers === 'number') ? sp.artist.followers : 0;
+    const previews = (ap && ap.topTracks) ? ap.topTracks.filter(t => Array.isArray(t.previews) && t.previews.length > 0).length : 0;
+    const popularityBoost = (sp && sp.artist && typeof sp.artist.popularity === 'number') ? sp.artist.popularity * 1000 : 0;
+    const totalListens = followers + popularityBoost + (previews * 500);
+    let cover = null;
+    if (sp?.artist?.images?.[0]?.url) cover = sp.artist.images[0].url;
+    else if (ap?.artist?.artwork?.url) cover = ap.artist.artwork.url.replace('{w}x{h}', '600x600');
+    else if (sp?.topTracks?.[0]?.album?.images?.[0]?.url) cover = sp.topTracks[0].album.images[0].url;
+    const tracks = [];
+    const apTracks = Array.isArray(ap?.topTracks) ? ap.topTracks : [];
+    const spTracks = Array.isArray(sp?.topTracks) ? sp.topTracks : [];
+    for (const t of apTracks) {
+      const preview = Array.isArray(t.previews) && t.previews[0] ? t.previews[0].url : null;
+      if (preview) tracks.push({ title: t.name || '', link: preview });
+    }
+    for (const t of spTracks) {
+      if (t.preview_url) tracks.push({ title: t.name || '', link: t.preview_url });
+    }
+    return { artistName, spotify: sp, apple: ap, aggregated: { totalListens, cover, tracks } };
+  } catch (e) {
+    functions.logger.error('getStreamingData error', e);
+    throw new functions.https.HttpsError('internal', e?.message || 'Errore getStreamingData');
+  }
+});
