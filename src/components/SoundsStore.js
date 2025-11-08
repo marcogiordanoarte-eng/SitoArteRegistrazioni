@@ -308,6 +308,60 @@ export default function SoundsStore() {
           </div>
         </section>
 
+        {/* Presentazione Social Sounds */}
+        <section className="container" aria-label="Presentazione Social Sounds">
+          <div
+            className="reveal"
+            style={{
+              marginTop: -12,
+              marginBottom: 18,
+              padding: '18px 16px',
+              borderRadius: 12,
+              border: '1px solid rgba(96,165,250,0.35)',
+              background: 'linear-gradient(180deg, rgba(37, 99, 235, 0.08) 0%, rgba(30, 58, 138, 0.06) 100%)',
+              color: '#93c5fd',
+              textAlign: 'center',
+              lineHeight: 1.55,
+              textTransform: 'uppercase',
+              fontSize: 'clamp(12px, 1.7vw, 14px)'
+            }}
+          >
+            {lang === 'it' ? (
+              <>
+                <p style={{ margin: '4px 0' }}>
+                  BENVENUTI IN SOUNDS!   Che cos’è ?  Nasce da Arte Registrazioni: Casa Discografica che si occupa di Produzione, Editoria, Store e Social musicale.
+                </p>
+                <p style={{ margin: '4px 0' }}>
+                  Oltre ai Podcast, i Festival, le Playlist e i Profili Artista in Label, è nato SOUNDS con SOCIAL SOUNDS! Qui musicisti e cantanti possono inserire i post dei loro concerti, scambiarsi opinioni, cercare collaborazioni, COMUNICARE. Sounds offre anche la possibilità ai fan di avere un posto unico dove scoprire le date degli spettacoli, seguire gli artisti che amano e conoscerli meglio!
+                </p>
+                <p style={{ margin: '4px 0' }}>
+                  SOUNDS è  un posto riservato al solo mondo della musica!<br/>
+                  SOUNDS è uno Store musicale completamente nuovo!<br/>
+                  Dove poter ascoltare artisti e acquistare la loro musica!<br/>
+                  SOUNDS è Social per vivere e scoprire la musica!<br/>
+                  Sounds è musica!
+                </p>
+              </>
+            ) : (
+              <>
+                <p style={{ margin: '4px 0' }}>
+                  WELCOME TO SOUNDS!  WHAT IS IT?  BORN FROM ARTE REGISTRAZIONI: A RECORD LABEL DEALING WITH PRODUCTION, PUBLISHING, STORE AND MUSIC SOCIAL.
+                </p>
+                <p style={{ margin: '4px 0' }}>
+                  BESIDES PODCASTS, FESTIVALS, PLAYLISTS AND ARTIST PROFILES IN LABEL, SOUNDS WITH SOCIAL SOUNDS WAS BORN! HERE MUSICIANS AND SINGERS CAN POST THEIR GIGS, EXCHANGE OPINIONS, SEEK COLLABORATIONS, COMMUNICATE. SOUNDS ALSO GIVES FANS A UNIQUE PLACE TO DISCOVER SHOW DATES, FOLLOW THE ARTISTS THEY LOVE AND GET TO KNOW THEM BETTER!
+                </p>
+                <p style={{ margin: '4px 0' }}>
+                  SOUNDS IS A PLACE RESERVED ONLY FOR THE WORLD OF MUSIC!<br/>
+                  SOUNDS IS A COMPLETELY NEW MUSIC STORE!<br/>
+                  WHERE YOU CAN LISTEN TO ARTISTS AND BUY THEIR MUSIC!<br/>
+                  SOUNDS IS SOCIAL TO EXPERIENCE AND DISCOVER MUSIC!<br/>
+                  SOUNDS IS MUSIC!
+                </p>
+              </>
+            )}
+          </div>
+        </section>
+
         {/* Sezione hero spostata sotto Social */}
         <section className="hero" aria-label="Intro">
           <div className="hero-media">
