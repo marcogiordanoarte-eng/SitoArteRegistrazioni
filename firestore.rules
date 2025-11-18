@@ -9,7 +9,18 @@ service cloud.firestore {
     // Collezione artisti: lettura pubblica, scrittura admin o proprietario del profilo
     match /artisti/{docId} {
       allow read: if true;
-      allow write: if isAdmin() || isArtistOwner(docId);
+      // Creazione completa consentita solo ad admin o proprietario
+      allow create: if isAdmin() || isArtistOwner(docId);
+      // Aggiornamento consentito ad admin, proprietario, oppure a qualsiasi utente autenticato
+      // limitatamente ai soli campi spotifyLink e appleLink
+      allow update: if isAdmin() || isArtistOwner(docId) || (
+        request.auth != null &&
+        resource.data.diff(request.resource.data).changedKeys().hasOnly(["spotifyLink", "appleLink"]) &&
+        // Evita rimozione accidentale di altri campi obbligatori: tutti gli altri campi restano invariati
+        resource.data.keys().hasAll(request.resource.data.keys())
+      );
+      // Eliminazione solo admin
+      allow delete: if isAdmin();
     }
     match /artisti/{artistId}/tracks/{trackId} {
       allow read: if true;
@@ -23,7 +34,24 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    // Auditions: creazione pubblica controllata (no lettura pubblica), lettura solo admin
+    match /auditions/{auditionId} {
+      allow create: if validAudition();
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+    // Auditions meta (inserite da Cloud Function): solo lettura admin
+    match /auditionsMeta/{metaId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
     match /countdowns/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Live plays feed: public read for visual pulses, write restricted
+    match /livePlays/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }
@@ -67,4 +95,16 @@ function isAdmin() {
 function isArtistOwner(docId) {
   // Consente al creatore/proprietario (UID==docId) di aggiornare SOLO il proprio documento
   return request.auth != null && request.auth.uid == docId;
+}
+
+function validAudition() {
+  return request.resource.data.keys().hasOnly([
+      'name','email','linkSpotifySoundCloud','linkAppleMusic','fileUrls','createdAt'
+    ]) &&
+    request.resource.data.name is string &&
+    request.resource.data.email is string &&
+    request.resource.data.fileUrls is list &&
+    request.resource.data.fileUrls.size() > 0 &&
+    request.resource.data.fileUrls.size() <= 5 &&
+    request.resource.data.createdAt is int;
 }

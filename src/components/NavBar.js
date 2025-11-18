@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useI18n } from "../i18n";
+import EnterNowButton from './EnterNowButton';
 
 export default function NavBar() {
   const [open, setOpen] = useState(false);
@@ -89,16 +90,12 @@ export default function NavBar() {
           </Link>
         </div>
 
-        {/* Lingua switch */}
-        <div className="nav-row nav-row--tail" style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-          <span style={{ color: '#9aa3b2', fontSize: 12 }}>{t('nav_language')}:</span>
-          <button type="button" className={`glow-btn glow-btn--sm${lang==='it' ? ' glow-btn--active' : ''}`} onClick={() => setLang('it')} aria-pressed={lang==='it'}>
-            {t('lang_it')}
-          </button>
-          <button type="button" className={`glow-btn glow-btn--sm${lang==='en' ? ' glow-btn--active' : ''}`} onClick={() => setLang('en')} aria-pressed={lang==='en'}>
-            {t('lang_en')}
-          </button>
+        {/* Entra ora (Social Sounds) */}
+        <div className="nav-row nav-row--single" style={{ display:'flex', justifyContent:'center' }}>
+          <EnterNowButton size="md" />
         </div>
+
+        {/* Lingua switch removed: now global fixed top-right */}
       </nav>
     </div>
   );

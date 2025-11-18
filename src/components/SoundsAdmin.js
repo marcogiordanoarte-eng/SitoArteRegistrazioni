@@ -6,15 +6,7 @@ import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase
 import { httpsCallable } from 'firebase/functions';
 
 export default function SoundsAdmin() {
-  const [showOverlay, setShowOverlay] = useState(false);
-  const [studioVideoUrl, setStudioVideoUrl] = useState('');
-  useEffect(() => {
-    const unsubStudio = onSnapshot(doc(db, 'site', 'config'), (snap) => {
-      const data = snap.exists() ? snap.data() : {};
-      setStudioVideoUrl(data?.studioVideoUrl || '');
-    });
-    return () => unsubStudio();
-  }, []);
+  
   const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newGenre, setNewGenre] = useState({ name: '', order: 0, coverUrl: '', defaultPrice: '' });
@@ -284,17 +276,7 @@ export default function SoundsAdmin() {
           </div>
         ))}
       </section>
-      {/* Overlay video studio */}
-      {showOverlay && studioVideoUrl && (
-        <div className="fullscreen-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowOverlay(false)}>
-          <video src={studioVideoUrl} autoPlay controls loop playsInline
-            style={{ width: '100vw', height: '100vh', objectFit: 'contain', background: '#000' }}
-            onClick={e => e.stopPropagation()}
-          />
-          <button onClick={() => setShowOverlay(false)} style={{ position: 'absolute', top: 24, right: 32, fontSize: 32, color: '#ffd700', background: 'none', border: 'none', cursor: 'pointer', zIndex: 10000 }}>×</button>
-        </div>
-      )}
-      <Footer showArteButton={true} onArteClick={() => setShowOverlay(true)} />
+      <Footer showArteButton={false} />
     </div>
   );
 }

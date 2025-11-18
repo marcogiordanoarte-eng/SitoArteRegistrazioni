@@ -18,11 +18,14 @@ import {
 import BuyMusicAdmin from './BuyMusicAdmin';
 import PodcastAdmin from './PodcastAdmin';
 import CountdownAdmin from './CountdownAdmin';
-import DashboardVideoManager from './DashboardVideoManager';
-import DashboardLogoVideoManager from './DashboardLogoVideoManager';
+import DashboardWorldMap from './DashboardWorldMap';
+import AudioLinkChecker from './AudioLinkChecker';
+import PlaybackValidator from './PlaybackValidator';
 import ArtistTracksManager from './ArtistTracksManager';
+import MigrationTool from './MigrationTool';
 import DashboardGameMusic from './DashboardGameMusic';
 import SocialSoundsAdmin from './SocialSoundsAdmin';
+import SocialVerifyArtists from './SocialVerifyArtists';
 import { auth, resetPassword } from './firebase';
 import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
@@ -30,7 +33,7 @@ import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'fire
 function Dashboard() {
   const { logout, user, changeCurrentUserPassword } = useAuth();
   const navigate = useNavigate();
-  const [view, setView] = useState("list"); // aggiunto 'videoLogo'
+  const [view, setView] = useState("list"); // include 'videoLogo' per gestione logoVideoUrl
   const [podItems, setPodItems] = useState([]);
   const [podUploading, setPodUploading] = useState(false);
   const [cdItems, setCdItems] = useState([]);
@@ -52,6 +55,8 @@ function Dashboard() {
   const [buyIntroEn, setBuyIntroEn] = useState('');
   const [homeVideoUrl, setHomeVideoUrl] = useState('');
   const [homeVideoUploading, setHomeVideoUploading] = useState(false);
+  const [arteTextIt, setArteTextIt] = useState('');
+  const [arteTextEn, setArteTextEn] = useState('');
   const [artists, setArtists] = useState([]);
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [artistLoginCode, setArtistLoginCode] = useState('');
@@ -114,6 +119,8 @@ function Dashboard() {
       setBuyIntroIt(data?.buyIntroIt || '');
   setBuyIntroEn(data?.buyIntroEn || '');
   setHomeVideoUrl(data?.homeVideoUrl || '');
+      setArteTextIt(data?.arteTextIt || '');
+      setArteTextEn(data?.arteTextEn || '');
     });
     return () => unsub();
   }, []);
@@ -482,21 +489,8 @@ function Dashboard() {
           </div>
         )}
   <div className="dash-views">
-        <button className="dash-btn dash-btn--ghost" onClick={() => setView('video')}>Gestione Video Studio</button>
-        <button className="dash-btn dash-btn--ghost" onClick={() => setView('videoLogo')}>Gestione Video Logo</button>
     <button className="dash-btn dash-btn--ghost" onClick={() => setView('social')}>Social Sounds (Login & Utenti)</button>
-      {view === 'video' && (
-        <div className="dash-editor dash-container">
-          <h3 className="dash-section-title">Video Presentazione Studio</h3>
-          <DashboardVideoManager onBack={handleBack} />
-        </div>
-      )}
-      {view === 'videoLogo' && (
-        <div className="dash-editor dash-container">
-          <h3 className="dash-section-title">Video Logo</h3>
-          <DashboardLogoVideoManager onBack={handleBack} />
-        </div>
-      )}
+        <button className="dash-btn dash-btn--ghost" onClick={() => setView('verifyArtists')}>Verifica Artisti</button>
         <button
           className="dash-btn dash-btn--primary"
           onClick={() => setView("create")}
@@ -547,9 +541,15 @@ function Dashboard() {
         </button>
         <button
           className="dash-btn dash-btn--ghost"
-          onClick={() => setView('duplicates')}
+          onClick={() => setView('worldmap')}
         >
-          Controllo Duplicati
+          World Map
+        </button>
+        <button
+          className="dash-btn dash-btn--ghost"
+          onClick={() => setView('audioLinks')}
+        >
+          Audio Links Checker
         </button>
         {/* Voce AI rimossa */}
       </div>
@@ -620,79 +620,24 @@ function Dashboard() {
         </div>
       )}
 
-      {view === 'duplicates' && (
-        <div className="dash-list dash-container">
-          <h3 className="dash-section-title">Controllo Duplicati</h3>
-          <p style={{color:'#bbb'}}>Suggerimenti basati su nome normalizzato ed email. Usa Modifica per verificare e <em>Elimina</em> quello non più valido. Non viene effettuata alcuna fusione automatica.</p>
-          {/* Group by normalizedName */}
-          <div style={{marginTop:16}}>
-            <h4 className="dash-section-title" style={{marginTop:0}}>Per Nome</h4>
-            {(() => {
-              const groups = artists.reduce((acc, a) => {
-                const key = (a.normalizedName || (a.nome || a.name || '')).toString().toLowerCase()
-                  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                  .replace(/[^a-z0-9]+/g, '-')
-                  .replace(/(^-|-$)+/g, '') || '(vuoto)';
-                acc[key] = acc[key] || [];
-                acc[key].push(a);
-                return acc;
-              }, {});
-              const dups = Object.entries(groups).filter(([, list]) => list.length > 1);
-              if (dups.length === 0) return <div style={{color:'#8f8'}}>Nessun sospetto duplicato per nome.</div>;
-              return (
-                <ul>
-                  {dups.map(([key, list]) => (
-                    <li key={key} className="dash-item">
-                      <div style={{fontWeight:'bold'}}>"{key}"</div>
-                      <ul style={{marginTop:8}}>
-                        {list.map(a => (
-                          <li key={a.id} style={{display:'flex', alignItems:'center', gap:8, padding:'6px 0'}}>
-                            <span>{a.nome || a.name} <span style={{color:'#888'}}>({a.id})</span></span>
-                            {a.loginEmail || a.email ? <span style={{color:'#bbb'}}>{(a.loginEmail || a.email)}</span> : null}
-                            <button className="dash-small-btn dash-small-btn--primary" onClick={() => handleSelectArtist(a)}>Modifica</button>
-                            <button className="dash-small-btn dash-small-btn--danger" onClick={() => { if(window.confirm(`Eliminare definitivamente "${a.nome}"?`)) handleDeleteArtist(a.id); }}>Elimina</button>
-                          </li>
-                        ))}
-                      </ul>
-                    </li>
-                  ))}
-                </ul>
-              );
-            })()}
-          </div>
-          {/* Group by email */}
-          <div style={{marginTop:24}}>
-            <h4 className="dash-section-title">Per Email</h4>
-            {(() => {
-              const groups = artists.reduce((acc, a) => {
-                const key = ((a.loginEmail || a.email || '').trim().toLowerCase()) || '(vuota)';
-                acc[key] = acc[key] || [];
-                acc[key].push(a);
-                return acc;
-              }, {});
-              const dups = Object.entries(groups)
-                .filter(([key, list]) => key !== '(vuota)' && list.length > 1);
-              if (dups.length === 0) return <div style={{color:'#8f8'}}>Nessun sospetto duplicato per email.</div>;
-              return (
-                <ul>
-                  {dups.map(([key, list]) => (
-                    <li key={key} className="dash-item">
-                      <div style={{fontWeight:'bold'}}>{key}</div>
-                      <ul style={{marginTop:8}}>
-                        {list.map(a => (
-                          <li key={a.id} style={{display:'flex', alignItems:'center', gap:8, padding:'6px 0'}}>
-                            <span>{a.nome || a.name} <span style={{color:'#888'}}>({a.id})</span></span>
-                            <button className="dash-small-btn dash-small-btn--primary" onClick={() => handleSelectArtist(a)}>Modifica</button>
-                            <button className="dash-small-btn dash-small-btn--danger" onClick={() => { if(window.confirm(`Eliminare definitivamente "${a.nome}"?`)) handleDeleteArtist(a.id); }}>Elimina</button>
-                          </li>
-                        ))}
-                      </ul>
-                    </li>
-                  ))}
-                </ul>
-              );
-            })()}
-          </div>
+      {view === 'worldmap' && (
+        <div className="dash-editor dash-container">
+          <h3 className="dash-section-title">World Map – Dati & Allineamento</h3>
+          <DashboardWorldMap artists={artists} />
+        </div>
+      )}
+
+      {view === 'audioLinks' && (
+        <div className="dash-editor dash-container">
+          <h3 className="dash-section-title">Audio Links Checker</h3>
+          <p>Seleziona un artista dall'elenco per verificare lo stato dei suoi URL audio (Storage, anteprime, mp3). Usa i suggerimenti per correggere i 404.</p>
+          {artists.length === 0 && <p>Nessun artista disponibile.</p>}
+          {artists.length > 0 && (
+            <div style={{display:'flex', flexDirection:'column', gap:16}}>
+              <ArtistSelector artists={artists} />
+              <PlaybackValidator />
+            </div>
+          )}
         </div>
       )}
 
@@ -740,6 +685,14 @@ function Dashboard() {
         <div className="dash-editor dash-container">
           <h3 className="dash-section-title">Social Sounds – Login & Utenti</h3>
           <SocialSoundsAdmin />
+        </div>
+      )}
+
+      {view === 'verifyArtists' && (
+        <div className="dash-editor dash-container">
+          <h3 className="dash-section-title">Verifica Artisti</h3>
+          <p>Elenco degli utenti registrati come Artista in Social Sounds con IPI/ISNI. Puoi verificare o rimuovere la verifica.</p>
+          <SocialVerifyArtists />
         </div>
       )}
 
@@ -880,7 +833,7 @@ function Dashboard() {
       {view === 'settings' && (
         <div className="dash-editor dash-container">
           <h3 className="dash-section-title">Impostazioni Sito</h3>
-          <p>Gestisci il logo "Sounds", il video in Home e i testi introduttivi della pagina Buy Music.</p>
+          <p>Gestisci il logo "Sounds", il video in Home, i testi introduttivi di Buy Music e il testo della pagina "Arte Registrazioni".</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12, border: '1px dashed #333', borderRadius: 10 }}>
               <label style={{ color: '#ffd700', fontWeight: 'bold' }}>Video Home</label>
@@ -955,6 +908,48 @@ function Dashboard() {
                   }
                 }}>Salva Testi</button>
               </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
+              <h4 className="dash-section-title" style={{ margin: '8px 0' }}>Pagina "Arte Registrazioni" – Testo</h4>
+              <label style={{ color: '#ffd700' }}>
+                Testo (Italiano)
+                <textarea
+                  rows={8}
+                  value={arteTextIt}
+                  onChange={(e) => setArteTextIt(e.target.value)}
+                  placeholder={'Inserisci il testo in italiano per la pagina "Arte Registrazioni". Usa una riga vuota per separare i paragrafi.'}
+                  style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #444', background: '#111', color: '#fff', marginTop: 6 }}
+                />
+              </label>
+              <label style={{ color: '#ffd700' }}>
+                Text (English)
+                <textarea
+                  rows={8}
+                  value={arteTextEn}
+                  onChange={(e) => setArteTextEn(e.target.value)}
+                  placeholder={'Enter the English text for the "Arte Registrazioni" page. Use a blank line to separate paragraphs.'}
+                  style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #444', background: '#111', color: '#fff', marginTop: 6 }}
+                />
+              </label>
+              <div>
+                <button
+                  className="dash-btn dash-btn--primary"
+                  onClick={async () => {
+                    try {
+                      await setDoc(doc(db, 'site', 'config'), {
+                        arteTextIt: arteTextIt || null,
+                        arteTextEn: arteTextEn || null,
+                      }, { merge: true });
+                      alert('Testo "Arte Registrazioni" aggiornato.');
+                    } catch (e) {
+                      console.error('Errore salvataggio testo Arte Registrazioni', e);
+                      alert('Errore salvataggio testo');
+                    }
+                  }}
+                >Salva Testo</button>
+              </div>
+              <div style={{ color: '#888', fontSize: 12 }}>Suggerimento: puoi incollare testo con a capo. Le righe vuote divideranno i paragrafi. Se lasci vuoto, verrà mostrato il testo predefinito (i18n).</div>
             </div>
           </div>
         </div>
@@ -1089,6 +1084,9 @@ function Dashboard() {
           <div style={{ marginTop: 40 }}>
             <ArtistTracksManager artist={selectedArtist} />
           </div>
+          <div style={{ marginTop: 40 }}>
+            <MigrationTool />
+          </div>
         </div>
       )}
 
@@ -1117,3 +1115,36 @@ function Dashboard() {
 }
 
 export default Dashboard;
+
+// Inline selector for Audio Links Checker (admin-only tool)
+function ArtistSelector({ artists }) {
+  const [checkerArtistId, setCheckerArtistId] = useState(artists[0]?.id || '');
+
+  useEffect(() => {
+    if (!checkerArtistId && artists && artists[0]?.id) {
+      setCheckerArtistId(artists[0].id);
+    }
+  }, [artists, checkerArtistId]);
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+        <label style={{ color:'#ffd700', fontWeight:600 }}>Artista</label>
+        <select
+          value={checkerArtistId}
+          onChange={(e) => setCheckerArtistId(e.target.value)}
+          style={{ minWidth: 220, padding: 8, borderRadius: 8, border: '1px solid #444', background: '#111', color: '#fff' }}
+        >
+          {artists.map((a) => (
+            <option key={a.id} value={a.id}>{a.nome || a.name || a.id}</option>
+          ))}
+        </select>
+      </div>
+      {checkerArtistId ? (
+        <AudioLinkChecker artistId={checkerArtistId} />
+      ) : (
+        <div style={{ color:'#888' }}>Seleziona un artista per iniziare.</div>
+      )}
+    </div>
+  );
+}

@@ -1,6 +1,8 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import PublicSite from "./PublicSite";
+import { PlayerProvider } from './PlayerContext';
+import MiniPlayer from './MiniPlayer';
 import DownloadConfirm from "./DownloadConfirm";
 import Artisti from "./Artisti";
 import ArtistDetail from "./ArtistDetail";
@@ -10,6 +12,9 @@ import Festival from "./Festival";
 import BuyMusic from "./BuyMusic";
 // Sostituito: nuova homepage Store per /sounds
 import SoundsStore from "./SoundsStore";
+import SocialPage from "./SocialPage";
+import RealReels from "./RealReels";
+import WorldMapArtist from "./WorldMapArtist";
 import BuyGenreDetail from "./BuyGenreDetail";
 import Podcast from "./Podcast";
 import Countdown from "./Countdown";
@@ -26,6 +31,11 @@ import { ADMIN_UIDS } from './config';
 import ArtistSelfDashboard from './ArtistSelfDashboard';
 import CalendArte from './CalendArte';
 import PentaPlatform from './PentaPlatform';
+import ArteRegistrazioniPage from './ArteRegistrazioniPage';
+import LangSwitchTop from './LangSwitchTop';
+import CreativeProfile from './CreativeProfile';
+import SuodsChat from './SuodsChat';
+import EventsManager from './EventsManager';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -148,20 +158,27 @@ export default function App() {
     <AuthProvider>
       <I18nProvider>
       <BrowserRouter>
+      <PlayerProvider>
         <div style={{ position:'relative', minHeight:'100vh' }}>
           <Routes>
             {/* Sounds diventa la Home di tutto il progetto */}
             <Route path="/" element={<SoundsStore />} />
             <Route path="/artisti" element={<Artisti />} />
             <Route path="/artista/:id" element={<ArtistDetail />} />
+            <Route path="/worldmap/:id" element={<WorldMapArtist />} />
             <Route path="/studio" element={<Studio />} />
             <Route path="/festival" element={<Festival />} />
             <Route path="/podcast" element={<Podcast />} />
             <Route path="/countdown" element={<Countdown />} />
-            {/* Rotta esplicita per Sounds (alias della home) */}
-            <Route path="/sounds" element={<Navigate to="/" replace />} />
+            {/* Social Sounds */}
+            <Route path="/sounds" element={<SocialPage />} />
+            <Route path="/sounds/reels" element={<RealReels />} />
+            <Route path="/sounds/chat" element={<AuthRoute><SuodsChat /></AuthRoute>} />
+            <Route path="/creative-profile" element={<AuthRoute><CreativeProfile /></AuthRoute>} />
+            <Route path="/events" element={<AuthRoute><EventsManager /></AuthRoute>} />
             {/* Pagina Label ripristinata */}
             <Route path="/label" element={<PublicSite />} />
+            <Route path="/arte-registrazioni" element={<ArteRegistrazioniPage />} />
             <Route path="/buy" element={<BuyMusic />} />
             {/* Rotta /musica rimossa su richiesta */}
             <Route path="/buy/genre/:gid" element={<BuyGenreDetail />} />
@@ -180,7 +197,11 @@ export default function App() {
           </Routes>
           {/* Nessun assistente o finestrella: UI IA rimossa */}
             {/* Nessun assistente o finestrella: UI IA rimossa */}
+          <MiniPlayer />
+          {/* Global language switch (top-right), hidden automatically on Sounds home */}
+          <LangSwitchTop />
         </div>
+      </PlayerProvider>
       </BrowserRouter>
       </I18nProvider>
     </AuthProvider>

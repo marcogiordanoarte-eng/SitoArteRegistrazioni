@@ -1,116 +1,65 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useI18n } from '../i18n';
-import YouTubeButton from './YouTubeButton';
+import SocialMinimal from './SocialMinimal';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
-import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import "./Artisti.css";
 import { db } from './firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import NavBar from './NavBar';
-import LogoPrompt from './LogoPrompt';
 
 export default function PublicSite() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const promoRef = useRef(null);
   const [homeVideoUrl, setHomeVideoUrl] = useState('');
-  const [studioVideoUrl, setStudioVideoUrl] = useState('');
-  const [logoVideoUrl, setLogoVideoUrl] = useState('');
-  const [showOverlay, setShowOverlay] = useState(false);
-  const [overlaySource, setOverlaySource] = useState(null); // 'studio' | 'logo'
-  const [logoDismissed, setLogoDismissed] = useState(() => {
-    try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
-  });
   // Nessuna intro vocale o AI: rimosso su richiesta
 
-  // Carica homeVideoUrl e studioVideoUrl da Firestore (real-time)
+  // Carica homeVideoUrl da Firestore (real-time)
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'site', 'config'), (snap) => {
       const data = snap.exists() ? snap.data() : {};
   setHomeVideoUrl(data?.homeVideoUrl || '');
-  setStudioVideoUrl(data?.studioVideoUrl || '');
-  setLogoVideoUrl(data?.logoVideoUrl || '');
     });
     return () => unsub();
   }, []);
 
-  // Overlay fullscreen logic
-  // Quando si apre l'overlay, metti in pausa il video principale e forzalo in mute
-  const openLogoOverlay = () => {
-    try {
-      if (promoRef.current) {
-        promoRef.current.pause();
-        promoRef.current.muted = true; // forza mute
-        promoRef.current.volume = 0;
-      }
-    } catch {}
-    setOverlaySource('logo');
-    setShowOverlay(true);
-    if (!logoDismissed) {
-      try { localStorage.setItem('ar_logo_clicked','1'); } catch {}
-      setLogoDismissed(true);
-    }
-  };
-  const openStudioOverlay = () => {
-    try {
-      if (promoRef.current) {
-        promoRef.current.pause();
-        promoRef.current.muted = true;
-        promoRef.current.volume = 0;
-      }
-    } catch {}
-    setOverlaySource('studio');
-    setShowOverlay(true);
-  };
-  // Quando si chiude l'overlay, riattiva il video principale ma lascia sempre in mute
-  const closeOverlay = () => {
-  setShowOverlay(false);
-  setOverlaySource(null);
-    setTimeout(() => {
-      try {
-        if (promoRef.current) {
-          promoRef.current.muted = true; // audio resta OFF
-          promoRef.current.volume = 0;
-          promoRef.current.play();
-        }
-      } catch {}
-    }, 300);
-  };
-
-  // Accessibilità: attiva overlay con tastiera (Enter/Space)
-  const handleLogoKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      openLogoOverlay();
-    }
-  };
-
   return (
     <>
+      <style>{`
+        .btn-enter-green {
+          display:inline-block;
+          padding: 10px 16px;
+          border: 1px solid #00FF00;
+          color: #00FF00;
+          background: rgba(0,0,0,0.35);
+          border-radius: 10px;
+          text-decoration: none;
+          font-weight: 600;
+          letter-spacing: 0.3px;
+          text-shadow: 0 0 10px rgba(0,255,0,0.65);
+          box-shadow: 0 0 0 rgba(0,255,0,0.0);
+          transition: box-shadow 300ms ease, filter 300ms ease;
+        }
+        @keyframes pulseGlow {
+          0% { box-shadow: 0 0 8px rgba(0,255,0,0.35), 0 0 0 rgba(0,255,0,0.0); }
+          50% { box-shadow: 0 0 16px rgba(0,255,0,0.75), 0 0 32px rgba(0,255,0,0.25); }
+          100% { box-shadow: 0 0 8px rgba(0,255,0,0.35), 0 0 0 rgba(0,255,0,0.0); }
+        }
+        .btn-enter-green:hover {
+          animation: pulseGlow 2.2s ease-in-out infinite;
+          filter: brightness(1.05);
+        }
+      `}</style>
   <Link to="/login" className="dash-badge" title="Dashboard">Dashboard</Link>
       <div className="publicsite-bg page-home">
     {/* DISCO ANIMATO SOTTO LE FRECCE */}
-        <div
-      className="logo-wrapper"
-      style={{ cursor: 'pointer', margin: '18px 0 0 0', position:'relative' }}
-      onClick={openLogoOverlay}
-      onKeyDown={handleLogoKeyDown}
-      role="button"
-      tabIndex={0}
-  aria-label={t('ps_open_logo_video')}
-  title="Logo Video"
-    >
-  <LogoPrompt show={!showOverlay} text={t('ps_press')} position="bottom" />
+        <div className="logo-wrapper" style={{ margin: '18px 0 0 0', position:'relative' }}>
           <div className="logo-combo">
             <div className="logo-stack" aria-hidden="true">
-              <img src="/disco.png" alt="Disco" className="disco-img" />
-              <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
-            </div>
-            <div className="sounds-app" aria-hidden="true">
-              <img src="/soundslogo.jpg" alt="Logo Sounds" className="sounds-app-img" />
-            </div>
+                <img src="/disco.png" alt="Disco" className="disco-img" />
+                <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
+              </div>
           </div>
         </div>
         <button
@@ -125,7 +74,6 @@ export default function PublicSite() {
         <div className="container" style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", display: "flex", marginBottom: 0 }}>
           {/* Video principale della homepage: parte SEMPRE in mute */}
           <video
-            ref={promoRef}
             src={homeVideoUrl || "/monitor-default.mp4"}
             autoPlay
             controls
@@ -134,25 +82,17 @@ export default function PublicSite() {
             playsInline
             style={{ maxWidth: "92vw", maxHeight: "72vh", borderRadius: 12, boxShadow: "0 4px 24px rgba(0,0,0,0.2)", marginBottom: 12 }}
           />
-          <BrandButton onClick={openStudioOverlay} />
+          <BrandButton onClick={() => navigate('/arte-registrazioni')} />
+          <div style={{ marginTop: 10 }}>
+            <Link to="/sounds" className="btn-enter-green">Entra ora</Link>
+          </div>
         </div>
-        {/* Overlay fullscreen solo per video studio */}
-        <FullscreenVideoOverlay
-          show={showOverlay && ((overlaySource === 'studio' && !!studioVideoUrl) || (overlaySource === 'logo' && !!logoVideoUrl))}
-          src={overlaySource === 'studio' ? studioVideoUrl : logoVideoUrl}
-          onClose={closeOverlay}
-          attemptUnmuted
-          objectFit="cover"
-          controls
-        />
   <h1 className="publicsite-title">{t('ps_welcome_title')}</h1>
         <p className="publicsite-desc">
           {t('ps_welcome_desc_line1')}<br />
           {t('ps_welcome_desc_line2')}
         </p>
-        <div className="youtube-under-menu">
-          <YouTubeButton small layout="row" />
-        </div>
+        <SocialMinimal />
   <Footer showArteButton={false} />
     {/* Widget AI globale già montato in App.js */}
       </div>

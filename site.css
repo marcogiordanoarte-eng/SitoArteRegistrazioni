@@ -25,3 +25,12 @@ body { font-family:Arial, sans-serif; background:#000; margin:0; padding:40px; c
 .glow-btn:focus-visible, .navbar a:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
 @media (max-width:900px) { .logo-stack,.disco-img { width:120px; height:120px;} .logo-img { width:80px; height:80px; top:20px; left:20px;} .sounds-logo-img { width:56px; height:56px; top:18px; right:14px; } .navbar ul { gap:16px;} .panel { padding:20px;} .promo-video { max-width:98vw; max-height:40vh;} }
 @media (max-width:600px) { .logo-wrapper { margin-top:60px;} .logo-stack,.disco-img { width:80px; height:80px;} .logo-img { width:50px; height:50px; top:15px; left:15px;} .sounds-logo-img { width:38px; height:38px; top:12px; right:10px; } .navbar ul { gap:8px;} .panel { padding:10px;} .promo-video { max-width:98vw; max-height:30vh;} }
+
+/* Tab buttons (ArtistLogin) */
+.tab-btn, .tab-btn-active { font-family:Arial, sans-serif; font-size:14px; font-weight:600; padding:12px 10px; cursor:pointer; background:rgba(0,0,0,0.35); color:#ccc; border:none; outline:none; letter-spacing:.5px; transition:.25s; }
+.tab-btn:first-child, .tab-btn-active:first-child { border-top-left-radius:10px; border-bottom-left-radius:10px; }
+.tab-btn:last-child, .tab-btn-active:last-child { border-top-right-radius:10px; border-bottom-right-radius:10px; }
+.tab-btn:hover { background:rgba(255,255,255,0.08); color:#fff; }
+.tab-btn-active { background:linear-gradient(135deg,#16a34a,#065f46); color:#fff; box-shadow:0 0 12px rgba(0,0,0,0.4),0 0 16px rgba(22,163,74,0.4); }
+.tab-btn-active:hover { filter:brightness(1.08); }
+.tab-btn:focus-visible, .tab-btn-active:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }

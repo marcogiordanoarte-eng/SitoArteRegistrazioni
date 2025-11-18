@@ -13,7 +13,7 @@ const MESSAGES = {
   it: {
     // Common/nav
     nav_menu: 'Menù',
-    nav_artists_label: 'Etichetta Artisti',
+  nav_artists_label: 'Artisti Etichetta',
     nav_festival: 'Festival',
     nav_podcast: 'Podcast',
     nav_countdown: 'Conto alla rovescia',
@@ -112,6 +112,14 @@ const MESSAGES = {
     buymusic_how_title: 'Come funziona',
     buymusic_toggle_show_en: 'Mostra traduzione inglese',
     buymusic_toggle_hide_en: 'Nascondi traduzione inglese',
+    
+    // Arte Registrazioni page
+    arte_title: 'ARTE REGISTRAZIONI',
+    arte_p1: 'È UNA CASA DISCOGRAFICA CHE SI OCCUPA DI PRODUZIONE, EDITORIA, STORE E SOCIAL MUSICALE.',
+    arte_p2: 'OLTRE AI PODCAST, I FESTIVAL, LE PLAYLIST E I PROFILI ARTISTA IN LABEL, È NATO SOUNDS CON SOCIAL SOUNDS! QUI MUSICISTI E CANTANTI POSSONO INSERIRE I POST DEI LORO CONCERTI, SCAMBIARSI OPINIONI, CERCARE COLLABORAZIONI, COMUNICARE.',
+    arte_p3: 'LA CASA DISCOGRAFICA, SI DEDICA A SOSTENERE ARTISTI , AIUTANDO A CREARE, DISTRIBUIRE E A PROMUOVERE LA MUSICA CON PROFESSIONALITÀ. NATA  A TORINO E FONDATA DA MARCO GIORDANO: MUSICISTA E COMPOSITORE. SOTTO LA SUA ETICHETTA, HA COMPOSTO MOLTI DISCHI ATTIVI.',
+    arte_p4: 'LA SEDE SI TROVA IN TORINO CORSO FRANCIA 169. UN PUNTO DI RIFERIMENTO PER LA SCENA MUSICALE.',
+    arte_p5: 'Arte Registrazioni e Sounds sono Musica!',
   },
   en: {
     // Common/nav
@@ -215,6 +223,14 @@ const MESSAGES = {
     buymusic_how_title: 'How it works',
     buymusic_toggle_show_en: 'Show English translation',
     buymusic_toggle_hide_en: 'Hide English translation',
+
+    // Arte Registrazioni page
+    arte_title: 'ARTE REGISTRAZIONI',
+    arte_p1: 'IS A RECORD LABEL FOCUSED ON PRODUCTION, PUBLISHING, STORE AND A MUSIC SOCIAL PLATFORM.',
+    arte_p2: 'BESIDES PODCASTS, FESTIVALS, PLAYLISTS AND ARTIST PROFILES IN LABEL, SOUNDS WITH SOCIAL SOUNDS WAS BORN! HERE MUSICIANS AND SINGERS CAN POST THEIR GIGS, EXCHANGE OPINIONS, SEEK COLLABORATIONS, COMMUNICATE.',
+    arte_p3: 'THE RECORD LABEL IS DEDICATED TO SUPPORTING ARTISTS, HELPING THEM CREATE, DISTRIBUTE AND PROMOTE MUSIC WITH PROFESSIONALISM. BORN IN TURIN AND FOUNDED BY MARCO GIORDANO: MUSICIAN AND COMPOSER. UNDER HIS LABEL, MANY ACTIVE RECORDS HAVE BEEN COMPOSED.',
+    arte_p4: 'THE HEADQUARTERS IS IN TURIN, CORSO FRANCIA 169. A REFERENCE POINT FOR THE MUSIC SCENE.',
+    arte_p5: 'Arte Registrazioni and Sounds are Music!',
   }
 };
 

@@ -13,8 +13,6 @@ export default function AdminSeed() {
   const isAdmin = useMemo(() => !!(user && (ADMIN_UIDS.includes(user.uid) || (((user.email)||'').toLowerCase() && ADMIN_EMAILS.includes(((user.email)||'').toLowerCase())))), [user]);
   const [files, setFiles] = useState({
     homeVideo: null,
-    studioVideo: null,
-    logoVideo: null,
     festivalPdf: null,
   });
   const [tracks, setTracks] = useState([
@@ -55,10 +53,8 @@ export default function AdminSeed() {
     setLog([]);
     try {
       // 1) Carica su Storage i media scelti
-      const [homeVideoUrl, studioVideoUrl, logoVideoUrl, festivalPdfUrl] = await Promise.all([
+      const [homeVideoUrl, festivalPdfUrl] = await Promise.all([
         uploadIfPresent(files.homeVideo, 'public/videos/home', 'mp4'),
-        uploadIfPresent(files.studioVideo, 'public/videos/studio', 'mp4'),
-        uploadIfPresent(files.logoVideo, 'public/videos/logo', 'mp4'),
         uploadIfPresent(files.festivalPdf, 'public/pdfs/festival', 'pdf'),
       ]);
 
@@ -74,8 +70,6 @@ export default function AdminSeed() {
       // 2) Scrivi config sito
       const config = {};
       if (homeVideoUrl) config.homeVideoUrl = homeVideoUrl;
-      if (studioVideoUrl) config.studioVideoUrl = studioVideoUrl;
-      if (logoVideoUrl) config.logoVideoUrl = logoVideoUrl;
       if (festivalPdfUrl) config.festivalPdfUrl = festivalPdfUrl;
       if (Object.keys(config).length > 0) {
         await setDoc(doc(db, 'site', 'config'), config, { merge: true });
@@ -103,7 +97,7 @@ export default function AdminSeed() {
       }, { merge: true });
       setLog(l => [...l, '✓ Creato/aggiornato artista: artista-demo']);
 
-  setResult({ ok: true, homeVideoUrl, studioVideoUrl, logoVideoUrl, tracks: uploadedTracks.length, festivalPdfUrl });
+  setResult({ ok: true, homeVideoUrl, tracks: uploadedTracks.length, festivalPdfUrl });
     } catch (err) {
       console.error(err);
       setResult({ ok: false, error: err?.message || String(err) });
@@ -173,16 +167,10 @@ export default function AdminSeed() {
     <div className="publicsite-bg" style={{ padding: 24 }}>
       <div style={{ maxWidth: 780, margin: '0 auto', background: 'rgba(20,20,20,0.9)', border: '1px solid #333', borderRadius: 16, padding: 20 }}>
         <h1 style={{ color:'#ffd700', marginTop: 0 }}>Seed contenuti minimi</h1>
-        <p style={{ color:'#ddd' }}>Carica file locali per popolare rapidamente l'app: video home/studio/logo, 2 tracce audio e PDF del festival. I file saranno salvati in Firebase Storage sotto <code>public/</code> e le URL scritte in Firestore.</p>
+        <p style={{ color:'#ddd' }}>Carica file locali per popolare rapidamente l'app: video home, 2 tracce audio e PDF del festival. I file saranno salvati in Firebase Storage sotto <code>public/</code> e le URL scritte in Firestore.</p>
         <form onSubmit={onSeed} style={{ display:'grid', gap: 14 }}>
           <label style={{ color:'#fff' }}>Home video (mp4)
             <input type="file" accept="video/mp4,video/*" onChange={onPick('homeVideo')} />
-          </label>
-          <label style={{ color:'#fff' }}>Studio video (mp4)
-            <input type="file" accept="video/mp4,video/*" onChange={onPick('studioVideo')} />
-          </label>
-          <label style={{ color:'#fff' }}>Logo video (mp4)
-            <input type="file" accept="video/mp4,video/*" onChange={onPick('logoVideo')} />
           </label>
           <div style={{ marginTop: 4 }}>
             <div style={{ color:'#fff', fontWeight:700, marginBottom: 6 }}>Tracce (mp3/m4a/wav)</div>

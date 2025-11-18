@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import NavBar from './NavBar';
-import YouTubeButton from './YouTubeButton';
+import SocialMinimal from './SocialMinimal';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
+import EnterNowButton from './EnterNowButton';
 import LogoPrompt from './LogoPrompt';
-import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import { onSnapshot, doc } from 'firebase/firestore';
 import "./Artisti.css";
 import { db } from './firebase';
@@ -13,15 +13,8 @@ import { db } from './firebase';
 // Placeholder: public page showing festival PDF if available.
 export default function Festival({ pdfUrl }) {
   const navigate = useNavigate();
-  const [showOverlay, setShowOverlay] = useState(false);
-  const [studioVideoUrl, setStudioVideoUrl] = useState('');
-  const [logoVideoUrl, setLogoVideoUrl] = useState('');
-  const [overlaySource, setOverlaySource] = useState(null);
-  const videoPresentazioneRef = React.useRef(null);
+  
   const [finalPdf, setFinalPdf] = useState(pdfUrl || '');
-  const [logoDismissed, setLogoDismissed] = useState(() => {
-    try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
-  });
   const [title, setTitle] = useState('Festival');
   const [description, setDescription] = useState('Scarica il Bando di Partecipazione e il PDF con specifiche tecniche.');
   const [bandoUrl, setBandoUrl] = useState('');
@@ -46,49 +39,22 @@ export default function Festival({ pdfUrl }) {
       setPaymentLink(data?.festivalPaymentLinkUrl || '');
       setPaymentDesc(data?.festivalPaymentDescription || '');
       setVideoUrl(data?.festivalVideoUrl || '');
-  setStudioVideoUrl(data?.studioVideoUrl || '');
-  setLogoVideoUrl(data?.logoVideoUrl || '');
     }, (e) => {
       console.warn('Impossibile caricare config Festival', e);
     });
     return () => unsub();
   }, [pdfUrl]);
 
-  // Overlay logic: pausa/riattiva video presentazione
-  const openOverlay = (source = 'studio') => {
-    try {
-      if (videoPresentazioneRef.current) {
-        videoPresentazioneRef.current.pause();
-        videoPresentazioneRef.current.muted = true;
-        videoPresentazioneRef.current.volume = 0;
-      }
-    } catch (e) {}
-    setOverlaySource(source);
-    setShowOverlay(true);
-  };
-  const closeOverlay = () => {
-    setShowOverlay(false);
-    setTimeout(() => {
-      try {
-        if (videoPresentazioneRef.current) {
-          videoPresentazioneRef.current.muted = true;
-          videoPresentazioneRef.current.volume = 0;
-          videoPresentazioneRef.current.play();
-        }
-      } catch (e) {}
-    }, 300);
-  };
-
   return (
     <div className="publicsite-bg page-festival">
         {/* Intro vocale rimossa */}
       <Link to="/login" className="dash-badge">Dashboard</Link>
-  <div className="logo-wrapper" style={{ cursor: 'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} openOverlay('logo'); }} title="Video Logo">
-    <LogoPrompt show={!showOverlay && !logoDismissed} text="Premi" position="top" />
-        <div className="logo-stack">
-            <img src="/disco.png" alt="Disco" className="disco-img" />
-            <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
-        </div>
+  <div className="logo-wrapper" style={{ position:'relative' }}>
+  <LogoPrompt show={false} text="Premi" position="top" />
+    <div className="logo-stack" aria-hidden="true">
+      <img src="/disco.png" alt="Disco" className="disco-img" />
+      <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
+    </div>
       </div>
       <button
         onClick={() => navigate(-1)}
@@ -158,22 +124,16 @@ export default function Festival({ pdfUrl }) {
         {videoUrl ? (
           <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
             <h3 style={{ color: '#ffd700', marginBottom: 0 }}>Video di presentazione</h3>
-            <video ref={videoPresentazioneRef} src={videoUrl} controls style={{ width: '100%', maxWidth: 980, borderRadius: 12 }} />
+            <video src={videoUrl} controls style={{ width: '100%', maxWidth: 980, borderRadius: 12 }} />
           </div>
         ) : null}
       </div>
-      <div className="youtube-under-menu">
-        <YouTubeButton small layout="row" />
-      </div>
-      {/* Overlay video studio */}
-      <FullscreenVideoOverlay
-        show={showOverlay && ((overlaySource === 'studio' && !!studioVideoUrl) || (overlaySource === 'logo' && !!logoVideoUrl))}
-        src={overlaySource === 'studio' ? studioVideoUrl : logoVideoUrl}
-        onClose={closeOverlay}
-        attemptUnmuted
-      />
+      <SocialMinimal />
       <div style={{ marginTop: 12, display:'flex', justifyContent:'center' }}>
-  <BrandButton onClick={() => openOverlay('studio')} />
+        <BrandButton />
+      </div>
+      <div style={{ marginTop: 8, display:'flex', justifyContent:'center' }}>
+        <EnterNowButton />
       </div>
   <Footer showArteButton={false} />
     </div>

@@ -10,8 +10,8 @@ const artistExample = {
     {
       titolo: "Urlo",
       image: "/loghi/spotify1.png",
-  fileAudioPlay: "/audio/Urlo.wav",
-  fileAudioDownload: "/audio/Urlo.wav.zip",
+  fileAudioPlay: "",
+  fileAudioDownload: "",
       linkSpotify: "https://open.spotify.com/album/5tglExKefh0tAMNPHElVnx",
       linkYouTube: "https://youtu.be/On5PFc0DsuQ?si=mv5JZv5VL0TeqXFU",
       linkAppleMusic: "http://itunes.apple.com/album/id/1810964427",

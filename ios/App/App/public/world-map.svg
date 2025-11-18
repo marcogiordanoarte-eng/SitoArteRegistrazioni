@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="Simplified world map silhouette">
+  <!--
+    World map silhouette (simplified)
+    License: CC0 1.0 (Public Domain) — You can copy, modify, distribute and use, even for commercial purposes, without asking permission.
+    Author: GitHub Copilot for Arte Registrazioni — 2025-10-26
+    Notes: Optimized for lightweight background use on the Live map. Not for cartographic precision.
+  -->
+  <title>Medium-detail world map</title>
+  <desc>Recognizable, medium-detail silhouettes of continents for use as a neutral background.</desc>
+  <defs>
+    <style>
+      :root { --map-land: #4b5563; }
+      .land { fill: var(--map-land, #4b5563); }
+    </style>
+  </defs>
+  <g id="land" class="land" shape-rendering="geometricPrecision">
+    <!-- North America (medium detail) -->
+    <path d="M60,80 L90,92 L120,108 L150,118 L210,132 L260,138 L300,142 L340,152 L360,160 L370,170 L360,184 L340,205 L320,220 L300,232 L280,242 L260,248 L240,246 L220,232 L210,220 L196,206 L178,188 L160,172 L140,156 L120,142 L95,126 L72,110 L60,100 Z" />
+
+    <!-- Central America and Caribbean (small) -->
+    <path d="M300,242 L318,252 L326,262 L330,272 L324,278 L312,270 L300,260 Z" />
+    <circle cx="335" cy="265" r="3" />
+    <circle cx="345" cy="272" r="2.5" />
+
+    <!-- South America (medium detail) -->
+    <path d="M330,280 L340,300 L346,320 L356,338 L370,352 L384,366 L398,382 L410,404 L412,424 L406,440 L398,456 L388,476 L378,492 L368,506 L360,498 L352,478 L346,456 L340,430 L336,400 L334,370 L332,340 L330,310 Z" />
+
+    <!-- Greenland (medium) -->
+    <path d="M420,28 L450,34 L480,40 L510,50 L520,64 L516,78 L500,86 L474,94 L450,100 L430,94 L420,80 Z" />
+
+    <!-- Europe (medium detail) -->
+    <path d="M600,150 L620,146 L640,146 L660,146 L690,138 L720,126 L750,116 L770,118 L790,124 L806,132 L812,146 L800,156 L780,164 L760,170 L740,176 L720,182 L700,182 L684,178 L668,174 L652,168 L636,160 L620,154 Z" />
+
+    <!-- North Africa + Middle East (medium detail) -->
+    <path d="M580,180 L600,184 L620,192 L640,202 L660,214 L680,226 L700,238 L720,246 L740,248 L760,246 L778,242 L792,236 L804,226 L812,214 L816,200 L812,188 L800,182 L780,182 L760,184 L740,186 L720,186 L700,184 L680,182 L660,180 L640,178 L620,178 Z" />
+
+    <!-- Sub-Saharan Africa (medium detail) -->
+    <path d="M640,210 L656,226 L672,244 L686,266 L700,292 L710,316 L716,338 L714,354 L704,366 L690,378 L674,390 L660,402 L646,418 L642,430 L648,438 L662,436 L680,430 L696,422 L708,410 L720,396 L732,378 L742,360 L750,338 L754,318 L750,300 L738,284 L724,268 L708,252 L692,238 L674,224 L656,214 Z" />
+
+    <!-- Asia (medium detail) -->
+    <path d="M800,120 L820,112 L844,104 L870,96 L900,90 L930,90 L960,96 L988,110 L1012,126 L1030,144 L1044,164 L1050,182 L1046,198 L1034,210 L1016,220 L996,230 L976,240 L952,248 L930,254 L906,256 L886,254 L866,248 L850,238 L838,226 L830,212 L828,198 L832,184 L840,170 L850,156 L824,144 L812,138 Z" />
+
+    <!-- Japan / Islands -->
+    <circle cx="1020" cy="214" r="4" />
+    <circle cx="1032" cy="222" r="3" />
+    <circle cx="1042" cy="230" r="2.5" />
+
+    <!-- Australia (medium detail) -->
+    <path d="M980,336 L996,348 L1012,358 L1030,370 L1050,382 L1070,390 L1090,392 L1106,384 L1114,368 L1108,354 L1092,342 L1072,332 L1050,324 L1026,320 L1004,322 L988,328 Z" />
+
+    <!-- Southeast Asia (islands minimal) -->
+    <circle cx="940" cy="300" r="3" />
+    <circle cx="952" cy="308" r="2.5" />
+    <circle cx="964" cy="316" r="2" />
+
+    <!-- Antarctica (stylized strip) -->
+    <path d="M0,568 L1200,568 L1200,595 L0,595 Z" />
+  </g>
+
+  <!-- Small centered logo at the top (adjust size/position via data attributes) -->
+  <g id="branding" aria-label="Logo">
+    <image href="logo.png" x="575" y="30" width="50" height="50" preserveAspectRatio="xMidYMid meet" opacity="0.95" />
+  </g>
+</svg>

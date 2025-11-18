@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@capacitor/core": "^6.2.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "cra-template-pwa": "2.0.0",
     "firebase": "^12.3.0",
+    "music-metadata-browser": "^2.5.11",
     "react": "^19.1.1",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
@@ -17,10 +19,10 @@
     "react-router-dom": "^7.9.1"
   },
   "scripts": {
-    "start": "BROWSER=\"Google Chrome\" react-scripts start",
-    "start:open": "BROWSER=\"Google Chrome\" react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "BROWSER=\"Google Chrome\" craco start",
+    "start:open": "BROWSER=\"Google Chrome\" craco start",
+    "build": "craco build",
+    "test": "craco test",
     "eject": "react-scripts eject",
     "voice-backend": "HOST=127.0.0.1 PORT=5005 SIMPLE_TTS_ENABLED=1 python3 ../voice_server.py || HOST=127.0.0.1 PORT=5005 SIMPLE_TTS_ENABLED=1 python ../voice_server.py",
     "voice-backend-full": "HOST=127.0.0.1 PORT=5005 python3 ../voice_server.py || HOST=127.0.0.1 PORT=5005 python ../voice_server.py",
@@ -46,6 +48,11 @@
     ]
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/ios": "^6.2.0",
+    "@craco/craco": "^7.1.0",
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^16.0.0",
     "firebase-tools": "^14.20.0",
     "react-scripts": "^5.0.1"
   }

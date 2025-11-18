@@ -142,6 +142,9 @@ export default function ArtistSelfDashboard() {
               restrictToBioAndPhoto={true}
             />
           )}
+          {artistDoc && (
+            <></>
+          )}
           {message && artistDoc && <div style={{marginTop:12, color:'#9fe89f'}}>{message}</div>}
         </div>
       </div>

@@ -369,13 +369,11 @@ export default function SoundsStore() {
             <p className="lead reveal">{t('hero_lead')}</p>
             <div className="cta-row reveal">
               <a className="btn btn-primary" href="#unisciti">{t('cta_upload')}</a>
-              <a className="btn btn-ghost" href="#come-funziona">{t('cta_how')}</a>
             </div>
           </div>
         </section>
 
-        <section id="come-funziona" className="how container" aria-labelledby="how-title">
-          <h2 id="how-title" className="section-title reveal">{t('how_title')}</h2>
+        <section className="how container">
           <div className="cards">
             <article className="card reveal">
               <div className="icon-wrap" aria-hidden="true">
@@ -452,7 +450,6 @@ export default function SoundsStore() {
             </label>
             <div className="actions">
               <button className="btn btn-primary" type="submit">{t('form_submit')}</button>
-              <a className="btn btn-ghost" href="#come-funziona">{t('form_details')}</a>
             </div>
           </form>
         </section>
@@ -488,13 +485,7 @@ export default function SoundsStore() {
             </div>
           </div>
 
-          {/* Title as in page */}
-          <h1 className="publicsite-title">Buy Music</h1>
-
-          {/* Come funziona */}
-          <div className="publicsite-desc" style={{ maxWidth: 980, margin: '8px auto 14px', textAlign: 'center' }}>
-            <strong>Come funziona</strong>: scegli un genere, ascolta l’anteprima e acquista il brano che preferisci. I prezzi sono indicati accanto ad ogni brano (esempi: € 1,99 singolo, € 9,99 album, € 100 pacchetto). Dopo il pagamento ottieni il download immediato e la licenza d’uso. Per provare una pagina di pagamento funzionante, apri <Link to="/pagamento-esempio" style={{ color: '#ffd700', textDecoration: 'underline' }}>questa demo</Link>.
-          </div>
+          {/* Title and explanatory paragraph intentionally removed per request */}
 
           {/* Genres grid identical classes/structure */}
           {genres.length === 0 ? (
@@ -548,23 +539,23 @@ export default function SoundsStore() {
             <div className="copy">2025 © Arte Registrazioni</div>
           </div>
           <div className="social">
-            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="social-link">
+            <a href="https://www.facebook.com/arteregistrazionilabel/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="social-link">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 8h-2.2c-.4 0-.8.4-.8.8V11h3v2h-3v6h-2v-6H8v-2h2V8.8A2.8 2.8 0 0 1 12.8 6H15v2Z" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <rect x="3" y="3" width="18" height="18" rx="4" stroke="#94a3b8" strokeWidth="1.5" />
+              </svg>
+            </a>
+            <a href="https://www.youtube.com/@arteregistrazioni" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="social-link">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="7" width="18" height="10" rx="3" stroke="#94a3b8" strokeWidth="1.5" />
+                <path d="M11 10v4l4-2-4-2Z" stroke="#94a3b8" strokeWidth="1.5" strokeLinejoin="round" />
+              </svg>
+            </a>
+            <a href="https://www.instagram.com/arte.registrazioni/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="social-link">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="3" y="3" width="18" height="18" rx="5" stroke="#94a3b8" strokeWidth="1.5"/>
                 <circle cx="12" cy="12" r="4" stroke="#94a3b8" strokeWidth="1.5"/>
                 <circle cx="17.5" cy="6.5" r="1" fill="#94a3b8"/>
-              </svg>
-            </a>
-            <a href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="social-link">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14 3v8.2a3.8 3.8 0 1 1-3.8-3.8" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M14 6c1.2 1.8 3.1 3 5 3" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            </a>
-            <a href="https://t.me/" target="_blank" rel="noopener noreferrer" aria-label="Telegram" className="social-link">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 5 10 13l-2 6 3-4 10-10Z" stroke="#94a3b8" strokeWidth="1.5" strokeLinejoin="round"/>
-                <path d="M21 5 4 11l5 2" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
             </a>
           </div>

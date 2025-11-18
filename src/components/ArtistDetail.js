@@ -1,36 +1,96 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import NavBar from './NavBar';
-import YouTubeButton from './YouTubeButton';
+import SocialMinimal from './SocialMinimal';
 import Footer from './Footer';
 import "./Artisti.css";
-import { db, fetchArtistData, fetchAppleArtistData } from './firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import CustomAudio from './CustomAudio';
+import { db, registerLivePlayEvent } from './firebase';
+import { usePlayer } from './PlayerContext';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 
-// Utility: controlla se un URL punta a un file audio/video riproducibile direttamente
+// Utility: controlla se un URL punta a un file audio riproducibile direttamente
+function isSafariLike() {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return /Safari\//.test(ua) && !/Chrome\//.test(ua);
+}
 function isPlayableAudioUrl(url) {
   if (!url || typeof url !== 'string') return false;
-  const p = url.split('?')[0].toLowerCase();
-  return ['.mp3', '.m4a', '.aac', '.wav', '.ogg', '.oga', '.mp4', '.webm', '.m3u8'].some(ext => p.endsWith(ext));
+  const clean = url.split('?')[0].toLowerCase();
+  const isHls = clean.endsWith('.m3u8');
+  // HLS nativo: ok su Safari, evitare su Chrome senza hls.js
+  if (isHls) return isSafariLike();
+  return ['.mp3', '.m4a', '.aac', '.wav', '.ogg', '.oga', '.mp4', '.webm'].some(ext => clean.endsWith(ext));
+}
+
+// Raccoglie il miglior URL audio da un oggetto traccia (considerando campi comuni)
+function pickBestAudioUrlFromTrack(track) {
+  if (!track || typeof track !== 'object') return '';
+  const candidates = [
+    track.streamAudioUrl,
+    track.previewUrl,
+    track.previewAudioUrl,
+    track.audioPreviewUrl,
+    track.fullAudioUrl,
+    track.audioUrl,
+    track.url,
+    track.fileUrl,
+    track.streamUrl,
+    track.link,
+  ].filter(Boolean);
+  for (const u of candidates) {
+    if (isPlayableAudioUrl(u)) return u;
+  }
+  return '';
+}
+
+// Normalizza stringhe per matching robusto titolo->traccia dashboard
+function normalizeTitle(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/\p{Diacritic}+/gu, '') // rimuovi accenti
+    .replace(/\([^)]*\)|\[[^\]]*\]|\{[^}]*\}/g, ' ') // rimuovi parentesi e contenuto
+    .replace(/[^a-z0-9\s]/g, ' ') // rimuovi punteggiatura
+    .replace(/\s+/g, ' ') // comprimi spazi
+    .trim();
+}
+
+function jaccardTokenSim(a, b) {
+  const A = new Set(normalizeTitle(a).split(' ').filter(Boolean));
+  const B = new Set(normalizeTitle(b).split(' ').filter(Boolean));
+  if (A.size === 0 || B.size === 0) return 0;
+  let inter = 0;
+  A.forEach(t => { if (B.has(t)) inter++; });
+  const uni = A.size + B.size - inter;
+  return inter / (uni || 1);
 }
 
 // Piccolo hint per mostrare le label (placeholder: qui non eseguiamo nulla di complesso)
 function showLabelHint() { /* no-op placeholder; in futuro potresti aggiungere tooltip animati */ }
 
 export default function ArtistDetail() {
+  // Simple locale detection for button labels
+  const locale = ((((typeof navigator !== 'undefined') && navigator.language) || 'it').toLowerCase().startsWith('it')) ? 'it' : 'en';
+  const t = (key) => {
+    const dict = {
+      worldListens: { it: 'Ascolti dal Mondo', en: 'World Listens' },
+      game: { it: 'Gioco', en: 'Game' },
+      artistDashboard: { it: 'Dashboard Artista', en: 'Artist Dashboard' },
+      back: { it: 'Indietro', en: 'Back' },
+    };
+    return (dict[key] && (dict[key][locale] || dict[key].it)) || key;
+  };
   const { id } = useParams();
   const navigate = useNavigate();
   const [artist, setArtist] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [audioUiMsg, setAudioUiMsg] = useState(null);
+  const [artistTracks, setArtistTracks] = useState([]); // tracce caricate in dashboard (subcollection)
+  // Nessun messaggio UI per l'audio richiesto: rimosso
   const [trackIndexByAlbum, setTrackIndexByAlbum] = useState({});
   const [videoError, setVideoError] = useState({});
-  const [totalListens, setTotalListens] = useState(null);
-  const [spotifyArtistUrl, setSpotifyArtistUrl] = useState(null);
-  const [appleArtistUrl, setAppleArtistUrl] = useState(null);
+  // Rimozione stati inutilizzati per pulizia ESLint
   const [showIntroForIdx, setShowIntroForIdx] = useState(null); // fullscreen video index
   const [showPortraitFs, setShowPortraitFs] = useState(false); // fullscreen portrait
   const [showStepsFsIdx, setShowStepsFsIdx] = useState(null); // fullscreen steps image index
@@ -42,6 +102,39 @@ export default function ArtistDetail() {
   const fsVideoRef = useRef(null);
   const lastPlayGestureTsRef = useRef(0);
   const forceFallback = false; // switch manuale se vuoi forzare fallback video
+  const lastPulseRef = useRef(0);
+  const player = usePlayer();
+  // Fallback rapido: se non abbiamo un URL audio diretto, prova a recuperare una preview da Apple iTunes Search API (pubblica)
+  async function fetchApplePreviewUrl(trackTitle, artistName) {
+    try {
+      const term = encodeURIComponent(`${trackTitle || ''} ${artistName || ''}`.trim());
+      if (!term) return '';
+      const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=5`;
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 2500);
+      const resp = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(to);
+      if (!resp.ok) return '';
+      const data = await resp.json().catch(() => ({}));
+      const results = Array.isArray(data.results) ? data.results : [];
+      // Scegliamo la preview con similarità migliore sul titolo
+      let best = null; let bestScore = -1;
+      results.forEach(r => {
+        const score = jaccardTokenSim(trackTitle || '', r.trackName || '');
+        if (score > bestScore) { bestScore = score; best = r; }
+      });
+      if (best && best.previewUrl && isPlayableAudioUrl(best.previewUrl)) return best.previewUrl;
+      // fallback: prima previewUrl valida in lista
+      const any = results.find(r => r.previewUrl && isPlayableAudioUrl(r.previewUrl));
+      return any ? any.previewUrl : '';
+    } catch { return ''; }
+  }
+  function tryRegisterPlayPulse() {
+    const now = Date.now();
+    if (now - (lastPulseRef.current || 0) < 8000) return; // anti-spam 8s
+    lastPulseRef.current = now;
+    registerLivePlayEvent({ artistId: (artist?.id || id), city: 'Roma', country: 'Italia' }).catch(()=>{});
+  }
 
   useEffect(() => {
     let aborted = false;
@@ -51,7 +144,19 @@ export default function ArtistDetail() {
         const ref = doc(db, 'artisti', id);
         const snap = await getDoc(ref);
         if (!snap.exists()) throw new Error('Artista non trovato');
-        if (!aborted) setArtist({ id: snap.id, ...snap.data() });
+        const artistData = { id: snap.id, ...snap.data() };
+        if (!aborted) setArtist(artistData);
+        // carica anche le tracce singole dell'artista (per avere audio reali)
+        try {
+          const tracksCol = collection(db, 'artisti', snap.id, 'tracks');
+          const tSnap = await getDocs(tracksCol);
+          if (!aborted) {
+            const list = tSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setArtistTracks(list);
+          }
+        } catch {
+          if (!aborted) setArtistTracks([]);
+        }
       } catch (e) {
         if (!aborted) setError(e.message || 'Errore caricamento artista');
       } finally {
@@ -62,31 +167,7 @@ export default function ArtistDetail() {
     return () => { aborted = true; };
   }, [id]);
 
-  // Carica plays reali da Spotify/Apple senza toccare audio/cover manuali
-  useEffect(() => {
-    let aborted = false;
-    async function fetchStreaming() {
-      try {
-        const lookup = (artist?.nome || artist?.name || '').trim();
-        if (!lookup) return;
-        const [sp, ap] = await Promise.all([
-          fetchArtistData(lookup).catch(() => null),
-          fetchAppleArtistData(lookup).catch(() => null),
-        ]);
-        if (aborted) return;
-        const followers = (sp && sp.artist && typeof sp.artist.followers === 'number') ? sp.artist.followers : 0;
-        const popularityBoost = (sp && sp.artist && typeof sp.artist.popularity === 'number') ? sp.artist.popularity * 1000 : 0;
-        const previews = (ap && ap.topTracks) ? ap.topTracks.filter(t => Array.isArray(t.previews) && t.previews.length > 0).length : 0;
-        const appleHeuristic = previews * 500;
-        const total = followers + popularityBoost + appleHeuristic;
-        if (total > 0) setTotalListens(total);
-        if (sp && sp.artist && sp.artist.url) setSpotifyArtistUrl(sp.artist.url);
-        if (ap && ap.artist && ap.artist.url) setAppleArtistUrl(ap.artist.url);
-      } catch {}
-    }
-    fetchStreaming();
-    return () => { aborted = true; };
-  }, [artist?.nome, artist?.name]);
+  // Rimosso fetch streaming su pagina pubblica: i dati sono mostrati nella World Map
 
   // Fullscreen handlers (CRT video)
   const openFullscreen = (albumIdx) => setShowIntroForIdx(albumIdx);
@@ -102,20 +183,20 @@ export default function ArtistDetail() {
 
   return (
     <div className="publicsite-bg artist-detail" style={{ paddingBottom: 60 }}>
-      {/* Pulsante blu per Dashboard Artista, visibile solo su pagina artista */}
+      {/* Pulsante blu per Dashboard (localizzato) */}
       <Link
         to={`/artist-login?aid=${encodeURIComponent(artist.id || id)}`}
         className="glow-btn glow-btn--blue"
-        title="Dashboard Artista"
-        aria-label="Dashboard Artista"
+        title={t('artistDashboard')}
+        aria-label={t('artistDashboard')}
         style={{ position:'fixed', top:12, right:12, zIndex:10001 }}
       >
-        Dashboard Artista
+        {t('artistDashboard')}
       </Link>
       <button
         onClick={() => navigate(-1)}
-        aria-label="Torna indietro"
-        title="Indietro"
+        aria-label={t('back')}
+        title={t('back')}
         style={{ position:'fixed', top:10, left:10, zIndex:10000, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(4px)', border:'2px solid #ffd700', width:44, height:44, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 12px rgba(255,215,0,0.6)' }}
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
@@ -137,45 +218,14 @@ export default function ArtistDetail() {
           </div>
         )}
         <h1 className="artist-name" style={{ textAlign: 'center', maxWidth: '92vw' }}>{artist.nome || artist.name || 'Artista'}</h1>
-        {/* Social bar: Spotify/Apple dinamici da API (niente manuali) */}
-        {(artist.socials && (artist.socials.instagram || artist.socials.youtube || artist.socials.facebook)) || spotifyArtistUrl || appleArtistUrl ? (
-          <div className="social-bar" style={{ marginTop: 6, marginBottom: 6 }}>
-            {artist.socials.facebook && (
-              <a className="social-btn social-btn--fb" href={artist.socials.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                <span className="social-halo"></span>
-                <img src="/icons/facebook.png" alt="Facebook" />
-                <span className="social-label">Facebook</span>
-              </a>
-            )}
-            {artist.socials.youtube && (
-              <a className="social-btn social-btn--yt" href={artist.socials.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-                <span className="social-halo"></span>
-                <img src="/icons/yt.png" alt="YouTube" />
-                <span className="social-label">YouTube</span>
-              </a>
-            )}
-            {artist.socials.instagram && (
-              <a className="social-btn social-btn--ig" href={artist.socials.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                <span className="social-halo"></span>
-                <img src="/icons/instagram.png" alt="Instagram" />
-                <span className="social-label">Instagram</span>
-              </a>
-            )}
-            {spotifyArtistUrl && (
-              <a className="social-btn" href={spotifyArtistUrl} target="_blank" rel="noopener noreferrer" aria-label="Spotify">
-                <span className="social-halo"></span>
-                <img src="/icons/spotify1.png" alt="Spotify" />
-                <span className="social-label">Spotify</span>
-              </a>
-            )}
-            {appleArtistUrl && (
-              <a className="social-btn" href={appleArtistUrl} target="_blank" rel="noopener noreferrer" aria-label="Apple Music">
-                <span className="social-halo"></span>
-                <img src="/icons/apple3.png" alt="Apple Music" />
-                <span className="social-label">Apple</span>
-              </a>
-            )}
-          </div>
+        {/* Social bar: mostra solo social dell'artista; niente pulsanti Spotify/Apple (usati solo per tracciamento) */}
+        {(artist.socials && (artist.socials.instagram || artist.socials.youtube || artist.socials.facebook)) ? (
+          <SocialMinimal
+            facebook={artist.socials.facebook}
+            youtube={artist.socials.youtube}
+            instagram={artist.socials.instagram}
+            style={{ marginTop: 6, marginBottom: 6 }}
+          />
         ) : null}
         {artist.website && (
           <div style={{ marginTop: 6 }}>
@@ -189,22 +239,18 @@ export default function ArtistDetail() {
           <div className="bio-box" style={{ maxWidth: 860, width: 'min(92vw,860px)', marginTop: 12, lineHeight: 1.55, color: '#fcfbfb', position:'relative', paddingTop: 0 }}>
             <p className="bio-text" style={{ margin: 0, whiteSpace: 'pre-wrap', color: '#fcfbfb', fontSize: '1.02rem' }}>{artist.bio}</p>
             <div style={{ marginTop: 14, display:'flex', gap:12, flexWrap:'wrap' }}>
-              {/* Pulsanti voce reale disattivati */}
+              {/* Pulsante blu: Ascolti dal Mondo */}
               <button
                 type="button"
-                onClick={() => {
-                  // Quick scroll to albums / musica se presente
-                  const firstAlbum = document.querySelector('.album-card');
-                  if (firstAlbum) firstAlbum.scrollIntoView({ behavior:'smooth', block:'center' });
-                }}
-                style={{ background:'#0b3d1f', border:'1px solid #19c97d', color:'#d5ffe8', padding:'8px 14px', borderRadius:12, cursor:'pointer', fontWeight:600, fontSize:'.8rem', letterSpacing:.5 }}
-              >Buy Music →
+                onClick={() => navigate(`/worldmap/${encodeURIComponent(artist.id || id)}`)}
+                style={{ background:'#0b2a6f', border:'1px solid #3b82f6', color:'#e6f0ff', padding:'8px 14px', borderRadius:12, cursor:'pointer', fontWeight:600, fontSize:'.85rem', letterSpacing:.5 }}
+              >{t('worldListens')} →
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/pentagramma')}
                 style={{ background:'#111', border:'1px solid #ffd700', color:'#ffd700', padding:'8px 14px', borderRadius:12, cursor:'pointer', fontWeight:600, fontSize:'.8rem', letterSpacing:.5 }}
-              >Gioco →
+              >{t('game')} →
               </button>
             </div>
           </div>
@@ -235,16 +281,52 @@ export default function ArtistDetail() {
               const trackCount = tracks.length;
               const isSingle = (trackCount === 1) || (!hasTracks && !!playBtn);
               const priceLabel = isSingle ? 'Singolo \u20ac 1,99' : 'Album \u20ac 9,99';
-              const candidateSrc = hasTracks ? (currentTrack?.link || '') : (playBtn?.link || '');
+              // PRIORITA' AGGIORNATA: prima album.streamAudioUrl (streaming completo) poi eventuale master/download, poi traccia corrente, poi Play button legacy, poi match tracce subcollection.
+              const albumLevelCandidates = [
+                album.streamAudioUrl,
+                album.fullAudioUrl,
+                album.downloadLink,
+              ].filter(u => u && isPlayableAudioUrl(u));
+              let candidateSrc = albumLevelCandidates[0] || '';
+              // Se abbiamo tracce, proviamo preferenza sulla traccia selezionata (potrebbe avere streamAudioUrl specifico)
+              const trackCandidate = pickBestAudioUrlFromTrack(currentTrack || {});
+              if (hasTracks && isPlayableAudioUrl(trackCandidate)) {
+                candidateSrc = trackCandidate;
+              }
+              // Fallback al bottone Play se ancora vuoto
+              if (!candidateSrc && playBtn && isPlayableAudioUrl(playBtn.link)) {
+                candidateSrc = playBtn.link;
+              }
+              // Ricerca robusta nelle tracce subcollection se ancora non abbiamo URL valido
+              if (!candidateSrc || !isPlayableAudioUrl(candidateSrc)) {
+                const wantedRaw = (currentTrack?.title || currentTrack?.name || album?.title || '').trim();
+                if (wantedRaw) {
+                  const wanted = normalizeTitle(wantedRaw);
+                  let best = null; let bestScore = -1;
+                  for (const t of artistTracks) {
+                    if (currentTrack?.id && t.id && String(currentTrack.id) === String(t.id)) { best = t; bestScore = 1; break; }
+                    const score = jaccardTokenSim(wanted, t.title || t.name || '');
+                    if (score > bestScore) { bestScore = score; best = t; }
+                  }
+                  if (best && bestScore >= 0.45) {
+                    const fromBest = pickBestAudioUrlFromTrack(best);
+                    if (fromBest) candidateSrc = fromBest;
+                  }
+                }
+              }
+              // Se il link non è un file audio supportato, usa una piccola traccia silenziosa per attivare comunque il player globale
+              // Demo fallback udibile dal bundle pubblico (finché non si configurano previewUrl reali)
+              // DEMO_FALLBACK rimosso: fallback gestito internamente dal PlayerContext
+              // Determina se è un URL audio diretto (informativo, non usato per scegliere il fallback qui)
+              // eslint-disable-next-line no-unused-vars
               const hasPlayableAudio = isPlayableAudioUrl(candidateSrc);
-              const firstTrackLink = hasTracks ? (tracks[0]?.link || '') : '';
-              // Link dinamici: se disponibili, usiamo URL artista da API (niente manuali)
-              const spotifyLink = spotifyArtistUrl || null;
-              const appleLink = appleArtistUrl || null;
+              const playableSrc = hasPlayableAudio ? candidateSrc : '';
+              // Niente pulsanti Spotify/Apple in pagina pubblica: i link sono usati solo per tracciamento
               const ytBtn = album.buttons?.find(b => (b.name || '').toLowerCase().includes('youtube'));
               const downloadBtn = album.buttons?.find(b => (b.name || '').toLowerCase().includes('download'));
-              const isPlaying = !!(audioRefs.current[idx]?.element && !audioRefs.current[idx].element.paused);
-              const btnCount = 1 /* play */ + (spotifyBtn?1:0) + (appleBtn?1:0) + (ytBtn?1:0) + ((album.paymentLinkUrl || downloadBtn)?1:0);
+              const isPlaying = !!(player?.state?.playing && player?.state?.src === playableSrc);
+              // Conteggio pulsanti per layout (play + youtube + download/acquisto)
+              const btnCount = 1 /* play */ + (ytBtn?1:0) + ((album.paymentLinkUrl || downloadBtn)?1:0);
               return (
                 <div
                   key={idx}
@@ -253,28 +335,7 @@ export default function ArtistDetail() {
                   style={{ width: 'min(92vw,560px)', background: 'rgba(30,30,30,0.92)', borderRadius: 28, boxShadow: '0 6px 32px rgba(0,0,0,0.45)', padding: 30, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}
                 >
                   {/* Audio nascosto per avere ref PRIMA del click Play */}
-                  {hasPlayableAudio && (
-                    <div style={{ width: 0, height: 0, overflow: 'hidden' }}>
-                      <CustomAudio
-                        ref={(node) => {
-                          if (node) {
-                            audioRefs.current[idx] = node;
-                            try {
-                              const el = node.element;
-                              if (el && !el._arBound) {
-                                el.addEventListener('play', () => { try { setTrackIndexByAlbum(p => ({ ...p })); } catch {} });
-                                el.addEventListener('pause', () => { try { setTrackIndexByAlbum(p => ({ ...p })); } catch {} });
-                                el._arBound = true;
-                              }
-                            } catch {}
-                          } else { delete audioRefs.current[idx]; }
-                        }}
-                        src={candidateSrc}
-                        icons={{ play: '/icons/play4.png', pause: '/icons/play4.png' }}
-                        showButton={false}
-                      />
-                    </div>
-                  )}
+                  {/* local CustomAudio removed: unified global player for persistent playback across routes */}
                   {/* 1) Cover */}
                   {album.cover && (
                     <div className="album-cover-box" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
@@ -285,43 +346,38 @@ export default function ArtistDetail() {
                   )}
                   {/* 2) Pulsanti sotto la cover */}
                   <div className="album-buttons-row" data-count={btnCount} style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'stretch', gap: 10, flexWrap: 'nowrap' }}>
-                    {hasPlayableAudio ? (
+                    {(
                       <button
                         type="button"
                         className={`icon-cell icon-cell--play pulse-on-hover play-toggle-btn ${isPlaying ? 'is-active' : ''}`}
                         aria-label={isPlaying ? 'Pause' : 'Play'}
                         data-label={isPlaying ? 'Pause' : 'Play'}
-                        onPointerDown={async (e) => {
-                          showLabelHint(e);
-                          lastPlayGestureTsRef.current = Date.now();
-                          setAudioUiMsg(null);
-                          try {
-                            Object.keys(audioRefs.current || {}).forEach(k => { const i = Number(k); if (i !== idx) audioRefs.current[i]?.pause?.(); });
-                            const ref = audioRefs.current[idx];
-                            if (ref && ref.element) {
-                              try { ref.element.muted = false; ref.element.volume = 1; } catch {}
-                              if (ref.element.paused) await ref.play?.(); else ref.pause?.();
-                            }
-                            const v = videoRefs.current[idx];
-                            const ael = audioRefs.current[idx]?.element;
-                            if (ael && v) {
-                              v.muted = true; v.defaultMuted = true; v.volume = 0; v.currentTime = ael.currentTime || 0; if (ael.paused) v.pause(); else { try { await v.play(); } catch {} }
-                            }
-                          } catch (err) {
-                            const name = (err && (err.name || err.code)) || '';
-                            if (name === 'NotAllowedError' || name === 'AbortError') setAudioUiMsg('Se la musica non parte, disattiva silenzioso e tocca Play.');
-                            else setAudioUiMsg('Errore avvio audio. Riprova.');
-                          }
-                        }}
                         onClick={async () => {
-                          if (Date.now() - lastPlayGestureTsRef.current < 250) return; // evita doppio gesto
-                          setAudioUiMsg(null);
+                          // evita doppi tap in rapidissima successione
+                          const nowTs = Date.now();
+                          if (nowTs - (lastPlayGestureTsRef.current || 0) < 250) return;
+                          lastPlayGestureTsRef.current = nowTs;
+                          // no message UI
                           try {
-                            Object.keys(audioRefs.current || {}).forEach(k => { const i = Number(k); if (i !== idx) audioRefs.current[i]?.pause?.(); });
-                            const ref = audioRefs.current[idx];
-                            if (ref && ref.element) {
-                              if (ref.element.paused) { try { ref.element.muted = false; ref.element.volume = 1; } catch {}; await ref.play?.(); }
-                              else ref.pause?.();
+                            let chosenSrc = playableSrc;
+                            let displayTitle = hasTracks ? (currentTrack?.title || album.title) : (album.title);
+                            // Fallback Apple iTunes Search se non abbiamo URL diretto
+                            if (!chosenSrc) {
+                              const applePreview = await fetchApplePreviewUrl(displayTitle, (artist?.nome || artist?.name || ''));
+                              if (applePreview) {
+                                chosenSrc = applePreview;
+                              }
+                            }
+                            if (!chosenSrc) {
+                              console.warn('[Play] Nessun URL audio valido (neanche Apple fallback) per', displayTitle);
+                              return;
+                            }
+                            const candidate = { src: chosenSrc, title: displayTitle, cover: album.cover, artistId: (artist?.id || id), trackId: (currentTrack?.id || null) };
+                            if (!player.state.playing || player.state.src !== playableSrc) {
+                              await player.play(candidate);
+                              tryRegisterPlayPulse();
+                            } else {
+                              player.pause();
                             }
                           } catch {}
                         }}
@@ -336,26 +392,13 @@ export default function ArtistDetail() {
                           <img src="/icons/play4.png" alt="Play" width={30} height={30} />
                         )}
                       </button>
-                    ) : playBtn ? (
-                      <a className="icon-cell icon-cell--play pulse-on-hover" onPointerDown={showLabelHint} href={playBtn.link} target="_blank" rel="noopener noreferrer" aria-label="Play" data-label="Play"><img src="/icons/play4.png" alt="Play" /></a>
-                    ) : (hasTracks ? (
-                      firstTrackLink ? (
-                        <a className="icon-cell icon-cell--play pulse-on-hover" onPointerDown={showLabelHint} href={firstTrackLink} target="_blank" rel="noopener noreferrer" aria-label="Play" data-label="Play"><img src="/icons/play4.png" alt="Play" /></a>
-                      ) : null
-                    ) : null)}
-                    {spotifyLink && <a className="icon-cell pulse-on-hover" onPointerDown={showLabelHint} href={spotifyLink} target="_blank" rel="noopener noreferrer" aria-label="Spotify" data-label="Spotify"><img src="/icons/spotify1.png" alt="Spotify" /></a>}
-                    {appleLink && <a className="icon-cell pulse-on-hover" onPointerDown={showLabelHint} href={appleLink} target="_blank" rel="noopener noreferrer" aria-label="Apple Music" data-label="Apple Music"><img src="/icons/apple3.png" alt="Apple Music" /></a>}
+                    )}
                     {ytBtn && <a className="icon-cell pulse-on-hover" onPointerDown={showLabelHint} href={ytBtn.link} target="_blank" rel="noopener noreferrer" aria-label="YouTube" data-label="YouTube"><img src="/icons/youtube2.png" alt="YouTube" /></a>}
                     {album.paymentLinkUrl && (
                       <a className="icon-cell icon-cell--download pulse-on-hover" onPointerDown={showLabelHint} href={album.paymentLinkUrl} target="_blank" rel="noopener noreferrer" aria-label="Buy & Download" data-label="Buy & Download" data-price={priceLabel}><img src="/icons/download5.png" alt="Buy & Download" /></a>
                     )}
                   </div>
-                  {/* Ascolti totali sotto il player (se disponibili) */}
-                  {totalListens !== null && (
-                    <div style={{ marginTop: 8, color: '#ffd700', fontWeight: 700 }}>
-                      Ascolti totali: {totalListens.toLocaleString('it-IT')}
-                    </div>
-                  )}
+                  {/* Rimosso blocco Ascolti dalla pagina pubblica */}
                   {/* 3) Navigazione tracce */}
                   {hasTracks && (
                     <div className="album-track-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 10, color: '#ffd700' }}>
@@ -374,12 +417,7 @@ export default function ArtistDetail() {
                       <span><strong>Genere:</strong> {album.genre}</span>
                     </div>
                   </div>
-                  {/* Messaggi audio */}
-                  {audioUiMsg && (
-                    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center' }}>
-                      <div style={{ color: '#ffe9a6', background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.08)', padding: '6px 10px', borderRadius: 8, fontWeight: 700 }}>{audioUiMsg}</div>
-                    </div>
-                  )}
+                  {/* no audio message UI */}
                   {/* 4) Disco animato (ruota solo quando playing tramite classe is-playing) */}
                   <div className="album-disc-wrapper" style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 18 }}>
                     <div className="album-disc" aria-hidden="true">
@@ -540,9 +578,7 @@ export default function ArtistDetail() {
         </div>
       )}
 
-      <div className="youtube-under-menu" style={{ marginTop: 40 }}>
-        <YouTubeButton small layout="row" />
-      </div>
+      <SocialMinimal style={{ marginTop: 40 }} />
       <Footer />
     </div>
   );

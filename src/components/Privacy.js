@@ -33,19 +33,10 @@ export default function Privacy() {
       <NavBar />
   
 
-      <div className="container" style={{ maxWidth: 900, margin: '24px auto', padding: '0 12px' }}>
-        <h1 className="publicsite-title" style={{ textAlign: 'center' }}>{t('privacy_title')}</h1>
-        <div className="detail-panel" style={{ marginTop: 12 }}>
-          <div className="bio-box" style={{ color: '#fff' }}>
-            <p>{t('privacy_p1')}</p>
-            <p>{t('privacy_p2').replace('Contatti', '')}<Link to="/contatti">{t('nav_contacts')}</Link>.</p>
-            <p>{t('privacy_p3')}</p>
-            <p>{t('privacy_p4')}</p>
-            <p>{t('privacy_p5')}</p>
-            <p>{t('privacy_p6')}</p>
-            <p>{t('privacy_p7')}</p>
-            <p>{t('privacy_p8')}</p>
-          </div>
+      <div className="container" style={{ maxWidth: 980, margin: '24px auto', padding: '0 12px' }}>
+        <h1 className="publicsite-title" style={{ textAlign: 'center' }}>Privacy & Policy</h1>
+        <div className="detail-panel" style={{ marginTop: 12, padding: 0, overflow: 'hidden', borderRadius: 12 }}>
+          <iframe title="Policy" src="/policy.html" style={{ width: '100%', height: '75vh', border: 'none' }} />
         </div>
       </div>
 

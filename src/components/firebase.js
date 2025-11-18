@@ -14,7 +14,8 @@ const firebaseConfig = {
   // Nota: usare il nome bucket, non l'host firebasestorage.app
   // Per i progetti nuovi, il bucket di default è <project-id>.firebasestorage.app
   // Allineiamo al bucket effettivo per evitare mismatch con Signed POST
-  storageBucket: "arteregistrazioni-2025.firebasestorage.app",
+  // ATTENZIONE: usare il bucket canonicale *.appspot.com per Firebase Storage REST
+  storageBucket: "arteregistrazioni-2025.appspot.com",
   messagingSenderId: "130523873354",
   appId: "1:130523873354:web:eb48aea4dd9446270e66b3",
   measurementId: "G-XF3QX0NPZT"
@@ -75,6 +76,16 @@ export const STORAGE_BUCKET = firebaseConfig.storageBucket;
 export const PROJECT_ID = firebaseConfig.projectId;
 // Functions (callable) - specifica regione esplicitamente
 export const functions = getFunctions(app, 'us-central1');
+
+// Wrapper per callable: mantieni httpsCallable standard (niente fetch diretto per onCall).
+async function callCallable(name, data) {
+  const callable = httpsCallable(functions, name);
+  const res = await callable(data);
+  return res.data;
+}
+
+// HTTP fallback endpoint (con CORS esplicito): definito in functions come registerLivePlayHttp
+const REGISTER_LIVE_HTTP = `https://us-central1-${PROJECT_ID}.cloudfunctions.net/registerLivePlayHttp`;
 // Usa l'emulatore di Storage in sviluppo se richiesto via env
 if (process.env.REACT_APP_USE_STORAGE_EMULATOR === 'true') {
   try {
@@ -151,16 +162,32 @@ export async function changeCurrentUserPassword(newPassword) {
 // Spotify artist data helper (calls Cloud Function spotifyArtistData)
 // Richiede che le funzioni siano configurate con: firebase functions:config:set spotify.clientid=... spotify.clientsecret=...
 // Non esporre mai client secret direttamente nel frontend.
-export async function fetchArtistData(artistName, market = 'IT') {
-  if (!artistName || typeof artistName !== 'string') {
+// Estrae ID artista da URL Spotify se presente
+function extractSpotifyArtistId(input) {
+  if (!input || typeof input !== 'string') return null;
+  try {
+    // Formati possibili:
+    // https://open.spotify.com/artist/<ID>
+    // https://open.spotify.com/artist/<ID>?si=...
+  const m = input.match(/open\.spotify\.com\/artist\/([A-Za-z0-9]+)/); // regex semplice; nessuna escape inutile
+    if (m && m[1]) return m[1];
+  } catch {}
+  return null;
+}
+
+// Helper principale Spotify con fallback ID->name
+export async function fetchArtistData(artistNameOrUrl, market = 'IT') {
+  if (!artistNameOrUrl || typeof artistNameOrUrl !== 'string') {
     throw new Error('artistName richiesto');
   }
+  // Se è un URL Spotify prova estrazione ID
+  const id = extractSpotifyArtistId(artistNameOrUrl);
+  const isIdLookup = !!id;
   try {
     const callable = httpsCallable(functions, 'spotifyArtistData');
-    const res = await callable({ artistName, market });
+    const res = await callable({ artistName: isIdLookup ? id : artistNameOrUrl, market, byId: isIdLookup });
     return res.data;
   } catch (e) {
-    // Normalizza errore per UI
     const msg = e?.message || 'Errore Spotify';
     return { found: false, error: true, message: msg };
   }
@@ -168,18 +195,52 @@ export async function fetchArtistData(artistName, market = 'IT') {
 
 // Apple Music artist data helper
 // Richiede configurazione funzioni: firebase functions:config:set apple.musickit_teamid=... apple.musickit_keyid=... apple.musickit_privatekey="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-export async function fetchAppleArtistData(artistName, storefront = 'it') {
-  if (!artistName || typeof artistName !== 'string') {
+function extractAppleArtistName(input) {
+  if (!input || typeof input !== 'string') return null;
+  try {
+    // https://music.apple.com/it/artist/<slug-name>/<numericId>
+  const m = input.match(/music\.apple\.com\/[a-z]{2}\/artist\/([^/]+)\//i); // escape dentro [] non necessaria
+    if (m && m[1]) {
+      return decodeURIComponent(m[1]).replace(/-/g, ' ').trim();
+    }
+  } catch {}
+  return null;
+}
+
+export async function fetchAppleArtistData(artistNameOrUrl, storefront = 'it') {
+  if (!artistNameOrUrl || typeof artistNameOrUrl !== 'string') {
     throw new Error('artistName richiesto');
   }
+  const extracted = extractAppleArtistName(artistNameOrUrl);
+  const query = extracted || artistNameOrUrl;
   try {
     const callable = httpsCallable(functions, 'appleArtistData');
-    const res = await callable({ artistName, storefront });
+    const res = await callable({ artistName: query, storefront });
     return res.data;
   } catch (e) {
     const msg = e?.message || 'Errore Apple Music';
     return { found: false, error: true, message: msg };
   }
+}
+
+// Spotify single track helper (calls Cloud Function spotifyTrackData)
+export async function fetchSpotifyTrackData(trackUrlOrId, market = 'IT') {
+  if (!trackUrlOrId || typeof trackUrlOrId !== 'string') {
+    throw new Error('track (URL o ID) richiesto');
+  }
+  const callable = httpsCallable(functions, 'spotifyTrackData');
+  const res = await callable({ track: trackUrlOrId, market });
+  return res.data;
+}
+
+// Apple single track helper (calls Cloud Function appleTrackData)
+export async function fetchAppleTrackData(trackUrlOrId, storefront = 'it') {
+  if (!trackUrlOrId || typeof trackUrlOrId !== 'string') {
+    throw new Error('track (URL o ID) richiesto');
+  }
+  const callable = httpsCallable(functions, 'appleTrackData');
+  const res = await callable({ track: trackUrlOrId, storefront });
+  return res.data;
 }
 
 // Log (solo sviluppo) per tracciare cambi utente
@@ -190,3 +251,39 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Google Sign-In rimosso: accesso admin solo tramite email/password
+
+// Wrapper callable: registra un play live (per la mappa) – usa Cloud Function registerLivePlay
+// Params: { artistId, city?, country?, lat?, lon? }
+// Fallback: se non passi lat/lon verrà salvato null (posizionamento via city/country se corrisponde a capitali note)
+export async function registerLivePlayEvent({ artistId, city, country, lat, lon }) {
+  if (!artistId) throw new Error('artistId richiesto');
+  // In localhost usa direttamente l'endpoint HTTP con CORS esplicito; in produzione callable.
+  const isLocal = typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location.hostname);
+  if (isLocal) {
+    try {
+      const resp = await fetch(REGISTER_LIVE_HTTP, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artistId, city, country, lat, lon })
+      });
+      if (!resp.ok) throw new Error('HTTP livePlay non-ok ' + resp.status);
+      const json = await resp.json().catch(() => ({ ok: false }));
+      if (!json.ok) throw new Error('HTTP livePlay response invalida');
+      return json;
+    } catch (e) {
+      if (process.env.NODE_ENV !== 'production') console.warn('[registerLivePlayEvent] http local error', e?.message || e);
+      throw e;
+    }
+  }
+  // Produzione: callable
+  return await callCallable('registerLivePlay', { artistId, city, country, lat, lon });
+}
+
+// Log strutturato dei play per reportistica SIAE (Cloud Function logPlay)
+// Params: { artistId, trackId?, title?, src?, event: 'start'|'threshold'|'complete', playedSec?, durationSec? }
+export async function logPlayEvent(payload) {
+  if (!payload || !payload.artistId || !payload.event) throw new Error('artistId ed event richiesti');
+  const callable = httpsCallable(functions, 'logPlay');
+  const res = await callable(payload);
+  return res.data;
+}

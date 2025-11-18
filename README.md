@@ -84,6 +84,28 @@ Progetto CRA con react-scripts. Porta dev: 3001. Assicurati che .env.local sia p
 - Salvataggio resiliente con fallback a doc uid
 - Rimosso UI di deduplica automatica, lasciato “Elimina” manuale in lista
 
+## Streaming audio: modello aggiornato (novembre 2025)
+
+- Campo unificato per lo streaming completo: `streamAudioUrl` (MP3/AAC o anche WAV).
+- Download WAV “master”: usare `fullAudioUrl` e/o `downloadLink` (pensati come link di acquisto/scaricamento).
+- Anteprime: non più obbligatorie; se assenti il player tenta comunque lo streaming completo.
+- Autoplay/mobile: il player sblocca in modo silenzioso l’audio (incluso WAV) e usa fallback con timeout su `canplay`.
+- Fallback esterni: se un brano non ha URL riproducibili, si prova Apple iTunes Search/Spotify preview quando disponibili.
+
+Migrazione dati legacy → `streamAudioUrl`:
+1) In Dashboard (Modifica artista) usa il pannello “Migrazione Audio → streamAudioUrl”.
+2) Avvia prima in “Dry-run (simula)”: vedrai quanti album/tracce verranno aggiornati.
+3) Esegui la migrazione reale (togli spunta a Dry-run): verrà popolato `streamAudioUrl` usando i migliori candidati fra `previewAudioUrl`/`fullAudioUrl`/`downloadLink`/link dei bottoni Play.
+4) I link `gs://` vengono convertiti automaticamente in HTTPS.
+
+Note su formati e peso:
+- Lo streaming di file WAV è consentito ma può rallentare l’avvio e consumare banda. Consigliati MP3/AAC per fruizione rapida.
+- Il player esegue una “sonda” leggera (HEAD o GET con Range 0-0) per evitare download completi nei controlli.
+
+Log degli errori nel mini player:
+- In caso di URL mancante/404/CORS il MiniPlayer mostra un messaggio sintetico.
+- Puoi usare “Audio Links Checker” (Dashboard → Audio Links Checker) per scansionare rapidamente gli URL.
+
 ## Workflow di lavoro e salvataggi (importante)
 
 Per lavorare sempre su questa versione unica e poter ripristinare velocemente:

@@ -14,24 +14,18 @@ export default function Studio() {
   const navigate = useNavigate();
   const [showOverlay, setShowOverlay] = React.useState(false);
   const [studioVideoUrl, setStudioVideoUrl] = React.useState('');
-  const [logoVideoUrl, setLogoVideoUrl] = React.useState('');
-  const [overlaySource, setOverlaySource] = React.useState(null); // 'studio' | 'logo'
   const promoRef = React.useRef(null);
-  const [logoDismissed, setLogoDismissed] = React.useState(() => {
-    try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
-  });
 
   React.useEffect(() => {
     const unsubStudio = onSnapshot(doc(db, 'site', 'config'), (snap) => {
       const data = snap.exists() ? snap.data() : {};
-      setStudioVideoUrl(data?.studioVideoUrl || '');
-      setLogoVideoUrl(data?.logoVideoUrl || '');
+  setStudioVideoUrl(data?.studioVideoUrl || '');
     });
     return () => unsubStudio();
   }, []);
 
   // Overlay logic: pausa/riattiva video presentazione
-  const openOverlay = (source = 'studio') => {
+  const openOverlay = () => {
     try {
       if (promoRef.current) {
         promoRef.current.pause();
@@ -39,12 +33,10 @@ export default function Studio() {
         promoRef.current.volume = 0;
       }
     } catch (e) {}
-    setOverlaySource(source);
     setShowOverlay(true);
   };
   const closeOverlay = () => {
     setShowOverlay(false);
-    setOverlaySource(null);
     setTimeout(() => {
       try {
         if (promoRef.current) {
@@ -64,8 +56,8 @@ export default function Studio() {
           <polyline points="15 18 9 12 15 6" />
         </svg>
       </button>
-      <div className="logo-wrapper" style={{ cursor:'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} openOverlay('logo'); }} title="Video Logo">
-        <LogoPrompt show={!showOverlay && !logoDismissed} text="Premi" position="top" />
+      <div className="logo-wrapper" style={{ position:'relative' }}>
+        <LogoPrompt show={false} text="Premi" position="top" />
         <div className="logo-stack">
             <img src="/disco.png" alt="Disco" className="disco-img" />
             <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
@@ -73,13 +65,13 @@ export default function Studio() {
       </div>
       <NavBar />
       <div className="container studio-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <button type="button" className="studio-btn" aria-label="Arte Studio a schermo intero" onClick={() => openOverlay('studio')}>
+  <button type="button" className="studio-btn" aria-label="Arte Studio a schermo intero" onClick={openOverlay}>
           <img src="/artestudio.jpg" alt="Arte Studio a schermo intero" ref={promoRef} />
         </button>
       </div>
       <FullscreenVideoOverlay
-        show={showOverlay && ((overlaySource === 'studio' && !!studioVideoUrl) || (overlaySource === 'logo' && !!logoVideoUrl))}
-        src={overlaySource === 'studio' ? studioVideoUrl : logoVideoUrl}
+        show={showOverlay && !!studioVideoUrl}
+        src={studioVideoUrl}
         onClose={closeOverlay}
         attemptUnmuted
       />
@@ -87,7 +79,7 @@ export default function Studio() {
         <YouTubeButton small layout="row" />
       </div>
       <div style={{ marginTop: 12, display:'flex', justifyContent:'center' }}>
-        <BrandButton onClick={() => openOverlay('studio')} />
+        <BrandButton />
       </div>
   <Footer showArteButton={false} />
     </div>

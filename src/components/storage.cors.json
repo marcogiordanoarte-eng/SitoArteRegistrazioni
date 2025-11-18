@@ -8,7 +8,11 @@
       "http://localhost:3001",
       "http://127.0.0.1:3001",
       "https://localhost:3001",
-      "https://127.0.0.1:3001"
+      "https://127.0.0.1:3001",
+      "http://localhost:3008",
+      "http://127.0.0.1:3008",
+      "https://localhost:3008",
+      "https://127.0.0.1:3008"
     ],
     "method": ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"],
     "responseHeader": [

@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import NavBar from './NavBar';
-import YouTubeButton from './YouTubeButton';
+import SocialMinimal from './SocialMinimal';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
+import EnterNowButton from './EnterNowButton';
 import LogoPrompt from './LogoPrompt';
-import FullscreenVideoOverlay from './FullscreenVideoOverlay';
-import { doc, collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import './Artisti.css';
 import { db } from './firebase';
 import { useI18n } from '../i18n';
@@ -36,43 +36,13 @@ function formatDHMS(msLeft) {
 export default function Countdown() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
-  const [showOverlay, setShowOverlay] = useState(false);
-  const [studioVideoUrl, setStudioVideoUrl] = useState('');
-  const [logoVideoUrl, setLogoVideoUrl] = useState('');
-  const [overlaySource, setOverlaySource] = useState(null);
+  
   const [items, setItems] = useState([]); // {id, title?, coverUrl, releaseAt, order, createdAt}
   const [now, setNow] = useState(Date.now());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const promoRef = React.useRef(null);
-  const [logoDismissed, setLogoDismissed] = useState(() => {
-    try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
-  });
+  
 
-  // Overlay fullscreen logic: pausa/riattiva video principale
-  const openOverlay = (source = 'studio') => {
-    try {
-      if (promoRef.current) {
-        promoRef.current.pause();
-        promoRef.current.muted = true;
-        promoRef.current.volume = 0;
-      }
-    } catch (e) {}
-    setOverlaySource(source);
-    setShowOverlay(true);
-  };
-  const closeOverlay = () => {
-    setShowOverlay(false);
-    setTimeout(() => {
-      try {
-        if (promoRef.current) {
-          promoRef.current.muted = true;
-          promoRef.current.volume = 0;
-          promoRef.current.play();
-        }
-      } catch (e) {}
-    }, 300);
-  };
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -107,18 +77,13 @@ export default function Countdown() {
     return () => unsub();
   }, []);
 
+  
+
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  useEffect(() => {
-    const unsubStudio = onSnapshot(doc(db, 'site', 'config'), (snap) => {
-      const data = snap.exists() ? snap.data() : {};
-      setStudioVideoUrl(data?.studioVideoUrl || '');
-      setLogoVideoUrl(data?.logoVideoUrl || '');
-    });
-    return () => unsubStudio();
-  }, []);
+  // Rimosso caricamento URL video overlay da config
 
   const split = useMemo(() => {
     const upcoming = [];
@@ -220,12 +185,12 @@ export default function Countdown() {
     <div className="publicsite-bg page-countdown">
       <Link to="/login" className="dash-badge">Dashboard</Link>
   {/* Intro vocale rimossa */}
-  <div className="logo-wrapper" style={{ cursor: 'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} openOverlay('logo'); }} title="Video Logo">
-    <LogoPrompt show={!showOverlay && !logoDismissed} text={t('ps_press')} position="top" />
-        <div className="logo-stack">
-            <img src="/disco.png" alt="Disco" className="disco-img" />
-            <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
-        </div>
+  <div className="logo-wrapper" style={{ position:'relative' }}>
+  <LogoPrompt show={false} text={t('ps_press')} position="top" />
+    <div className="logo-stack" aria-hidden={true}>
+      <img src="/disco.png" alt="Disco" className="disco-img" />
+      <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
+    </div>
       </div>
       <button
         onClick={() => navigate(-1)}
@@ -276,21 +241,18 @@ export default function Countdown() {
           </>
         )}
       </div>
-      <div className="youtube-under-menu"><YouTubeButton small layout="row" /></div>
-      {/* Overlay video studio */}
-      <FullscreenVideoOverlay
-        show={showOverlay && ((overlaySource === 'studio' && !!studioVideoUrl) || (overlaySource === 'logo' && !!logoVideoUrl))}
-        src={overlaySource === 'studio' ? studioVideoUrl : logoVideoUrl}
-        onClose={closeOverlay}
-        attemptUnmuted
-      />
+  <SocialMinimal />
       <div style={{ marginTop: 12, display:'flex', justifyContent:'center', gap: 10, flexWrap:'wrap' }}>
-        <BrandButton onClick={() => openOverlay('studio')} />
+  <BrandButton />
         <Link to="/calend-arte" className="dash-small-btn" style={{ textDecoration:'none', border:'1px solid #ffd700', color:'#ffd700', padding:'8px 10px', borderRadius:8, background:'rgba(0,0,0,0.45)' }}>
           {t('calend_arte')}
         </Link>
       </div>
+      <div style={{ marginTop: 8, display:'flex', justifyContent:'center' }}>
+        <EnterNowButton />
+      </div>
   <Footer showArteButton={false} />
+  
     </div>
   );
 }

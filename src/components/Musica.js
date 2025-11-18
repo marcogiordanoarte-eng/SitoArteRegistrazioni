@@ -20,18 +20,13 @@ export default function Musica() {
   const [previewId, setPreviewId] = useState(null);
   const [showOverlay, setShowOverlay] = useState(false);
   const [studioVideoUrl, setStudioVideoUrl] = useState('');
-  const [logoVideoUrl, setLogoVideoUrl] = useState('');
-  const [overlaySource, setOverlaySource] = useState(null); // 'studio' | 'logo'
-  const [logoDismissed, setLogoDismissed] = useState(() => {
-    try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
-  });
+  const [overlaySource, setOverlaySource] = useState(null); // 'studio'
 
   // Config video studio
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'site', 'config'), (snap) => {
       const data = snap.exists() ? snap.data() : {};
   setStudioVideoUrl(data?.studioVideoUrl || '');
-  setLogoVideoUrl(data?.logoVideoUrl || '');
     });
     return () => unsub();
   }, []);
@@ -151,9 +146,9 @@ export default function Musica() {
     <div className="publicsite-bg page-musica">
       {/* Intro vocale rimossa */}
       <Link to="/login" className="dash-badge">Dashboard</Link>
-      {/* Logo centrale cliccabile */}
-  <div className="logo-wrapper" style={{ margin: isMobile ? '22px 0 34px 0' : '28px 0 56px 0', cursor:'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} setOverlaySource('logo'); setShowOverlay(true); }} title="Video Logo">
-        <LogoPrompt show={!showOverlay && !logoDismissed} text="Premi" position="top" />
+      {/* Logo centrale (statico) */}
+  <div className="logo-wrapper" style={{ margin: isMobile ? '22px 0 34px 0' : '28px 0 56px 0', position:'relative' }}>
+        <LogoPrompt show={false} text="Premi" position="top" />
         <div className="logo-stack">
           <img src="/disco.png" alt="Disco" className="disco-img" />
           <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
@@ -314,8 +309,8 @@ export default function Musica() {
   <audio ref={audioRef} style={{ display:'none' }} preload="auto" />
       </div>
       <FullscreenVideoOverlay
-        show={showOverlay && ((overlaySource === 'studio' && !!studioVideoUrl) || (overlaySource === 'logo' && !!logoVideoUrl))}
-        src={overlaySource === 'studio' ? studioVideoUrl : logoVideoUrl}
+        show={showOverlay && (overlaySource === 'studio' && !!studioVideoUrl)}
+        src={studioVideoUrl}
         onClose={() => setShowOverlay(false)}
         attemptUnmuted
       />

@@ -1,37 +1,19 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import NavBar from './NavBar';
-import YouTubeButton from './YouTubeButton';
+import SocialMinimal from './SocialMinimal';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
+import EnterNowButton from './EnterNowButton';
 import ContactForm from './ContactForm';
 import LogoPrompt from './LogoPrompt';
-import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import "./Artisti.css";
 import { useI18n } from '../i18n';
 
 export default function Contatti() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const [showOverlay, setShowOverlay] = React.useState(false);
-  const [studioVideoUrl, setStudioVideoUrl] = React.useState('');
-  const [logoVideoUrl, setLogoVideoUrl] = React.useState('');
-  const [overlaySource, setOverlaySource] = React.useState(null); // 'studio' | 'logo'
-  const [logoDismissed, setLogoDismissed] = useState(() => {
-    try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
-  });
-  React.useEffect(() => {
-    import('./firebase').then(({ db }) => {
-      import('firebase/firestore').then(({ doc, onSnapshot }) => {
-        const unsub = onSnapshot(doc(db, 'site', 'config'), (snap) => {
-          const data = snap.exists() ? snap.data() : {};
-          setStudioVideoUrl(data?.studioVideoUrl || '');
-          setLogoVideoUrl(data?.logoVideoUrl || '');
-        });
-        return () => unsub();
-      });
-    });
-  }, []);
+  
 
   // Autoplay gestito internamente dal componente FullscreenVideoOverlay
   return (
@@ -42,19 +24,13 @@ export default function Contatti() {
           <polyline points="15 18 9 12 15 6" />
         </svg>
       </button>
-  <div className="logo-wrapper" style={{ cursor: 'pointer', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {} ; setLogoDismissed(true);} setOverlaySource('logo'); setShowOverlay(true); }} title="Logo Video">
-    <LogoPrompt show={!showOverlay && !logoDismissed} text={t('ps_press')} position="top" />
-        <div className="logo-stack">
+  <div className="logo-wrapper" style={{ position:'relative' }}>
+    <LogoPrompt show={false} text={t('ps_press')} position="top" />
+        <div className="logo-stack" aria-hidden={true}>
           <img src="/disco.png" alt="Disco" className="disco-img" />
           <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
         </div>
       </div>
-      <FullscreenVideoOverlay
-        show={showOverlay && ((overlaySource === 'studio' && !!studioVideoUrl) || (overlaySource === 'logo' && !!logoVideoUrl))}
-        src={overlaySource === 'studio' ? studioVideoUrl : logoVideoUrl}
-        onClose={() => setShowOverlay(false)}
-        attemptUnmuted
-      />
       <NavBar />
       <div className="container contacts-container" style={{ maxWidth: 600, margin: "60px auto 0 auto", textAlign: "center", display: "flex", flexDirection: "column", gap: 48, padding: "16px 0" }}>
         <h1 style={{ fontSize: "2.2em", color: "#ffd700", marginBottom: 32 }}>{t('contacts_title')}</h1>
@@ -127,11 +103,10 @@ export default function Contatti() {
         }
       `}</style>
       </div>
-      <div className="youtube-under-menu">
-        <YouTubeButton small layout="row" />
-      </div>
-      <div style={{ marginTop:16, display:'flex', justifyContent:'center' }}>
-  <BrandButton onClick={() => { setOverlaySource('studio'); setShowOverlay(true); }} />
+      <SocialMinimal />
+      <div style={{ marginTop:16, display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
+        <EnterNowButton size="md" />
+        <BrandButton />
       </div>
   <Footer showArteButton={false} />
     </div>

@@ -37,7 +37,7 @@ export default function BrandButton({ onClick, size = 'lg', style }) {
     WebkitBackdropFilter: 'blur(4px)'
   };
   const handle = (e) => {
-    if (onClick) onClick(e); else navigate('/');
+    if (onClick) onClick(e); else navigate('/arte-registrazioni');
   };
   return (
     <button

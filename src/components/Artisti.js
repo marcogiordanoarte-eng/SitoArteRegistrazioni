@@ -1,9 +1,10 @@
 import { doc, collection, onSnapshot } from 'firebase/firestore';
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import YouTubeButton from './YouTubeButton';
+import SocialMinimal from './SocialMinimal';
 import Footer from './Footer';
 import BrandButton from './BrandButton';
+import EnterNowButton from './EnterNowButton';
 import LogoPrompt from './LogoPrompt';
 import FullscreenVideoOverlay from './FullscreenVideoOverlay';
 import "./Artisti.css";
@@ -13,15 +14,12 @@ import NavBar from './NavBar';
 export default function Artisti() {
   const [showOverlay, setShowOverlay] = useState(false);
   const [studioVideoUrl, setStudioVideoUrl] = useState('');
-  const [logoVideoUrl, setLogoVideoUrl] = useState('');
-  const [overlaySource, setOverlaySource] = useState(null); // 'studio' | 'logo'
+  const [overlaySource, setOverlaySource] = useState(null); // 'studio'
   const navigate = useNavigate();
   // Rimosso fullscreen viewer legacy: si naviga direttamente alla scheda artista
   const [artists, setArtists] = useState([]);
   // Rimozione fullscreen overlay legacy
-  const [logoDismissed, setLogoDismissed] = useState(() => {
-    try { return localStorage.getItem('ar_logo_clicked') === '1'; } catch { return false; }
-  });
+  
 
   // Leggi artisti da Firestore in tempo reale + studioVideoUrl
   useEffect(() => {
@@ -40,7 +38,6 @@ export default function Artisti() {
     const unsubStudio = onSnapshot(doc(db, 'site', 'config'), (snap) => {
       const data = snap.exists() ? snap.data() : {};
       setStudioVideoUrl(data?.studioVideoUrl || '');
-      setLogoVideoUrl(data?.logoVideoUrl || '');
     });
     return () => { unsub(); unsubStudio(); };
   }, []);
@@ -55,8 +52,8 @@ export default function Artisti() {
       {/* Quick access to Dashboard in top-right, consistent with Home */}
       <Link to="/login" className="dash-badge">Dashboard</Link>
   {/* Intro vocale rimossa */}
-  <div className="logo-wrapper" style={{ cursor: 'pointer', marginBottom: '24px', position:'relative' }} onClick={() => { if(!logoDismissed){ try { localStorage.setItem('ar_logo_clicked','1'); } catch {}; setLogoDismissed(true);} setOverlaySource('logo'); setShowOverlay(true); }} title="Video Logo">
-    <LogoPrompt show={!showOverlay && !logoDismissed} text="Premi" position="top" />
+  <div className="logo-wrapper" style={{ marginBottom: '24px', position:'relative' }}>
+    <LogoPrompt show={false} text="Premi" position="top" />
         <div className="logo-stack">
             <img src="/disco.png" alt="Disco" className="disco-img" />
             <img src="/logo.png" alt="Logo Arte Registrazioni" className="logo-img" />
@@ -72,7 +69,7 @@ export default function Artisti() {
       </button>
 
   <div style={{ marginTop: 8, display:'flex', justifyContent:'center' }}>
-  <BrandButton onClick={() => { setOverlaySource('studio'); setShowOverlay(true); }} size="lg" />
+  <BrandButton size="lg" />
   </div>
   {/* Galleria artisti */}
   <section className="gallery artist-gallery" style={{ marginBottom: 80 }}>
@@ -95,13 +92,15 @@ export default function Artisti() {
   {/* Menu spostato in fondo */}
   <NavBar />
   {/* Fullscreen viewer legacy rimosso */}
-      <div className="youtube-under-menu">
-        <YouTubeButton small layout="row" />
+      <SocialMinimal />
+      {/* CTA Social Sounds */}
+      <div style={{ marginTop:16, display:'flex', justifyContent:'center' }}>
+        <EnterNowButton size="md" />
       </div>
       {/* Overlay video studio */}
       <FullscreenVideoOverlay
-        show={showOverlay && ((overlaySource === 'studio' && !!studioVideoUrl) || (overlaySource === 'logo' && !!logoVideoUrl))}
-        src={overlaySource === 'studio' ? studioVideoUrl : logoVideoUrl}
+        show={showOverlay && (overlaySource === 'studio' && !!studioVideoUrl)}
+        src={studioVideoUrl}
         onClose={() => setShowOverlay(false)}
         attemptUnmuted
       />

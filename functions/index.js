@@ -1,6 +1,6 @@
 import functions from 'firebase-functions';
 import admin from 'firebase-admin';
-import fetch from 'node-fetch';
+import { v1 as videoIntelligence } from '@google-cloud/video-intelligence';
 import archiver from 'archiver';
 import OpenAI from 'openai';
 import sgMail from '@sendgrid/mail';
@@ -8,6 +8,7 @@ import { PassThrough } from 'stream';
 import { spawn } from 'child_process';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import fetch from 'node-fetch';
 
 // Determina dinamicamente il bucket di default.
 // Nota: per i progetti Firebase nuovi, lo storageBucket è "<project>.firebasestorage.app".
@@ -24,6 +25,232 @@ try {
 admin.initializeApp({ storageBucket: DEFAULT_BUCKET });
 const storage = admin.storage();
 const firestore = admin.firestore();
+const bucket = admin.storage().bucket();
+
+// ===== Moderation utilities =====
+function likelihoodToScore(l) {
+  // Vision SafeSearch likelihood mapping
+  const map = {
+    VERY_UNLIKELY: 0.0,
+    UNLIKELY: 0.2,
+    POSSIBLE: 0.5,
+    LIKELY: 0.75,
+    VERY_LIKELY: 0.9
+  };
+  return map[l] ?? 0;
+}
+
+// Text moderation via Perspective API
+// ENV first (preferred): PERSPECTIVE_API_KEY, PERSPECTIVE_THRESHOLD
+// Legacy fallback: functions:config:set perspective.key=... perspective.threshold=...
+export const moderateText = functions.https.onCall(async (data, context) => {
+  const { text } = data || {};
+  const cfg = functions.config();
+  const apiKey = process.env.PERSPECTIVE_API_KEY || cfg?.perspective?.key;
+  const thresholdCfg = Number(process.env.PERSPECTIVE_THRESHOLD ?? cfg?.perspective?.threshold);
+  const THRESHOLD = Number.isFinite(thresholdCfg) ? Math.max(0, Math.min(1, thresholdCfg)) : 0.5;
+  if (!text || typeof text !== 'string') {
+    return { allow: true, reason: 'empty' };
+  }
+  if (!apiKey) {
+    // If not configured, allow but flag pending
+    return { allow: true, pending: true };
+  }
+  try {
+    const body = {
+      comment: { text },
+      languages: ['it', 'en'],
+      requestedAttributes: {
+        TOXICITY: {},
+        INSULT: {},
+        THREAT: {},
+        IDENTITY_ATTACK: {}
+      }
+    };
+    const resp = await fetch(`https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=${apiKey}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const j = await resp.json();
+    const toks = j?.attributeScores?.TOXICITY?.summaryScore?.value || 0;
+    const insult = j?.attributeScores?.INSULT?.summaryScore?.value || 0;
+    const threat = j?.attributeScores?.THREAT?.summaryScore?.value || 0;
+    const ident = j?.attributeScores?.IDENTITY_ATTACK?.summaryScore?.value || 0;
+    const maxScore = Math.max(toks, insult, threat, ident);
+    const allow = maxScore < THRESHOLD;
+    return { allow, scores: { toks, insult, threat, ident }, threshold: THRESHOLD };
+  } catch (e) {
+    functions.logger.warn('moderateText error', e);
+    return { allow: true, pending: true };
+  }
+});
+
+// Image moderation via Google Vision SafeSearch (REST) using API key
+// ENV first (preferred): VISION_API_KEY
+// Legacy fallback: functions:config:set vision.key=YOUR_KEY
+export const moderateImage = functions.https.onCall(async (data, context) => {
+  const { storagePath } = data || {};
+  const key = process.env.VISION_API_KEY || functions.config()?.vision?.key;
+  if (!storagePath) throw new functions.https.HttpsError('invalid-argument', 'storagePath richiesto');
+  if (!key) return { allow: true, pending: true };
+  try {
+    const file = bucket.file(storagePath);
+    const [buf] = await file.download();
+    const b64 = buf.toString('base64');
+    const body = {
+      requests: [{
+        image: { content: b64 },
+        features: [{ type: 'SAFE_SEARCH_DETECTION' }]
+      }]
+    };
+    const resp = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const j = await resp.json();
+    const ann = j?.responses?.[0]?.safeSearchAnnotation || {};
+    const adult = likelihoodToScore(ann.adult);
+    const violence = likelihoodToScore(ann.violence);
+    const racy = likelihoodToScore(ann.racy);
+    const allow = (adult < 0.5) && (violence < 0.5) && (racy < 0.5);
+    return { allow, scores: { adult, violence, racy } };
+  } catch (e) {
+    functions.logger.warn('moderateImage error', e);
+    return { allow: true, pending: true };
+  }
+});
+
+// Video moderation via Google Cloud Video Intelligence (Explicit Content Detection)
+// Requires enabling the Video Intelligence API for the project. Auth uses the function's service account.
+// Input: { storagePath?: string, gcsUri?: string, threshold?: number, segments?: [{start:number,end:number}] }
+// Output: { allow: boolean, scores: { maxPornScore: number, frameCount: number }, flaggedFrames?: [{ timeSec:number, likelihood:string }], pending?: boolean }
+export const moderateVideo = functions
+  .runWith({ timeoutSeconds: 540, memory: '1GB' })
+  .https.onCall(async (data, context) => {
+    const { storagePath, gcsUri, threshold = 0.5, segments } = data || {};
+    try {
+      let inputUri = null;
+      if (typeof gcsUri === 'string' && gcsUri.startsWith('gs://')) {
+        inputUri = gcsUri;
+      } else if (typeof storagePath === 'string' && storagePath.trim()) {
+        const safe = storagePath.replace(/^\/+/, '');
+        inputUri = `gs://${DEFAULT_BUCKET}/${safe}`;
+      }
+      if (!inputUri) {
+        throw new functions.https.HttpsError('invalid-argument', 'Fornire storagePath o gcsUri');
+      }
+
+      const client = new videoIntelligence.VideoIntelligenceServiceClient();
+      const request = {
+        inputUri,
+        features: ['EXPLICIT_CONTENT_DETECTION']
+      };
+      if (Array.isArray(segments) && segments.length > 0) {
+        request.videoContext = {
+          segments: segments.map(s => ({
+            startTimeOffset: { seconds: Math.max(0, Math.floor(Number(s.start) || 0)) },
+            endTimeOffset: { seconds: Math.max(0, Math.floor(Number(s.end) || 0)) }
+          }))
+        };
+      }
+
+      functions.logger.info('moderateVideo request', { inputUri, withSegments: !!request.videoContext });
+      const [operation] = await client.annotateVideo(request);
+      const [result] = await operation.promise();
+      const ann = result?.annotationResults?.[0];
+      const explicit = ann?.explicitAnnotation;
+      const frames = Array.isArray(explicit?.frames) ? explicit.frames : [];
+
+      let maxPornScore = 0;
+      const flaggedFrames = [];
+      for (const f of frames) {
+        const likelihood = f?.pornographyLikelihood;
+        const score = likelihoodToScore(likelihood);
+        if (score > maxPornScore) maxPornScore = score;
+        if (score >= threshold) {
+          // timeOffset may have seconds and nanos
+          const ts = (Number(f?.timeOffset?.seconds) || 0) + (Number(f?.timeOffset?.nanos) || 0) / 1e9;
+          flaggedFrames.push({ timeSec: Math.round(ts * 100) / 100, likelihood: likelihood || 'UNKNOWN' });
+        }
+      }
+      const allow = maxPornScore < threshold;
+      const payload = {
+        allow,
+        scores: { maxPornScore, frameCount: frames.length },
+        flaggedFrames: flaggedFrames.slice(0, 20) // limit payload size
+      };
+      return payload;
+    } catch (e) {
+      // If API not enabled or permission issue, don't block uploads but mark pending
+      functions.logger.warn('moderateVideo error', e);
+      return { allow: true, pending: true };
+    }
+  });
+
+    // Admin-only callable: approva richiesta artista con validazione IPI/ISNI e set di claim/server flags
+    // Input: { uid: string, ipiIsni: string, email?: string, displayName?: string }
+    // Effects:
+    //  - Valida formato IPI (9-13 cifre) o ISNI (16 cifre, con o senza spazi)
+    //  - Imposta custom claims { artist: true, verifiedArtist: true } preservando altri claims
+    //  - Aggiorna RTDB path users/{uid}: { verified: true, isArtist: true, ipiIsni, verifiedAt }
+    //  - Scrive audit in Firestore 'artistVerifications'
+    export const approveArtistRequest = functions.https.onCall(async (data, context) => {
+      if (!context?.auth || context.auth.token?.admin !== true) {
+        throw new functions.https.HttpsError('permission-denied', 'Solo admin può approvare artisti');
+      }
+      const { uid, ipiIsni, email, displayName } = data || {};
+      if (!uid || typeof uid !== 'string' || uid.trim().length < 6) {
+        throw new functions.https.HttpsError('invalid-argument', 'uid non valido');
+      }
+      const raw = (ipiIsni || '').toString().trim();
+      if (!raw) {
+        throw new functions.https.HttpsError('invalid-argument', 'IPI/ISNI richiesto');
+      }
+      // Regex semplificate: ISNI 16 cifre (consenti spazi), IPI 9-13 cifre
+      const isniOk = /^\s*\d{4}\s?\d{4}\s?\d{4}\s?[0-9Xx]\s*$/.test(raw) || /^\d{16}$/.test(raw.replace(/\s+/g, ''));
+      const ipiOk = /^\d{9,13}$/.test(raw.replace(/\D+/g, ''));
+      if (!isniOk && !ipiOk) {
+        throw new functions.https.HttpsError('invalid-argument', 'Formato IPI/ISNI non riconosciuto');
+      }
+      try {
+        // Merge custom claims
+        const user = await admin.auth().getUser(uid).catch(()=>null);
+        const prevClaims = (user && user.customClaims) ? user.customClaims : {};
+        const newClaims = { ...prevClaims, artist: true, verifiedArtist: true };
+        await admin.auth().setCustomUserClaims(uid, newClaims);
+
+        // Update RTDB flags
+        try {
+          await admin.database().ref(`users/${uid}`).update({
+            verified: true,
+            isArtist: true,
+            ipiIsni: raw,
+            verifiedAt: Date.now(),
+            verifiedBy: context.auth.uid
+          });
+        } catch (e) {
+          functions.logger.warn('approveArtistRequest RTDB update warn', e);
+        }
+
+        // Audit log in Firestore
+        try {
+          await firestore.collection('artistVerifications').add({
+            uid,
+            email: email || user?.email || null,
+            displayName: displayName || user?.displayName || null,
+            ipiIsni: raw,
+            by: context.auth.uid,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            v: 1
+          });
+        } catch (e) {
+          functions.logger.warn('approveArtistRequest audit warn', e);
+        }
+
+        return { ok: true };
+      } catch (e) {
+        functions.logger.error('approveArtistRequest error', e);
+        throw new functions.https.HttpsError('internal', 'Errore approvazione artista');
+      }
+    });
 
 // (1) Existing (copied) album zip generator could be re-added later if needed.
 
@@ -133,10 +360,13 @@ export const aiChatStream = functions.https.onRequest(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    // Includiamo header comuni aggiuntivi per richieste fetch personalizzate
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Firebase-AppCheck');
     return res.status(204).send('');
   }
   res.set('Access-Control-Allow-Origin', '*');
+  // Replica degli headers consentiti anche sulla risposta principale (coerenza CORS)
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Firebase-AppCheck');
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
   const { messages, page } = req.body || {};
   if (!Array.isArray(messages) || !messages.length) return res.status(400).json({ error: 'messages required' });
@@ -453,34 +683,50 @@ async function getSpotifyToken() {
 }
 
 export const spotifyArtistData = functions.https.onCall(async (data, context) => {
-  const { artistName, market = 'IT' } = data || {};
-  if (!artistName || typeof artistName !== 'string' || artistName.trim().length < 2) {
+  const { artistName, market = 'IT', byId = false } = data || {};
+  if (!artistName || typeof artistName !== 'string' || artistName.trim().length < 1) {
     throw new functions.https.HttpsError('invalid-argument', 'artistName (string) richiesto');
   }
   try {
     const token = await getSpotifyToken();
     const headers = { 'Authorization': `Bearer ${token}` };
-    // 1) Cerca artista
-    const q = encodeURIComponent(artistName.trim());
-    const searchUrl = `https://api.spotify.com/v1/search?q=${q}&type=artist&limit=1&market=${encodeURIComponent(market)}`;
-    const sResp = await fetch(searchUrl, { headers });
-    if (sResp.status === 401) {
-      // Token scaduto: forza refresh una volta
-      _spotifyToken = null;
-      const fresh = await getSpotifyToken();
-      headers.Authorization = `Bearer ${fresh}`;
+    let artist = null;
+    let artistId = null;
+    if (byId) {
+      // Lookup diretto per ID
+      const id = artistName.trim();
+      const directUrl = `https://api.spotify.com/v1/artists/${encodeURIComponent(id)}`;
+      let dResp = await fetch(directUrl, { headers });
+      if (dResp.status === 401) { _spotifyToken = null; headers.Authorization = `Bearer ${await getSpotifyToken()}`; dResp = await fetch(directUrl, { headers }); }
+      if (dResp.ok) {
+        artist = await dResp.json();
+        artistId = artist.id;
+      } else if (dResp.status === 404) {
+        return { found: false, artist: null, topTracks: [], note: 'Artista non trovato via ID' };
+      } else {
+        const t = await dResp.text().catch(()=> '');
+        throw new Error(`Spotify artist id error ${dResp.status}: ${t.slice(0,200)}`);
+      }
     }
-    const sResp2 = sResp.status === 401 ? (await fetch(searchUrl, { headers })) : sResp;
-    if (!sResp2.ok) {
-      const t = await sResp2.text().catch(()=> '');
-      throw new Error(`Spotify search error ${sResp2.status}: ${t.slice(0,200)}`);
-    }
-    const sJson = await sResp2.json();
-    const artist = sJson?.artists?.items?.[0] || null;
     if (!artist) {
-      return { found: false, artist: null, topTracks: [], note: 'Nessun artista trovato' };
+      // Ricerca per nome
+      const q = encodeURIComponent(artistName.trim());
+      const searchUrl = `https://api.spotify.com/v1/search?q=${q}&type=artist&limit=1&market=${encodeURIComponent(market)}`;
+      let sResp = await fetch(searchUrl, { headers });
+      if (sResp.status === 401) {
+        _spotifyToken = null; headers.Authorization = `Bearer ${await getSpotifyToken()}`; sResp = await fetch(searchUrl, { headers });
+      }
+      if (!sResp.ok) {
+        const t = await sResp.text().catch(()=> '');
+        throw new Error(`Spotify search error ${sResp.status}: ${t.slice(0,200)}`);
+      }
+      const sJson = await sResp.json();
+      artist = sJson?.artists?.items?.[0] || null;
+      if (!artist) {
+        return { found: false, artist: null, topTracks: [], note: 'Nessun artista trovato' };
+      }
+      artistId = artist.id;
     }
-    const artistId = artist.id;
     const artistData = {
       id: artistId,
       name: artist.name,
@@ -521,6 +767,86 @@ export const spotifyArtistData = functions.https.onCall(async (data, context) =>
   } catch (e) {
     functions.logger.error('spotifyArtistData error', e);
     throw new functions.https.HttpsError('internal', e?.message || 'Errore integrazione Spotify');
+  }
+});
+
+// New: Fetch a single Spotify track by URL or ID and return compact metadata
+// Input: { track: string, market?: 'IT' }
+// Output: { found: boolean, track?: { id, name, url, preview_url, duration_ms, album: { id, name, images[], release_date }, artists: [{id,name,url}] } }
+export const spotifyTrackData = functions.https.onCall(async (data, context) => {
+  const { track, market = 'IT' } = data || {};
+  if (!track || typeof track !== 'string' || track.trim().length < 3) {
+    throw new functions.https.HttpsError('invalid-argument', 'track (URL o ID) richiesto');
+  }
+  try {
+    const token = await getSpotifyToken();
+    const headers = { 'Authorization': `Bearer ${token}` };
+    let id = null;
+    // Estrarre ID da URL se necessario
+    const m = track.match(/open\.spotify\.com\/track\/([A-Za-z0-9]+)/);
+    if (m && m[1]) id = m[1];
+    if (!id && /^[A-Za-z0-9]{10,}$/.test(track.trim())) id = track.trim();
+    if (!id) {
+      // come fallback, prova search by query string
+      const q = encodeURIComponent(track.trim());
+      const searchUrl = `https://api.spotify.com/v1/search?q=${q}&type=track&limit=1&market=${encodeURIComponent(market)}`;
+      let sResp = await fetch(searchUrl, { headers });
+      if (sResp.status === 401) { _spotifyToken = null; headers.Authorization = `Bearer ${await getSpotifyToken()}`; sResp = await fetch(searchUrl, { headers }); }
+      if (!sResp.ok) {
+        const t = await sResp.text().catch(()=> '');
+        throw new Error(`Spotify track search error ${sResp.status}: ${t.slice(0,200)}`);
+      }
+      const sJson = await sResp.json();
+      const item = sJson?.tracks?.items?.[0] || null;
+      if (!item) return { found: false };
+      return {
+        found: true,
+        track: {
+          id: item.id,
+          name: item.name,
+          url: item.external_urls?.spotify || null,
+          preview_url: item.preview_url || null,
+          duration_ms: item.duration_ms ?? null,
+          album: item.album ? {
+            id: item.album.id,
+            name: item.album.name,
+            release_date: item.album.release_date || null,
+            images: Array.isArray(item.album.images) ? item.album.images : []
+          } : null,
+          artists: Array.isArray(item.artists) ? item.artists.map(a => ({ id: a.id, name: a.name, url: a.external_urls?.spotify || null })) : []
+        }
+      };
+    }
+    // Lookup diretto via ID
+    const url = `https://api.spotify.com/v1/tracks/${encodeURIComponent(id)}`;
+    let resp = await fetch(url, { headers });
+    if (resp.status === 401) { _spotifyToken = null; headers.Authorization = `Bearer ${await getSpotifyToken()}`; resp = await fetch(url, { headers }); }
+    if (resp.status === 404) return { found: false };
+    if (!resp.ok) {
+      const t = await resp.text().catch(()=> '');
+      throw new Error(`Spotify track error ${resp.status}: ${t.slice(0,200)}`);
+    }
+    const tJson = await resp.json();
+    return {
+      found: true,
+      track: {
+        id: tJson.id,
+        name: tJson.name,
+        url: tJson.external_urls?.spotify || null,
+        preview_url: tJson.preview_url || null,
+        duration_ms: tJson.duration_ms ?? null,
+        album: tJson.album ? {
+          id: tJson.album.id,
+          name: tJson.album.name,
+          release_date: tJson.album.release_date || null,
+          images: Array.isArray(tJson.album.images) ? tJson.album.images : []
+        } : null,
+        artists: Array.isArray(tJson.artists) ? tJson.artists.map(a => ({ id: a.id, name: a.name, url: a.external_urls?.spotify || null })) : []
+      }
+    };
+  } catch (e) {
+    functions.logger.error('spotifyTrackData error', e);
+    throw new functions.https.HttpsError('internal', e?.message || 'Errore Spotify track');
   }
 });
 
@@ -606,6 +932,85 @@ export const appleArtistData = functions.https.onCall(async (data, context) => {
   } catch (e) {
     functions.logger.error('appleArtistData error', e);
     throw new functions.https.HttpsError('internal', e?.message || 'Errore integrazione Apple Music');
+  }
+});
+
+// New: Fetch a single Apple Music track by URL or ID and return compact metadata
+// Input: { track: string, storefront?: 'it' }
+// Output: { found: boolean, track?: { id, name, url, duration_ms, albumName, artwork, previews: [{url}] } }
+export const appleTrackData = functions.https.onCall(async (data, context) => {
+  const { track, storefront = 'it' } = data || {};
+  if (!track || typeof track !== 'string' || track.trim().length < 2) {
+    throw new functions.https.HttpsError('invalid-argument', 'track (URL o ID) richiesto');
+  }
+  try {
+    const devToken = getAppleMusicDevToken();
+    const headers = { 'Authorization': `Bearer ${devToken}`, 'Accept': 'application/json' };
+    let id = null;
+    const raw = track.trim();
+    // Estrarre ID da URL (formati: /song/<slug>/<id> oppure album/... ?i=<id>)
+    try {
+      const qi = raw.match(/[?&]i=(\d+)/);
+      if (qi && qi[1]) id = qi[1];
+      if (!id) {
+        const m = raw.match(/music\.apple\.com\/[a-z]{2}\/(?:song|album)\/[^/]+\/(\d+)/i);
+        if (m && m[1]) id = m[1];
+      }
+    } catch {}
+    if (!id && /^\d{6,}$/.test(raw)) id = raw;
+    if (!id) {
+      // Fallback search by query string
+      const q = encodeURIComponent(raw);
+      const url = `https://api.music.apple.com/v1/catalog/${encodeURIComponent(storefront)}/search?term=${q}&types=songs&limit=1`;
+      const sResp = await fetch(url, { headers });
+      if (!sResp.ok) {
+        const t = await sResp.text().catch(()=> '');
+        throw new Error(`Apple track search error ${sResp.status}: ${t.slice(0,200)}`);
+      }
+      const sJson = await sResp.json();
+      const item = sJson?.results?.songs?.data?.[0] || null;
+      if (!item) return { found: false };
+      const a = item.attributes || {};
+      return {
+        found: true,
+        track: {
+          id: item.id,
+          name: a.name || null,
+          url: a.url || null,
+          duration_ms: typeof a.durationInMillis === 'number' ? a.durationInMillis : null,
+          albumName: a.albumName || null,
+          artwork: a.artwork || null,
+          previews: Array.isArray(a.previews) ? a.previews : []
+        }
+      };
+    }
+    // Lookup diretto per ID
+    const url = `https://api.music.apple.com/v1/catalog/${encodeURIComponent(storefront)}/songs/${encodeURIComponent(id)}`;
+    const resp = await fetch(url, { headers });
+    if (resp.status === 404) return { found: false };
+    if (!resp.ok) {
+      const t = await resp.text().catch(()=> '');
+      throw new Error(`Apple track error ${resp.status}: ${t.slice(0,200)}`);
+    }
+    const j = await resp.json();
+    const item = j?.data?.[0] || null;
+    if (!item) return { found: false };
+    const a = item.attributes || {};
+    return {
+      found: true,
+      track: {
+        id: item.id,
+        name: a.name || null,
+        url: a.url || null,
+        duration_ms: typeof a.durationInMillis === 'number' ? a.durationInMillis : null,
+        albumName: a.albumName || null,
+        artwork: a.artwork || null,
+        previews: Array.isArray(a.previews) ? a.previews : []
+      }
+    };
+  } catch (e) {
+    functions.logger.error('appleTrackData error', e);
+    throw new functions.https.HttpsError('internal', e?.message || 'Errore Apple track');
   }
 });
 
@@ -712,5 +1117,294 @@ export const getStreamingData = functions.https.onCall(async (data, context) => 
   } catch (e) {
     functions.logger.error('getStreamingData error', e);
     throw new functions.https.HttpsError('internal', e?.message || 'Errore getStreamingData');
+  }
+});
+
+// (J) registerLivePlay: registra un play live per pulsazioni mappa
+// Input: { artistId, city?, country?, lat?, lon? }
+// Valida campi e normalizza; non richiede auth (può essere chiamato da endpoint sicuro proxy) ma registra IP hash
+export const registerLivePlay = functions.https.onCall(async (data, context) => {
+  const { artistId, city, country, lat, lon } = data || {};
+  if (!artistId || typeof artistId !== 'string' || artistId.trim().length < 3) {
+    throw new functions.https.HttpsError('invalid-argument', 'artistId richiesto');
+  }
+  // Limiti minimi: se lat/lon presenti devono essere numeri validi
+  let latNum = null, lonNum = null;
+  if (lat != null || lon != null) {
+    latNum = Number(lat); lonNum = Number(lon);
+    if (!Number.isFinite(latNum) || !Number.isFinite(lonNum) || Math.abs(latNum) > 90 || Math.abs(lonNum) > 180) {
+      throw new functions.https.HttpsError('invalid-argument', 'lat/lon non validi');
+    }
+  }
+  const safeCity = city && typeof city === 'string' ? city.slice(0, 60) : null;
+  const safeCountry = country && typeof country === 'string' ? country.slice(0, 60) : null;
+  // Hash IP (non reversibile) per evitare spam massivo, se disponibile
+  let ipHash = null;
+  try {
+    const ip = context.rawRequest?.headers['x-forwarded-for']?.split(',')[0] || context.rawRequest?.ip || '';
+    if (ip) ipHash = crypto.createHash('sha256').update(ip).digest('hex').slice(0, 32);
+  } catch {}
+  try {
+    await firestore.collection('livePlays').add({
+      artistId: artistId.trim(),
+      city: safeCity || null,
+      country: safeCountry || null,
+      lat: latNum,
+      lon: lonNum,
+      ts: admin.firestore.FieldValue.serverTimestamp(),
+      sourceUid: context.auth?.uid || null,
+      ipHash,
+      v: 1
+    });
+    return { ok: true };
+  } catch (e) {
+    functions.logger.error('registerLivePlay error', e);
+    throw new functions.https.HttpsError('internal', 'Errore registrazione play');
+  }
+});
+
+// Variante HTTP con CORS esplicito per ambiente frontend (local dev / integrazioni semplici)
+// POST /registerLivePlayHttp  body: { artistId, city, country, lat, lon }
+export const registerLivePlayHttp = functions.https.onRequest(async (req, res) => {
+  // CORS preflight
+  if (req.method === 'OPTIONS') {
+    const reqHeaders = req.headers['access-control-request-headers'];
+    // Includi header aggiuntivi usati dal frontend (es. X-Firebase-AppCheck)
+    const allowHeaders = reqHeaders || 'Content-Type, Authorization, X-Firebase-AppCheck, X-Requested-With';
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', allowHeaders);
+    res.set('Access-Control-Max-Age', '86400');
+    return res.status(204).send('');
+  }
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Vary', 'Origin');
+  // Replica allowed headers nella risposta principale per coerenza (alcuni browser controllano anche qui)
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Firebase-AppCheck, X-Requested-With');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  let body = req.body || {};
+  // Se il client manda JSON string
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch {}
+  }
+  const { artistId, city, country, lat, lon } = body || {};
+  if (!artistId || typeof artistId !== 'string' || artistId.trim().length < 3) {
+    return res.status(400).json({ error: 'artistId richiesto' });
+  }
+  let latNum = null, lonNum = null;
+  if (lat != null || lon != null) {
+    latNum = Number(lat); lonNum = Number(lon);
+    if (!Number.isFinite(latNum) || !Number.isFinite(lonNum) || Math.abs(latNum) > 90 || Math.abs(lonNum) > 180) {
+      return res.status(400).json({ error: 'lat/lon non validi' });
+    }
+  }
+  const safeCity = city && typeof city === 'string' ? city.slice(0, 60) : null;
+  const safeCountry = country && typeof country === 'string' ? country.slice(0, 60) : null;
+  let ipHash = null;
+  try {
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '';
+    if (ip) ipHash = crypto.createHash('sha256').update(ip).digest('hex').slice(0, 32);
+  } catch {}
+  try {
+    await firestore.collection('livePlays').add({
+      artistId: artistId.trim(),
+      city: safeCity || null,
+      country: safeCountry || null,
+      lat: latNum,
+      lon: lonNum,
+      ts: admin.firestore.FieldValue.serverTimestamp(),
+      sourceUid: null,
+      ipHash,
+      via: 'http',
+      v: 2
+    });
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    functions.logger.error('registerLivePlayHttp error', e);
+    return res.status(500).json({ error: 'internal' });
+  }
+});
+
+// (K) logStreamingFetch: salva metriche di un fetch streaming per audit
+// Input: { artistId, spotifyFollowers, spotifyPopularity, applePreviewCount, totalEstimate }
+export const logStreamingFetch = functions.https.onCall(async (data, context) => {
+  const { artistId, spotifyFollowers, spotifyPopularity, applePreviewCount, totalEstimate } = data || {};
+  if (!artistId || typeof artistId !== 'string') {
+    throw new functions.https.HttpsError('invalid-argument', 'artistId richiesto');
+  }
+  // Limita scrittura ai soli admin oppure al sistema server-side (auth necessaria con claim admin)
+  if (!context.auth || !(context.auth.token?.admin === true)) {
+    throw new functions.https.HttpsError('permission-denied', 'Solo admin può loggare metriche');
+  }
+  try {
+    await firestore.collection('streamingFetchLogs').add({
+      artistId: artistId.trim(),
+      spotifyFollowers: typeof spotifyFollowers === 'number' ? spotifyFollowers : null,
+      spotifyPopularity: typeof spotifyPopularity === 'number' ? spotifyPopularity : null,
+      applePreviewCount: typeof applePreviewCount === 'number' ? applePreviewCount : null,
+      totalEstimate: typeof totalEstimate === 'number' ? totalEstimate : null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      by: context.auth.uid || null,
+      v: 1
+    });
+    return { ok: true };
+  } catch (e) {
+    functions.logger.error('logStreamingFetch error', e);
+    throw new functions.https.HttpsError('internal', 'Errore log metriche');
+  }
+});
+
+// (L) logPlay: registra eventi di riproduzione (start / threshold / complete) e incrementa contatori
+// Input: { artistId, trackId?, title?, src?, event, playedSec?, durationSec? }
+// Policy:
+//  - Evento "start": incrementa playsTotal artista e (se trackId) traccia immediatamente.
+//  - Evento "threshold": dopo ~30s o >=50% durata: incrementa playsVerified (qualificato per report SIAE).
+//  - Evento "complete": salva playedSec finale e incrementa playsCompleted.
+// Anti-spam: hash IP e debounce (max 1 start per trackId/ipHash ogni 25 minuti).
+export const logPlay = functions.https.onCall(async (data, context) => {
+  const { artistId, trackId, title, src, event, playedSec, durationSec } = data || {};
+  if (!artistId || typeof artistId !== 'string' || artistId.trim().length < 3) {
+    throw new functions.https.HttpsError('invalid-argument', 'artistId richiesto');
+  }
+  const allowedEvents = new Set(['start','threshold','complete']);
+  if (!allowedEvents.has(event)) {
+    throw new functions.https.HttpsError('invalid-argument', 'event non valido');
+  }
+  // Hash IP per limitare exploit massivi
+  let ipHash = null;
+  try {
+    const ip = context.rawRequest?.headers['x-forwarded-for']?.split(',')[0] || context.rawRequest?.ip || '';
+    if (ip) ipHash = crypto.createHash('sha256').update(ip).digest('hex').slice(0, 40);
+  } catch {}
+  const now = Date.now();
+  const dayKey = new Date().toISOString().slice(0,10).replace(/-/g,''); // YYYYMMDD
+  const docPayload = {
+    artistId: artistId.trim(),
+    trackId: trackId ? String(trackId) : null,
+    title: title ? String(title).slice(0,180) : null,
+    src: src ? String(src).slice(0,500) : null,
+    event,
+    playedSec: typeof playedSec === 'number' ? Math.max(0, Math.min(playedSec, 60*60)) : null,
+    durationSec: typeof durationSec === 'number' ? Math.max(0, Math.min(durationSec, 60*60)) : null,
+    ipHash,
+    dayKey,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    v: 1
+  };
+  try {
+    // Debounce start events per track/IP (25 min)
+    if (event === 'start' && ipHash && trackId) {
+      const recent = await firestore.collection('playLogs')
+        .where('ipHash','==', ipHash)
+        .where('trackId','==', String(trackId))
+        .where('event','==','start')
+        .orderBy('createdAt','desc')
+        .limit(1)
+        .get();
+      const lastTs = recent.docs[0]?.createTime?.toDate?.().getTime();
+      if (lastTs && (now - lastTs) < (25 * 60 * 1000)) {
+        // Skip duplicate start
+        return { skipped: true, reason: 'duplicate_start_debounce' };
+      }
+    }
+  } catch (e) {
+    functions.logger.warn('logPlay debounce check error', e);
+  }
+  try {
+    await firestore.collection('playLogs').add(docPayload);
+  } catch (e) {
+    functions.logger.error('logPlay write error', e);
+  }
+  // Aggiornamenti counters
+  const artistRef = firestore.collection('artisti').doc(artistId.trim());
+  const updates = {};
+  if (event === 'start') {
+    updates.playsTotal = admin.firestore.FieldValue.increment(1);
+    updates['playsDaily_' + dayKey] = admin.firestore.FieldValue.increment(1);
+  }
+  if (event === 'threshold') {
+    updates.playsVerified = admin.firestore.FieldValue.increment(1);
+    updates['playsVerifiedDaily_' + dayKey] = admin.firestore.FieldValue.increment(1);
+  }
+  if (event === 'complete') {
+    updates.playsCompleted = admin.firestore.FieldValue.increment(1);
+    updates['playsCompletedDaily_' + dayKey] = admin.firestore.FieldValue.increment(1);
+  }
+  // Track subdoc (optional)
+  let trackUpdates = null;
+  if (trackId) {
+    trackUpdates = {};
+    if (event === 'start') {
+      trackUpdates.playsTotal = admin.firestore.FieldValue.increment(1);
+      trackUpdates['playsDaily_' + dayKey] = admin.firestore.FieldValue.increment(1);
+    }
+    if (event === 'threshold') {
+      trackUpdates.playsVerified = admin.firestore.FieldValue.increment(1);
+      trackUpdates['playsVerifiedDaily_' + dayKey] = admin.firestore.FieldValue.increment(1);
+    }
+    if (event === 'complete') {
+      trackUpdates.playsCompleted = admin.firestore.FieldValue.increment(1);
+      trackUpdates['playsCompletedDaily_' + dayKey] = admin.firestore.FieldValue.increment(1);
+    }
+  }
+  try {
+    if (Object.keys(updates).length > 0) {
+      await artistRef.set(updates, { merge: true });
+    }
+  } catch (e) {
+    functions.logger.warn('logPlay artist counters error', e);
+  }
+  if (trackUpdates) {
+    try {
+      const trackRef = firestore.collection('artisti').doc(artistId.trim()).collection('tracks').doc(String(trackId));
+      await trackRef.set(trackUpdates, { merge: true });
+    } catch (e) {
+      functions.logger.warn('logPlay track counters error', e);
+    }
+  }
+  return { ok: true };
+});
+
+// (M) sendAuditionNotification: email interno quando arriva una nuova audition
+// Input: { name, email, linkSpotifySoundCloud?, linkAppleMusic?, fileUrls: [url] }
+// Uses SendGrid (functions:config:set sendgrid.key=... site.senderemail=...)
+export const sendAuditionNotification = functions.https.onCall(async (data, context) => {
+  const { name, email, linkSpotifySoundCloud, linkAppleMusic, fileUrls } = data || {};
+  const safeName = (name || '').toString().trim().slice(0,80) || 'Creativo';
+  const safeEmail = (email || '').toString().trim().slice(0,120);
+  if (!safeName || !safeEmail || !Array.isArray(fileUrls) || fileUrls.length === 0) {
+    throw new functions.https.HttpsError('invalid-argument', 'name, email e fileUrls richiesti');
+  }
+  const sendgridKey = functions.config()?.sendgrid?.key;
+  const sender = functions.config()?.site?.senderemail;
+  if (!sendgridKey || !sender) {
+    throw new functions.https.HttpsError('failed-precondition', 'SendGrid non configurato');
+  }
+  sgMail.setApiKey(sendgridKey);
+  const adminDest = 'arteregistrazioni@gmail.com'; // destinatario fisso richiesto
+  const links = [];
+  if (linkSpotifySoundCloud) links.push(`Spotify/SoundCloud: ${linkSpotifySoundCloud}`);
+  if (linkAppleMusic) links.push(`Apple Music: ${linkAppleMusic}`);
+  const filesList = fileUrls.map(u => `* ${u}`).join('\n');
+  const plain = `Nuova audition ricevuta\nNome: ${safeName}\nEmail: ${safeEmail}\n${links.length?links.join('\n')+'\n':''}File:\n${filesList}`;
+  const html = `<h3>Nuova audition</h3><p><strong>Nome:</strong> ${safeName}<br/><strong>Email:</strong> ${safeEmail}</p>` +
+    (links.length ? `<p>${links.map(l=>`<div>${l}</div>`).join('')}</p>` : '') +
+    `<p><strong>File:</strong><br/>${fileUrls.map(u=>`<a href="${u}" target="_blank" rel="noopener">${u}</a>`).join('<br/>')}</p>`;
+  try {
+    await sgMail.send({ to: adminDest, from: sender, subject: `Sounds, ascolta: ${safeName}`, text: plain, html });
+    await firestore.collection('auditionsMeta').add({
+      name: safeName,
+      email: safeEmail,
+      linkSpotifySoundCloud: linkSpotifySoundCloud || null,
+      linkAppleMusic: linkAppleMusic || null,
+      fileUrls: fileUrls.slice(0,10),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      notified: true,
+      v: 1
+    });
+    return { ok: true };
+  } catch (e) {
+    functions.logger.error('sendAuditionNotification error', e);
+    throw new functions.https.HttpsError('internal', 'Invio notifica fallito');
   }
 });

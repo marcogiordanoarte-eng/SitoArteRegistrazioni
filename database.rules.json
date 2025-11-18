@@ -1,0 +1,40 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "profiles": {
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "posts": {
+      ".read": true,
+      "$postId": {
+        ".write": "auth != null && newData.child('uid').val() === auth.uid",
+        "viewsCount": {
+          ".read": true,
+          ".write": "auth != null && auth.uid != data.parent().child('uid').val() && newData.isNumber() && ( !data.exists() && newData.val() == 1 || (data.exists() && newData.val() >= data.val()) )"
+        }
+      }
+    },
+    "events": {
+      "$uid": {
+        ".read": true,
+        "$eventId": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+    "chats": {
+      "creatives": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    }
+  }
+}
